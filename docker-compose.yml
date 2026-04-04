@@ -1,0 +1,27 @@
+version: "3"
+
+services:
+  nextjs-app-prod:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: prosolutti-robo
+    env_file:
+      - .env
+    command: npm run start
+    restart: always
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.analises-prod.rule=Host(`analisesprosolutti.com`)"
+      - "traefik.http.routers.analises-prod.entrypoints=websecure"
+      - "traefik.http.routers.analises-prod.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.analises-prod.loadbalancer.server.port=8181"
+    expose:
+      - "8181"
+
+networks:
+  traefik-net:
+    external: true

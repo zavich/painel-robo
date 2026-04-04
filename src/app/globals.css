@@ -1,0 +1,341 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "react-pdf/dist/Page/TextLayer.css";
+@import "react-pdf/dist/Page/AnnotationLayer.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-light: var(--success-light);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-light: var(--destructive-light);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gradient-primary: var(--gradient-primary);
+  --color-gradient-subtle: var(--gradient-subtle);
+  --color-sidebar-background: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.98 0.01 240);         /* Quase branco azulado */
+  --foreground: oklch(0.18 0.04 260);         /* Azul escuro para texto */
+
+  --card: oklch(1 0 0);                       /* Branco puro */
+  --card-foreground: oklch(0.18 0.04 260);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 260);
+
+  --primary: oklch(0.45 0.15 257);            /* Azul vibrante */
+  --primary-foreground: oklch(1 0 0);         /* Branco para contraste */
+  --primary-light: oklch(0.75 0.12 260);      /* Azul claro */
+
+  --secondary: oklch(0.95 0.02 120);          /* Verde suave */
+  --secondary-foreground: oklch(0.18 0.04 260);
+
+  --muted: oklch(0.93 0.01 260);              /* Cinza azulado claro */
+  --muted-foreground: oklch(0.5 0.02 260);
+
+  --accent: oklch(0.55 0.18 260);             /* Azul vibrante */
+  --accent-foreground: oklch(1 0 0);
+
+  --success: oklch(0.65 0.18 140);            /* Verde sucesso */
+  --success-foreground: oklch(1 0 0);
+  --success-light: oklch(0.85 0.08 140);
+
+  --destructive: oklch(0.6 0.22 30);          /* Vermelho destrutivo */
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-light: oklch(0.95 0.08 30);
+
+  --border: oklch(0.9 0.01 260);
+  --input: oklch(0.9 0.01 260);
+  --ring: oklch(0.55 0.18 260);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.18 260), oklch(0.85 0.13 340));
+  --gradient-subtle: linear-gradient(180deg, oklch(0.98 0.01 240), oklch(0.93 0.01 260));
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.10);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.10);
+
+  --sidebar-background: oklch(0.98 0.01 240);
+  --sidebar-foreground: oklch(0.18 0.04 260);
+  --sidebar-primary: oklch(0.55 0.18 260);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.85 0.13 340);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.9 0.01 260);
+  --sidebar-ring: oklch(0.55 0.18 260);
+}
+
+.dark {
+  --background: oklch(0.18 0.04 260);         /* Azul escuro */
+  --foreground: oklch(0.98 0.01 240);         /* Branco azulado */
+
+  --card: oklch(0.22 0.04 260);
+  --card-foreground: oklch(0.98 0.01 240);
+
+  --popover: oklch(0.22 0.04 260);
+  --popover-foreground: oklch(0.98 0.01 240);
+
+  --primary: oklch(0.75 0.12 260);            /* Azul claro */
+  --primary-foreground: oklch(0.18 0.04 260);
+  --primary-light: oklch(0.55 0.18 260);
+
+  --secondary: oklch(0.35 0.04 120);          /* Verde escuro */
+  --secondary-foreground: oklch(0.98 0.01 240);
+
+  --muted: oklch(0.22 0.04 260);
+  --muted-foreground: oklch(0.75 0.12 260);
+
+  --accent: oklch(0.65 0.13 340);             /* Rosa escuro */
+  --accent-foreground: oklch(0.98 0.01 240);
+
+  --success: oklch(0.45 0.18 140);            /* Verde sucesso escuro */
+  --success-foreground: oklch(0.98 0.01 240);
+  --success-light: oklch(0.65 0.08 140);
+
+  --destructive: oklch(0.45 0.22 30);         /* Vermelho escuro */
+  --destructive-foreground: oklch(0.98 0.01 240);
+  --destructive-light: oklch(0.65 0.08 30);
+
+  --border: oklch(0.22 0.04 260);
+  --input: oklch(0.22 0.04 260);
+  --ring: oklch(0.75 0.12 260);
+
+  --sidebar-background: oklch(0.18 0.04 260);
+  --sidebar-foreground: oklch(0.98 0.01 240);
+  --sidebar-primary: oklch(0.75 0.12 260);
+  --sidebar-primary-foreground: oklch(0.18 0.04 260);
+  --sidebar-accent: oklch(0.65 0.13 340);
+  --sidebar-accent-foreground: oklch(0.98 0.01 240);
+  --sidebar-border: oklch(0.22 0.04 260);
+  --sidebar-ring: oklch(0.75 0.12 260);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* PDF Search Highlight */
+.react-pdf__Page__textContent mark {
+  position: relative;
+  z-index: 1;
+}
+
+/* PDFViewer scroll custom */
+.pdf-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background: #f3f4f6;
+}
+
+.pdf-scroll::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.pdf-scroll::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.pdf-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Dark mode scrollbar */
+.dark .pdf-scroll::-webkit-scrollbar,
+.dark .pdf-scroll::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark .pdf-scroll::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark .pdf-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Firefox */
+.pdf-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af #f3f4f6;
+}
+
+.dark .pdf-scroll {
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+/* Header Content Scroll */
+.header-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.header-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.header-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.header-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.dark .header-scroll::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark .header-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* MD Editor Styles */
+@import '@uiw/react-md-editor/markdown-editor.css';
+
+/* Custom styles for MD Editor - Light Mode */
+[data-color-mode="light"] .w-md-editor {
+  background-color: white !important;
+  border-color: #e5e7eb !important;
+}
+
+[data-color-mode="light"] .w-md-editor-text-textarea,
+[data-color-mode="light"] .w-md-editor-text {
+  color: #000 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  background-color: white !important;
+}
+
+[data-color-mode="light"] .w-md-editor-toolbar {
+  background-color: #f9fafb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* Custom styles for MD Editor - Dark Mode */
+[data-color-mode="dark"] .w-md-editor {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-text-textarea,
+[data-color-mode="dark"] .w-md-editor-text {
+  color: #f3f4f6 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  background-color: #1f2937 !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-toolbar {
+  background-color: #111827 !important;
+  border-bottom: 1px solid #374151 !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-toolbar svg {
+  fill: #9ca3af !important;
+}
+
+/* Garantir que o textarea seja editável */
+.w-md-editor-text-textarea {
+  pointer-events: auto !important;
+  user-select: text !important;
+  cursor: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Remover overlay que pode estar bloqueando */
+.w-md-editor-text-pre {
+  pointer-events: none !important;
+}
+
+/* Garantir que o editor não está desabilitado */
+.w-md-editor-text-textarea:disabled {
+  opacity: 1 !important;
+  cursor: text !important;
+  background-color: inherit !important;
+}
+
+/* Forçar interatividade */
+.w-md-editor-text-input {
+  pointer-events: auto !important;
+}
+
+/* Remover aparência de disabled */
+.w-md-editor-text-textarea[disabled] {
+  opacity: 1 !important;
+  background-color: inherit !important;
+}
+
+/* Garantir que o editor inteiro seja clicável */
+.md-editor-wrapper {
+  cursor: text;
+}
+
+.md-editor-wrapper * {
+  pointer-events: auto !important;
+}
+
+/* Forçar visibilidade do cursor */
+.w-md-editor-text-textarea:focus {
+  outline: none !important;
+  caret-color: currentColor !important;
+}
+
+/* Garantir z-index correto para textarea */
+.w-md-editor-text-textarea {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* Insights - Prevenir quebra de layout */
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Garantir que conteúdo longo não quebre o modal */
+[role="dialog"] * {
+  max-width: 100%;
+  word-wrap: break-word;
+}
