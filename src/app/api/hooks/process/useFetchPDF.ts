@@ -21,8 +21,7 @@ function extractKey(url: string): string {
 export function useFetchPDF() {
   const fetchPDF = useCallback(async (pdfUrl: string): Promise<Blob | null> => {
     try {
-      const key = extractKey(pdfUrl);
-      const urlApi = `${process.env.NEXT_PUBLIC_API_URL}/process/documents/${key}`;
+      const urlApi = `${process.env.NEXT_PUBLIC_API_URL}/process/documents/${pdfUrl}`;
       const response = await fetch(urlApi, {
         method: "GET",
         credentials: "include",
