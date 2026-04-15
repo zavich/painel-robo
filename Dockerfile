@@ -1,32 +1,36 @@
-# Usa Node 22
-FROM node:22-alpine
+# Build stage
+FROM node:22-alpine AS builder
 
-# Diretório da aplicação
 WORKDIR /app
 
-# Copia package.json
 COPY package*.json ./
+RUN npm ci
 
-# Instala dependências
-RUN npm install
-
-# Copia o restante do projeto
 COPY . .
 
-# Define variáveis de ambiente para a aplicação
 ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ARG NEXT_PUBLIC_MAINTENANCE_MODE
-ENV NEXT_PUBLIC_MAINTENANCE_MODE=${NEXT_PUBLIC_MAINTENANCE_MODE}
 
-# Builda a aplicação
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_MAINTENANCE_MODE=$NEXT_PUBLIC_MAINTENANCE_MODE
+
 RUN npm run build
 
-# Expõe a porta padrão do Next
-EXPOSE 3000
 
-# Define ambiente de produção
+# Production stage
+FROM node:22-alpine
+
+WORKDIR /app
+
 ENV NODE_ENV=production
 
-# Inicia o Next
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.* ./
+
+EXPOSE 3000
+
 CMD ["npm", "start"]
