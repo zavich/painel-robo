@@ -46,6 +46,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: task-def-updated.json
-          service: painel-robo
-          cluster: painel-cluster
+          service: painel-robo-service
+          cluster: robo-cluster
           wait-for-service-stability: true
