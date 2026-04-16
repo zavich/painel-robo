@@ -12,7 +12,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, Mail, Lock, AlertCircle, Scale, Shield, Gavel } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  AlertCircle,
+  Scale,
+  Shield,
+  Gavel,
+} from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SigninRequestType } from "@/app/interfaces/user";
@@ -68,7 +77,7 @@ const LoginForm = () => {
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
     const savedRememberMe = localStorage.getItem("rememberMe") === "true";
-    
+
     if (savedEmail && savedRememberMe) {
       setValue("email", savedEmail);
       setValue("rememberMe", true);
@@ -92,15 +101,16 @@ const LoginForm = () => {
     clearErrors();
 
     try {
-      await signIn({ 
-        email: data.email, 
-        password: data.password 
+      await signIn({
+        email: data.email,
+        password: data.password,
       });
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.message || 
-                          "Erro ao fazer login. Verifique suas credenciais.";
-      
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Erro ao fazer login. Verifique suas credenciais.";
+
       setLoginError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -115,25 +125,25 @@ const LoginForm = () => {
   };
 
   return (
-    <div className={`w-full max-w-md mx-auto ${theme === "dark" ? "bg-gray-800/50" : "bg-gray-800/50"} backdrop-blur-sm rounded-2xl border shadow-2xl p-8 ${
-      theme === "dark" 
-        ? "border-gray-700" 
-        : "border-gray-700"
-    }`}>
+    <div
+      className={`w-full max-w-md mx-auto ${theme === "dark" ? "bg-gray-800/50" : "bg-gray-800/50"} backdrop-blur-sm rounded-2xl border shadow-2xl p-8 ${
+        theme === "dark" ? "border-gray-700" : "border-gray-700"
+      }`}
+    >
       {/* Header */}
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
-            theme === "dark" 
-              ? "bg-gradient-to-br from-blue-500 to-purple-600" 
-              : "bg-gradient-to-br from-blue-500 to-purple-600"
-          }`}>
+          <div
+            className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
+              theme === "dark"
+                ? "bg-gradient-to-br from-blue-500 to-purple-600"
+                : "bg-gradient-to-br from-blue-500 to-purple-600"
+            }`}
+          >
             <Scale className="h-8 w-8 text-white" />
           </div>
         </div>
-        <h1 className="text-3xl font-bold mb-2 text-gray-100">
-          Prosolutti
-        </h1>
+        <h1 className="text-3xl font-bold mb-2 text-gray-100">Juri Capital</h1>
         <p className="text-sm text-gray-400">
           Entre com suas credenciais para acessar sua conta
         </p>
@@ -143,9 +153,7 @@ const LoginForm = () => {
       {loginError && (
         <div className="mb-6 p-4 rounded-xl border flex items-center space-x-3 bg-red-900/20 border-red-800">
           <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-          <p className="text-sm font-medium text-red-300">
-            {loginError}
-          </p>
+          <p className="text-sm font-medium text-red-300">{loginError}</p>
         </div>
       )}
 
@@ -153,26 +161,28 @@ const LoginForm = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Email Field */}
         <div className="space-y-2">
-          <Label 
-            htmlFor="email" 
+          <Label
+            htmlFor="email"
             className="text-sm font-semibold text-gray-100"
           >
             E-mail
           </Label>
           <div className="relative">
-            <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-              getFieldStatus("email") === "error" 
-                ? "text-red-500" 
-                : "text-gray-400"
-            }`} />
+            <Mail
+              className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                getFieldStatus("email") === "error"
+                  ? "text-red-500"
+                  : "text-gray-400"
+              }`}
+            />
             <Input
               {...register("email")}
               id="email"
               type="email"
               placeholder="seu@email.com"
               className={`pl-10 h-11 bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-blue-500/20 focus:border-blue-500 ${
-                getFieldStatus("email") === "error" 
-                  ? "border-red-500 focus:ring-red-500/20" 
+                getFieldStatus("email") === "error"
+                  ? "border-red-500 focus:ring-red-500/20"
                   : ""
               }`}
               disabled={isLoading}
@@ -188,26 +198,28 @@ const LoginForm = () => {
 
         {/* Password Field */}
         <div className="space-y-2">
-          <Label 
-            htmlFor="password" 
+          <Label
+            htmlFor="password"
             className="text-sm font-semibold text-gray-100"
           >
             Senha
           </Label>
           <div className="relative">
-            <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-              getFieldStatus("password") === "error" 
-                ? "text-red-500" 
-                : "text-gray-400"
-            }`} />
+            <Lock
+              className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                getFieldStatus("password") === "error"
+                  ? "text-red-500"
+                  : "text-gray-400"
+              }`}
+            />
             <Input
               {...register("password")}
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="Digite sua senha"
               className={`pl-10 pr-10 h-11 bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-blue-500/20 focus:border-blue-500 ${
-                getFieldStatus("password") === "error" 
-                  ? "border-red-500 focus:ring-red-500/20" 
+                getFieldStatus("password") === "error"
+                  ? "border-red-500 focus:ring-red-500/20"
                   : ""
               }`}
               disabled={isLoading}
@@ -281,9 +293,7 @@ const LoginForm = () => {
             <div className="w-full border-t border-gray-700"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-800 text-gray-400">
-              ou
-            </span>
+            <span className="px-2 bg-gray-800 text-gray-400">ou</span>
           </div>
         </div>
       </div>
@@ -306,15 +316,11 @@ const LoginForm = () => {
       <div className="mt-8 grid grid-cols-2 gap-4">
         <div className="flex items-center space-x-2 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
           <Shield className="h-4 w-4 text-blue-400" />
-          <span className="text-xs font-medium text-gray-300">
-            Seguro
-          </span>
+          <span className="text-xs font-medium text-gray-300">Seguro</span>
         </div>
         <div className="flex items-center space-x-2 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
           <Gavel className="h-4 w-4 text-blue-400" />
-          <span className="text-xs font-medium text-gray-300">
-            Confiável
-          </span>
+          <span className="text-xs font-medium text-gray-300">Confiável</span>
         </div>
       </div>
     </div>

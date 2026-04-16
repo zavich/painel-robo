@@ -116,7 +116,7 @@ export function MainShell({ children }: MainShellProps) {
         <aside
           className={`hidden md:flex flex-col min-w-[200px] w-auto h-screen border-r ${sidebarBg} shadow-xl`}
         >
-          <div className="px-5 pt-5 pb-4 border-b border-slate-800 flex items-center">
+          {/* <div className="px-5 pt-5 pb-4 border-b border-slate-800 flex items-center">
             <Image
               src="/logowhite-prosolutti.png"
               alt="ProSolutti"
@@ -126,10 +126,10 @@ export function MainShell({ children }: MainShellProps) {
               className="object-contain"
               suppressHydrationWarning
             />
-                </div>
+          </div> */}
 
-                <nav className="flex-1 px-3 py-4 space-y-1 min-h-0">
-                  {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map(
+          <nav className="flex-1 px-3 py-4 space-y-1 min-h-0">
+            {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map(
               (item) => {
                 const Icon = item.icon;
                 const active = isItemActive(item);
@@ -157,7 +157,7 @@ export function MainShell({ children }: MainShellProps) {
                     <span>{item.label}</span>
                   </button>
                 );
-              }
+              },
             )}
           </nav>
 
@@ -174,14 +174,18 @@ export function MainShell({ children }: MainShellProps) {
                     ? "text-slate-300 hover:bg-slate-800 hover:text-slate-50"
                     : "text-slate-300 hover:bg-slate-800 hover:text-slate-50"
                 }`}
-                title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+                title={
+                  theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"
+                }
               >
                 {theme === "dark" ? (
                   <Sun className="h-4 w-4 mr-2" />
                 ) : (
                   <Moon className="h-4 w-4 mr-2" />
                 )}
-                <span className="text-sm">{theme === "dark" ? "Tema Claro" : "Tema Escuro"}</span>
+                <span className="text-sm">
+                  {theme === "dark" ? "Tema Claro" : "Tema Escuro"}
+                </span>
               </Button>
             </div>
           </div>
@@ -302,7 +306,7 @@ export function MainShell({ children }: MainShellProps) {
                           <span>{item.label}</span>
                         </button>
                       );
-                    }
+                    },
                   )}
                 </nav>
 
@@ -319,14 +323,20 @@ export function MainShell({ children }: MainShellProps) {
                           ? "text-slate-300 hover:bg-slate-800 hover:text-slate-50"
                           : "text-slate-300 hover:bg-slate-800 hover:text-slate-50"
                       }`}
-                      title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+                      title={
+                        theme === "dark"
+                          ? "Ativar tema claro"
+                          : "Ativar tema escuro"
+                      }
                     >
                       {theme === "dark" ? (
                         <Sun className="h-4 w-4 mr-2" />
                       ) : (
                         <Moon className="h-4 w-4 mr-2" />
                       )}
-                      <span className="text-sm">{theme === "dark" ? "Tema Claro" : "Tema Escuro"}</span>
+                      <span className="text-sm">
+                        {theme === "dark" ? "Tema Claro" : "Tema Escuro"}
+                      </span>
                     </Button>
                   </div>
                 </div>
@@ -361,13 +371,9 @@ export function MainShell({ children }: MainShellProps) {
           )}
 
           {/* Content */}
-          <div className="flex-1 overflow-auto">
-            {children}
-          </div>
+          <div className="flex-1 overflow-auto">{children}</div>
         </div>
       </div>
     </div>
   );
 }
-
-

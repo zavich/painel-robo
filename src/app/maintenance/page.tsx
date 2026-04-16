@@ -25,11 +25,11 @@ export default function MaintenancePage() {
       <div className="max-w-2xl w-full text-center space-y-8">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img
-            src="/logo-prosolutti.png"
-            alt="ProSolutti Logo"
+          {/* <img
+            src="/logo-juri-capital.png"
+            alt="Juri Capital Logo"
             className="w-32 h-32 object-contain"
-          />
+          /> */}
         </div>
 
         {/* Ícone de manutenção */}
@@ -66,7 +66,8 @@ export default function MaintenancePage() {
             Sistema em Manutenção
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300">
-            Estamos realizando melhorias para oferecer uma experiência ainda melhor.
+            Estamos realizando melhorias para oferecer uma experiência ainda
+            melhor.
           </p>
           <p className="text-lg text-gray-500 dark:text-gray-400">
             O sistema estará disponível em breve. Agradecemos sua compreensão.
@@ -102,11 +103,16 @@ export default function MaintenancePage() {
         {/* Animação de loading */}
         <div className="flex justify-center space-x-2 pt-4">
           <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
-          <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-          <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+          <div
+            className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"
+            style={{ animationDelay: "0.1s" }}
+          ></div>
+          <div
+            className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"
+            style={{ animationDelay: "0.2s" }}
+          ></div>
         </div>
       </div>
     </div>
   );
 }
-

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Analises Prosolutti",
+  title: "Analises Juri Capital",
   icons: {
     icon: "/martelo.png",
   },

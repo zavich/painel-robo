@@ -12,8 +12,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Process, Situation, ProcessPart, Company, SpecialRule } from "@/app/interfaces/processes";
-import { getClaimant, getDefendant, getProcessTitle } from "@/app/utils/processPartsUtils";
+import {
+  Process,
+  Situation,
+  ProcessPart,
+  Company,
+  SpecialRule,
+} from "@/app/interfaces/processes";
+import {
+  getClaimant,
+  getDefendant,
+  getProcessTitle,
+} from "@/app/utils/processPartsUtils";
 import { getStageLabel } from "@/app/utils/processUtils";
 import { capitalizeWords } from "@/app/utils/format";
 import {
@@ -45,7 +55,12 @@ import { mascararCNPJ, formatCpf } from "@/app/utils/masks";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTheme } from "@/app/hooks/use-theme-client";
 
 interface ProcessHeaderProps {
@@ -115,7 +130,7 @@ export function ProcessHeader({
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
-        console.error('Erro ao copiar:', err);
+        console.error("Erro ao copiar:", err);
       }
     }
   };
@@ -125,13 +140,16 @@ export function ProcessHeader({
 
   // Priorizar dados da Petição Inicial sobre processParts
   const initialPetition = process?.documents?.find(
-    (doc) => doc.title === "Petição Inicial"
+    (doc) => doc.title === "Petição Inicial",
   );
   const initialPetitionData = initialPetition?.data as any;
 
-  const claimantName = initialPetitionData?.qualificacao_reclamante?.nome_completo || claimant?.nome || "-";
+  const claimantName =
+    initialPetitionData?.qualificacao_reclamante?.nome_completo ||
+    claimant?.nome ||
+    "-";
   const defendantName = defendant?.nome || "-";
-  
+
   // Obter título do processo usando a mesma lógica do KanbanCard
   // Prioriza título editado, depois formPipedrive.title, depois gera automaticamente
   const savedTitle = process?.title || (process as any)?.formPipedrive?.title;
@@ -139,7 +157,7 @@ export function ProcessHeader({
     process?.processParts || [],
     process?.number,
     savedTitle,
-    false // Não usar número do processo como fallback - sempre gerar das partes se necessário
+    false, // Não usar número do processo como fallback - sempre gerar das partes se necessário
   );
 
   const breadcrumbItems = [
@@ -147,15 +165,20 @@ export function ProcessHeader({
     { label: "Processo" },
   ];
 
-  const activeParts = process?.processParts?.filter(part => part.polo === "ATIVO") || [];
-  const passiveParts = process?.processParts?.filter(part => part.polo === "PASSIVO") || [];
+  const activeParts =
+    process?.processParts?.filter((part) => part.polo === "ATIVO") || [];
+  const passiveParts =
+    process?.processParts?.filter((part) => part.polo === "PASSIVO") || [];
   const companies = process?.companies || [];
 
   // Verificar se é execução provisória
-  const isProvisionalExecution = !!(process?.class === "PROVISIONAL_EXECUTION" && process?.processMain);
-  
+  const isProvisionalExecution = !!(
+    process?.class === "PROVISIONAL_EXECUTION" && process?.processMain
+  );
+
   // Verificar se é processo principal com execução provisória vinculada
-  const isMainWithProvisionalExecution = process?.class === "MAIN" && process?.calledByProvisionalLawsuitNumber;
+  const isMainWithProvisionalExecution =
+    process?.class === "MAIN" && process?.calledByProvisionalLawsuitNumber;
 
   // Conteúdo do meio da primeira linha: Reclamante vs Reclamada (editável com 2 campos)
   const middleContent = isEditingTitle ? (
@@ -179,7 +202,9 @@ export function ProcessHeader({
         }}
         disabled={isSavingTitle}
       />
-      <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm font-semibold flex-shrink-0">VS</span>
+      <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm font-semibold flex-shrink-0">
+        VS
+      </span>
       <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
       <Input
         ref={defendantInputRef}
@@ -202,7 +227,9 @@ export function ProcessHeader({
         size="sm"
         variant="ghost"
         onClick={onSaveTitle}
-        disabled={isSavingTitle || (!editedClaimant?.trim() && !editedDefendant?.trim())}
+        disabled={
+          isSavingTitle || (!editedClaimant?.trim() && !editedDefendant?.trim())
+        }
         className="h-9 w-9 sm:h-10 sm:w-10 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 flex-shrink-0"
         title="Salvar (Enter)"
       >
@@ -229,60 +256,104 @@ export function ProcessHeader({
       <User2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
       {(() => {
         // Se há título gerado e não é vazio, usar ele
-        if (displayTitle && displayTitle.trim() && displayTitle !== process?.number) {
-          const separators = [' VS ', ' X ', ' x '];
+        if (
+          displayTitle &&
+          displayTitle.trim() &&
+          displayTitle !== process?.number
+        ) {
+          const separators = [" VS ", " X ", " x "];
           let parts: string[] = [];
-          
+
           for (const sep of separators) {
             if (displayTitle.includes(sep)) {
               parts = displayTitle.split(sep);
               break;
             }
           }
-          
+
           if (parts.length >= 2) {
             // Tem reclamante E empresa
             return (
               <>
-                <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0" title={parts[0]}>
+                <span
+                  className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                  title={parts[0]}
+                >
                   {capitalizeWords(parts[0])}
                 </span>
-                <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">Vs</span>
+                <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">
+                  Vs
+                </span>
                 <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0" title={parts.slice(1).join(' VS ')}>
-                  {capitalizeWords(parts.slice(1).join(' VS '))}
+                <span
+                  className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                  title={parts.slice(1).join(" VS ")}
+                >
+                  {capitalizeWords(parts.slice(1).join(" VS "))}
                 </span>
               </>
             );
           } else if (displayTitle.trim()) {
             // Só um nome (sem separador)
             return (
-              <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0" title={displayTitle}>
+              <span
+                className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                title={displayTitle}
+              >
                 {capitalizeWords(displayTitle)}
               </span>
             );
           }
         }
-        
+
         // Fallback: Título gerado automaticamente das partes
-        if (claimantName && claimantName !== '-' && defendantName && defendantName !== '-') {
+        if (
+          claimantName &&
+          claimantName !== "-" &&
+          defendantName &&
+          defendantName !== "-"
+        ) {
           return (
             <>
-              <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0" title={claimantName}>{capitalizeWords(claimantName)}</span>
-              <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">Vs</span>
+              <span
+                className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                title={claimantName}
+              >
+                {capitalizeWords(claimantName)}
+              </span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">
+                Vs
+              </span>
               <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-              <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0" title={defendantName}>{capitalizeWords(defendantName)}</span>
+              <span
+                className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                title={defendantName}
+              >
+                {capitalizeWords(defendantName)}
+              </span>
             </>
           );
         }
-        
+
         // Último fallback: mostrar apenas o que temos
         return (
           <>
-            <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0" title={claimantName}>{capitalizeWords(claimantName) || '-'}</span>
-            <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">Vs</span>
+            <span
+              className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+              title={claimantName}
+            >
+              {capitalizeWords(claimantName) || "-"}
+            </span>
+            <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">
+              Vs
+            </span>
             <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-            <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0" title={defendantName}>{capitalizeWords(defendantName)}</span>
+            <span
+              className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+              title={defendantName}
+            >
+              {capitalizeWords(defendantName)}
+            </span>
           </>
         );
       })()}
@@ -316,7 +387,7 @@ export function ProcessHeader({
             {/* Número do processo atual (execução provisória) */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div 
+                <div
                   onClick={handleCopyProcessNumber}
                   className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-md cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors group"
                 >
@@ -332,17 +403,22 @@ export function ProcessHeader({
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                {copied ? "Copiado!" : "Clique para copiar o número do processo"}
+                {copied
+                  ? "Copiado!"
+                  : "Clique para copiar o número do processo"}
               </TooltipContent>
             </Tooltip>
             {/* Link para processo principal */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div 
+                <div
                   onClick={(e) => {
                     e.preventDefault();
                     if (process?.processMain?.number) {
-                      window.open(`/processes/${process.processMain.number}`, '_blank');
+                      window.open(
+                        `/processes/${process.processMain.number}`,
+                        "_blank",
+                      );
                     }
                   }}
                   className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors group"
@@ -364,7 +440,7 @@ export function ProcessHeader({
             {/* Número do processo principal */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div 
+                <div
                   onClick={handleCopyProcessNumber}
                   className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors group"
                 >
@@ -380,17 +456,22 @@ export function ProcessHeader({
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                {copied ? "Copiado!" : "Clique para copiar o número do processo"}
+                {copied
+                  ? "Copiado!"
+                  : "Clique para copiar o número do processo"}
               </TooltipContent>
             </Tooltip>
             {/* Link para execução provisória vinculada */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div 
+                <div
                   onClick={(e) => {
                     e.preventDefault();
                     if (process?.calledByProvisionalLawsuitNumber) {
-                      window.open(`/processes/${process.calledByProvisionalLawsuitNumber}`, '_blank');
+                      window.open(
+                        `/processes/${process.calledByProvisionalLawsuitNumber}`,
+                        "_blank",
+                      );
                     }
                   }}
                   className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-md cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors group"
@@ -402,10 +483,15 @@ export function ProcessHeader({
                   <ExternalLink className="h-3 w-3 text-amber-600 dark:text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+              <TooltipContent
+                side="bottom"
+                className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
+              >
                 <div className="space-y-3">
                   <div>
-                    <p className="font-bold text-orange-600 dark:text-orange-400">Execução Provisória Vinculada</p>
+                    <p className="font-bold text-orange-600 dark:text-orange-400">
+                      Execução Provisória Vinculada
+                    </p>
                     <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                       Clique para abrir a execução provisória em nova aba.
                     </p>
@@ -432,7 +518,7 @@ export function ProcessHeader({
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div 
+              <div
                 onClick={handleCopyProcessNumber}
                 className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors group"
               >
@@ -453,7 +539,9 @@ export function ProcessHeader({
           </Tooltip>
         )}
 
-        <span className="hidden sm:inline text-gray-300 dark:text-gray-600 text-xs sm:text-sm">|</span>
+        <span className="hidden sm:inline text-gray-300 dark:text-gray-600 text-xs sm:text-sm">
+          |
+        </span>
 
         {/* Botão para abrir modal com todas as partes */}
         <Button
@@ -464,15 +552,21 @@ export function ProcessHeader({
         >
           <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
           <span className="whitespace-nowrap">
-            <span className="hidden sm:inline">Ver Todas ({(activeParts.length + passiveParts.length)})</span>
-            <span className="sm:hidden">Ver ({(activeParts.length + passiveParts.length)})</span>
+            <span className="hidden sm:inline">
+              Ver Todas ({activeParts.length + passiveParts.length})
+            </span>
+            <span className="sm:hidden">
+              Ver ({activeParts.length + passiveParts.length})
+            </span>
           </span>
         </Button>
 
         {isRefetching && !isSyncing && (
           <div className="flex items-center gap-1 ml-1 sm:ml-2">
             <RefreshCw className="h-3 w-3 text-blue-500 dark:text-blue-400 animate-spin" />
-            <span className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 font-medium">Atualizando...</span>
+            <span className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 font-medium">
+              Atualizando...
+            </span>
           </div>
         )}
         {(isSyncing || process?.processStatus?.name === "Processando") && (
@@ -483,20 +577,30 @@ export function ProcessHeader({
                 <span className="hidden sm:inline">Sincronizando</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+            <TooltipContent
+              side="bottom"
+              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
+            >
               <div className="space-y-2">
-                <p className="font-bold text-cyan-600 dark:text-cyan-400">Sincronização em Andamento</p>
+                <p className="font-bold text-cyan-600 dark:text-cyan-400">
+                  Sincronização em Andamento
+                </p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  O processo está sendo sincronizado. Aguarde a conclusão para visualizar os dados atualizados.
+                  O processo está sendo sincronizado. Aguarde a conclusão para
+                  visualizar os dados atualizados.
                 </p>
                 {process?.processStatus?.log && (
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Status:</span> {process.processStatus.log}
+                    <span className="font-semibold">Status:</span>{" "}
+                    {process.processStatus.log}
                   </p>
                 )}
                 {process?.processStatus?.updatedAt && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Última atualização: {new Date(process.processStatus.updatedAt).toLocaleString('pt-BR')}
+                    Última atualização:{" "}
+                    {new Date(process.processStatus.updatedAt).toLocaleString(
+                      "pt-BR",
+                    )}
                   </p>
                 )}
               </div>
@@ -511,45 +615,61 @@ export function ProcessHeader({
                 <span className="hidden sm:inline">Sem Deal ID</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+            <TooltipContent
+              side="bottom"
+              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
+            >
               <div className="space-y-2">
-                <p className="font-bold text-amber-600 dark:text-amber-400">Processo sem Deal ID do Pipedrive</p>
+                <p className="font-bold text-amber-600 dark:text-amber-400">
+                  Processo sem Deal ID do Pipedrive
+                </p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   Este processo não possui um dealId vinculado ao Pipedrive.
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Entre em contato com o suporte ou verifique a integração com o Pipedrive.
+                  Entre em contato com o suporte ou verifique a integração com o
+                  Pipedrive.
                 </p>
               </div>
             </TooltipContent>
           </Tooltip>
         )}
         {/* Badge para processo SEM vínculo - clicável */}
-        {process?.class === "MAIN" && !process?.calledByProvisionalLawsuitNumber && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div 
-                onClick={(e) => {
-                  e.preventDefault();
-                  onLinkProvisionalExecution?.();
-                }}
-                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-yellow-500 to-amber-600 dark:from-yellow-600 dark:to-amber-700 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-pointer hover:from-yellow-600 hover:to-amber-700 dark:hover:from-yellow-700 dark:hover:to-amber-800 transition-all"
+        {process?.class === "MAIN" &&
+          !process?.calledByProvisionalLawsuitNumber && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onLinkProvisionalExecution?.();
+                  }}
+                  className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-yellow-500 to-amber-600 dark:from-yellow-600 dark:to-amber-700 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-pointer hover:from-yellow-600 hover:to-amber-700 dark:hover:from-yellow-700 dark:hover:to-amber-800 transition-all"
+                >
+                  <AlertCircle className="h-3 w-3" />
+                  <span className="hidden sm:inline">
+                    Inserir Execução Provisória
+                  </span>
+                  <span className="sm:hidden">Inserir Exec.</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent
+                side="bottom"
+                className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
               >
-                <AlertCircle className="h-3 w-3" />
-                <span className="hidden sm:inline">Inserir Execução Provisória</span>
-                <span className="sm:hidden">Inserir Exec.</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
-              <div className="space-y-2">
-                <p className="font-bold text-yellow-600 dark:text-yellow-400">Vincular Execução Provisória</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Este processo não possui uma execução provisória vinculada. Clique para inserir e vincular uma execução provisória a este processo principal.
-                </p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
+                <div className="space-y-2">
+                  <p className="font-bold text-yellow-600 dark:text-yellow-400">
+                    Vincular Execução Provisória
+                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    Este processo não possui uma execução provisória vinculada.
+                    Clique para inserir e vincular uma execução provisória a
+                    este processo principal.
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
         {process?.dealId && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -563,22 +683,29 @@ export function ProcessHeader({
                 <span className="hidden sm:inline">Pipedrive</span>
               </a>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+            <TooltipContent
+              side="bottom"
+              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
+            >
               <div className="space-y-2">
-                <p className="font-bold text-emerald-600 dark:text-emerald-400">Ver Deal no Pipedrive</p>
+                <p className="font-bold text-emerald-600 dark:text-emerald-400">
+                  Ver Deal no Pipedrive
+                </p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   Clique para abrir este processo no Pipedrive em uma nova aba.
                 </p>
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 mt-2">
                   <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-                    <span className="font-semibold">Deal ID:</span> {process.dealId}
+                    <span className="font-semibold">Deal ID:</span>{" "}
+                    {process.dealId}
                   </p>
                 </div>
               </div>
             </TooltipContent>
           </Tooltip>
         )}
-        {process?.processStatus?.name === "Extração de movimentações Finalizada" && (
+        {process?.processStatus?.name ===
+          "Extração de movimentações Finalizada" && (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500 dark:bg-blue-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help animate-pulse">
@@ -586,20 +713,30 @@ export function ProcessHeader({
                 <span className="hidden sm:inline">Processando Docs</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+            <TooltipContent
+              side="bottom"
+              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
+            >
               <div className="space-y-2">
-                <p className="font-bold text-blue-600 dark:text-blue-400">Sincronizando Documentos</p>
+                <p className="font-bold text-blue-600 dark:text-blue-400">
+                  Sincronizando Documentos
+                </p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  As movimentações foram sincronizadas com sucesso. Aguarde enquanto os documentos são processados.
+                  As movimentações foram sincronizadas com sucesso. Aguarde
+                  enquanto os documentos são processados.
                 </p>
                 {process.processStatus.log && (
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Status:</span> {process.processStatus.log}
+                    <span className="font-semibold">Status:</span>{" "}
+                    {process.processStatus.log}
                   </p>
                 )}
                 {process.processStatus.updatedAt && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Última atualização: {new Date(process.processStatus.updatedAt).toLocaleString('pt-BR')}
+                    Última atualização:{" "}
+                    {new Date(process.processStatus.updatedAt).toLocaleString(
+                      "pt-BR",
+                    )}
                   </p>
                 )}
               </div>
@@ -614,22 +751,31 @@ export function ProcessHeader({
                 <span className="hidden sm:inline">Erro</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+            <TooltipContent
+              side="bottom"
+              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
+            >
               <div className="space-y-2">
-                <p className="font-bold text-red-600 dark:text-red-400">Erro no Processamento</p>
+                <p className="font-bold text-red-600 dark:text-red-400">
+                  Erro no Processamento
+                </p>
                 {process.processStatus.errorReason && (
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    <span className="font-semibold">Motivo:</span> {process.processStatus.errorReason}
+                    <span className="font-semibold">Motivo:</span>{" "}
+                    {process.processStatus.errorReason}
                   </p>
                 )}
                 {process.processStatus.log && (
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Log:</span> {process.processStatus.log}
+                    <span className="font-semibold">Log:</span>{" "}
+                    {process.processStatus.log}
                   </p>
                 )}
                 {process.processStatus.updatedAt && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(process.processStatus.updatedAt).toLocaleString('pt-BR')}
+                    {new Date(process.processStatus.updatedAt).toLocaleString(
+                      "pt-BR",
+                    )}
                   </p>
                 )}
               </div>
@@ -644,27 +790,54 @@ export function ProcessHeader({
                 <span className="hidden sm:inline">Declinado</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl">
+            <TooltipContent
+              side="bottom"
+              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
+            >
               <div className="space-y-2">
-                <p className="font-bold text-red-600 dark:text-red-400">Processo Declinado</p>
-                {process?.processDecisions?.history?.find(h => h.status === Situation.LOSS)?.rejection_reason && (
+                <p className="font-bold text-red-600 dark:text-red-400">
+                  Processo Declinado
+                </p>
+                {process?.processDecisions?.history?.find(
+                  (h) => h.status === Situation.LOSS,
+                )?.rejection_reason && (
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    <span className="font-semibold">Motivo:</span> {process.processDecisions.history.find(h => h.status === Situation.LOSS)?.rejection_reason}
+                    <span className="font-semibold">Motivo:</span>{" "}
+                    {
+                      process.processDecisions.history.find(
+                        (h) => h.status === Situation.LOSS,
+                      )?.rejection_reason
+                    }
                   </p>
                 )}
-                {process?.processDecisions?.history?.find(h => h.status === Situation.LOSS)?.rejection_description && (
+                {process?.processDecisions?.history?.find(
+                  (h) => h.status === Situation.LOSS,
+                )?.rejection_description && (
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Descrição:</span> {process.processDecisions.history.find(h => h.status === Situation.LOSS)?.rejection_description}
+                    <span className="font-semibold">Descrição:</span>{" "}
+                    {
+                      process.processDecisions.history.find(
+                        (h) => h.status === Situation.LOSS,
+                      )?.rejection_description
+                    }
                   </p>
                 )}
                 {process?.stage && (
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Etapa:</span> {getStageLabel(process.stage)}
+                    <span className="font-semibold">Etapa:</span>{" "}
+                    {getStageLabel(process.stage)}
                   </p>
                 )}
-                {process?.processDecisions?.history?.find(h => h.status === Situation.LOSS)?.createdAt && (
+                {process?.processDecisions?.history?.find(
+                  (h) => h.status === Situation.LOSS,
+                )?.createdAt && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Data da recusa: {new Date(process.processDecisions.history.find(h => h.status === Situation.LOSS)?.createdAt || '').toLocaleString('pt-BR')}
+                    Data da recusa:{" "}
+                    {new Date(
+                      process.processDecisions.history.find(
+                        (h) => h.status === Situation.LOSS,
+                      )?.createdAt || "",
+                    ).toLocaleString("pt-BR")}
                   </p>
                 )}
               </div>
@@ -672,7 +845,6 @@ export function ProcessHeader({
           </Tooltip>
         )}
       </div>
-
     </div>
   );
 
@@ -680,11 +852,11 @@ export function ProcessHeader({
   const processActionButtons = (
     <>
       {onViewPreAnalysis && (
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
-          className="text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 hover:bg-yellow-100 hover:text-yellow-800 hover:border-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300 font-medium transition-all" 
-          onClick={onViewPreAnalysis} 
+          className="text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 hover:bg-yellow-100 hover:text-yellow-800 hover:border-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300 font-medium transition-all"
+          onClick={onViewPreAnalysis}
           aria-label="Ver Formulário de Pré-Análise"
         >
           <FileSearch className="h-4 w-4" />
@@ -692,11 +864,11 @@ export function ProcessHeader({
         </Button>
       )}
       {onViewAnalysis && (
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
-          className="text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 dark:hover:bg-orange-900/30 dark:hover:text-orange-300 font-medium transition-all" 
-          onClick={onViewAnalysis} 
+          className="text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 dark:hover:bg-orange-900/30 dark:hover:text-orange-300 font-medium transition-all"
+          onClick={onViewAnalysis}
           aria-label="Ver Formulário de Análise"
         >
           <FileText className="h-4 w-4" />
@@ -704,15 +876,15 @@ export function ProcessHeader({
         </Button>
       )}
       {process?.situation === Situation.LOSS && (
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
-          className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium" 
-          onClick={onReopen} 
-          disabled={isPending} 
+          className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium"
+          onClick={onReopen}
+          disabled={isPending}
           aria-label="Reabrir Processo"
         >
-          <Clock className="h-4 w-4 mr-2" /> 
+          <Clock className="h-4 w-4 mr-2" />
           <span className="hidden lg:inline">Reabrir</span>
         </Button>
       )}
@@ -760,7 +932,10 @@ export function ProcessHeader({
             <Button
               size="sm"
               onClick={onSaveTitle}
-              disabled={isSavingTitle || (!editedClaimant?.trim() && !editedDefendant?.trim())}
+              disabled={
+                isSavingTitle ||
+                (!editedClaimant?.trim() && !editedDefendant?.trim())
+              }
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
               {isSavingTitle ? (
@@ -791,8 +966,12 @@ export function ProcessHeader({
         // Mobile: Mostrar título (customizado ou gerado) com estilo padrão
         <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 min-w-0">
           <User2 className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-          <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs truncate min-w-0 flex-1" title={displayTitle}>
-            {displayTitle.toUpperCase() || `${claimantName.toUpperCase()} VS ${defendantName.toUpperCase()}`}
+          <span
+            className="font-semibold text-gray-900 dark:text-gray-100 text-xs truncate min-w-0 flex-1"
+            title={displayTitle}
+          >
+            {displayTitle.toUpperCase() ||
+              `${claimantName.toUpperCase()} VS ${defendantName.toUpperCase()}`}
           </span>
           <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
           {onStartEditTitle && (
@@ -807,11 +986,11 @@ export function ProcessHeader({
           )}
         </div>
       )}
-      
+
       {onViewPreAnalysis && (
-        <Button 
-          variant="outline" 
-          className="w-full justify-start text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 hover:bg-yellow-100 hover:text-yellow-800 hover:border-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300 font-medium" 
+        <Button
+          variant="outline"
+          className="w-full justify-start text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 hover:bg-yellow-100 hover:text-yellow-800 hover:border-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300 font-medium"
           onClick={onViewPreAnalysis}
         >
           <FileSearch className="h-4 w-4 mr-2" />
@@ -819,9 +998,9 @@ export function ProcessHeader({
         </Button>
       )}
       {onViewAnalysis && (
-        <Button 
-          variant="outline" 
-          className="w-full justify-start text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 dark:hover:bg-orange-900/30 dark:hover:text-orange-300 font-medium" 
+        <Button
+          variant="outline"
+          className="w-full justify-start text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 dark:hover:bg-orange-900/30 dark:hover:text-orange-300 font-medium"
           onClick={onViewAnalysis}
         >
           <FileText className="h-4 w-4 mr-2" />
@@ -829,10 +1008,10 @@ export function ProcessHeader({
         </Button>
       )}
       {process?.situation === Situation.LOSS && (
-        <Button 
-          variant="outline" 
-          className="w-full justify-start text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium" 
-          onClick={onReopen} 
+        <Button
+          variant="outline"
+          className="w-full justify-start text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium"
+          onClick={onReopen}
           disabled={isPending}
         >
           <Clock className="h-4 w-4 mr-2" />
@@ -848,11 +1027,13 @@ export function ProcessHeader({
   return (
     <>
       {/* Simplified Process Header - without AppHeader to avoid duplication */}
-      <div className={`sticky top-0 z-10 border-b ${
-        theme === "dark"
-          ? "bg-slate-900/95 border-slate-800"
-          : "bg-white/95 border-slate-200"
-      }`}>
+      <div
+        className={`sticky top-0 z-10 border-b ${
+          theme === "dark"
+            ? "bg-slate-900/95 border-slate-800"
+            : "bg-white/95 border-slate-200"
+        }`}
+      >
         {/* Breadcrumbs */}
         <div className="px-4 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800">
           <Breadcrumb items={breadcrumbItems} />
@@ -863,9 +1044,7 @@ export function ProcessHeader({
           {/* First row: Process info and actions */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-4">
             {/* Left: Process number and tags */}
-            <div className="flex-1 min-w-0">
-              {leftContent}
-            </div>
+            <div className="flex-1 min-w-0">{leftContent}</div>
 
             {/* Right: Action buttons */}
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
@@ -873,15 +1052,21 @@ export function ProcessHeader({
               <div className="hidden md:flex items-center gap-2">
                 {processActionButtons}
               </div>
-              
+
               {/* Mobile: Show buttons in dropdown or inline based on space */}
               <div className="flex md:hidden items-center gap-2">
                 {processActionButtons}
               </div>
-              
+
               {/* Process Actions Menu */}
-              {(onViewProcessInfo || onAssignMember || onChangeStage || onSync) && (
-                <DropdownMenu open={processMenuOpen} onOpenChange={setProcessMenuOpen}>
+              {(onViewProcessInfo ||
+                onAssignMember ||
+                onChangeStage ||
+                onSync) && (
+                <DropdownMenu
+                  open={processMenuOpen}
+                  onOpenChange={setProcessMenuOpen}
+                >
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
@@ -897,11 +1082,14 @@ export function ProcessHeader({
                       <ChevronDown className="h-4 w-4 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className={`w-56 ${
-                    theme === "dark"
-                      ? "bg-slate-800 border-slate-700"
-                      : "bg-white border-slate-200"
-                  }`}>
+                  <DropdownMenuContent
+                    align="end"
+                    className={`w-56 ${
+                      theme === "dark"
+                        ? "bg-slate-800 border-slate-700"
+                        : "bg-white border-slate-200"
+                    }`}
+                  >
                     {onViewPreAnalysis && (
                       <DropdownMenuItem
                         onClick={() => {
@@ -926,9 +1114,13 @@ export function ProcessHeader({
                         Análise
                       </DropdownMenuItem>
                     )}
-                    {(onViewPreAnalysis || onViewAnalysis) && (onViewProcessInfo || onAssignMember || onChangeStage || onSync) && (
-                      <DropdownMenuSeparator className="md:hidden" />
-                    )}
+                    {(onViewPreAnalysis || onViewAnalysis) &&
+                      (onViewProcessInfo ||
+                        onAssignMember ||
+                        onChangeStage ||
+                        onSync) && (
+                        <DropdownMenuSeparator className="md:hidden" />
+                      )}
                     {onViewProcessInfo && (
                       <DropdownMenuItem
                         onClick={() => {
@@ -986,18 +1178,20 @@ export function ProcessHeader({
           {/* Second row: Process title (middleContent) */}
           {middleContent && (
             <div className="mt-3 flex items-center">
-              <div className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                theme === "dark"
-                  ? "bg-slate-800/50 border-slate-700"
-                  : "bg-slate-50 border-slate-200"
-              }`}>
+              <div
+                className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg border ${
+                  theme === "dark"
+                    ? "bg-slate-800/50 border-slate-700"
+                    : "bg-slate-50 border-slate-200"
+                }`}
+              >
                 {middleContent}
               </div>
             </div>
           )}
         </div>
       </div>
-      
+
       {/* Modal de Partes e Empresas */}
       <Dialog open={showPartsModal} onOpenChange={setShowPartsModal}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -1017,12 +1211,21 @@ export function ProcessHeader({
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {activeParts.map((part, idx) => (
-                    <div key={idx} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm">
-                      <Badge variant="outline" className="mb-2 text-xs">{part.tipo}</Badge>
-                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">{part.nome}</p>
+                    <div
+                      key={idx}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm"
+                    >
+                      <Badge variant="outline" className="mb-2 text-xs">
+                        {part.tipo}
+                      </Badge>
+                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">
+                        {part.nome}
+                      </p>
                       {part.documento?.numero && (
                         <p className="text-gray-600 dark:text-gray-400 text-xs break-all">
-                          {part.documento.tipo === "CPF" ? `CPF: ${formatCpf(part.documento.numero)}` : `${part.documento.tipo}: ${part.documento.numero}`}
+                          {part.documento.tipo === "CPF"
+                            ? `CPF: ${formatCpf(part.documento.numero)}`
+                            : `${part.documento.tipo}: ${part.documento.numero}`}
                         </p>
                       )}
                     </div>
@@ -1040,12 +1243,21 @@ export function ProcessHeader({
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {passiveParts.map((part, idx) => (
-                    <div key={idx} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm">
-                      <Badge variant="outline" className="mb-2 text-xs">{part.tipo}</Badge>
-                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">{part.nome}</p>
+                    <div
+                      key={idx}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm"
+                    >
+                      <Badge variant="outline" className="mb-2 text-xs">
+                        {part.tipo}
+                      </Badge>
+                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">
+                        {part.nome}
+                      </p>
                       {part.documento?.numero && (
                         <p className="text-gray-600 dark:text-gray-400 text-xs break-all">
-                          {part.documento.tipo === "CPF" ? `CPF: ${formatCpf(part.documento.numero)}` : `${part.documento.tipo}: ${part.documento.numero}`}
+                          {part.documento.tipo === "CPF"
+                            ? `CPF: ${formatCpf(part.documento.numero)}`
+                            : `${part.documento.tipo}: ${part.documento.numero}`}
                         </p>
                       )}
                     </div>
@@ -1063,7 +1275,7 @@ export function ProcessHeader({
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {companies.map((company, idx) => (
-                    <div 
+                    <div
                       key={idx}
                       onClick={() => {
                         onCompanyClick?.(company);
@@ -1071,24 +1283,42 @@ export function ProcessHeader({
                       }}
                       className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 text-sm cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                     >
-                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">{company.name}</p>
-                      <p className="text-gray-600 dark:text-gray-400 mb-2 text-xs break-all">CNPJ: {mascararCNPJ(company.cnpj)}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">
+                        {company.name}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-400 mb-2 text-xs break-all">
+                        CNPJ: {mascararCNPJ(company.cnpj)}
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {company.score !== undefined && (
-                          <Badge variant={company.score >= 7 ? "default" : "destructive"} className="text-xs">
+                          <Badge
+                            variant={
+                              company.score >= 7 ? "default" : "destructive"
+                            }
+                            className="text-xs"
+                          >
                             Score: {company.score}
                           </Badge>
                         )}
                         {company.specialRule && (
-                          <Badge 
-                            variant={company.specialRule === SpecialRule.SOLVENT ? "default" : "destructive"}
+                          <Badge
+                            variant={
+                              company.specialRule === SpecialRule.SOLVENT
+                                ? "default"
+                                : "destructive"
+                            }
                             className="text-xs"
                           >
-                            {company.specialRule === SpecialRule.SOLVENT ? "Solvente" : "Insolvente"}
+                            {company.specialRule === SpecialRule.SOLVENT
+                              ? "Solvente"
+                              : "Insolvente"}
                           </Badge>
                         )}
                         {!company.specialRule && (
-                          <Badge variant="outline" className="text-xs text-gray-500 dark:text-gray-400">
+                          <Badge
+                            variant="outline"
+                            className="text-xs text-gray-500 dark:text-gray-400"
+                          >
                             Solvência: N/D
                           </Badge>
                         )}
@@ -1100,12 +1330,14 @@ export function ProcessHeader({
             )}
 
             {/* Mensagem quando não há partes */}
-            {activeParts.length === 0 && passiveParts.length === 0 && companies.length === 0 && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Nenhuma parte ou empresa encontrada para este processo.</p>
-              </div>
-            )}
+            {activeParts.length === 0 &&
+              passiveParts.length === 0 &&
+              companies.length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Nenhuma parte ou empresa encontrada para este processo.</p>
+                </div>
+              )}
           </div>
         </DialogContent>
       </Dialog>
