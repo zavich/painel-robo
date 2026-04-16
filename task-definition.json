@@ -17,14 +17,6 @@
       "volumesFrom": [],
       "secrets": [
         {
-          "name": "NEXT_PUBLIC_MAINTENANCE_MODE",
-          "valueFrom": "arn:aws:secretsmanager:us-east-2:339340413604:secret:painel-robo/prod:NEXT_PUBLIC_MAINTENANCE_MODE::"
-        },
-        {
-          "name": "NEXT_PUBLIC_API_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-2:339340413604:secret:painel-robo/prod:NEXT_PUBLIC_API_URL::"
-        },
-        {
           "name": "NEXT_API_KEY_MASTER",
           "valueFrom": "arn:aws:secretsmanager:us-east-2:339340413604:secret:painel-robo/prod:NEXT_API_KEY_MASTER::"
         }
