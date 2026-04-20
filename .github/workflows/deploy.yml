@@ -32,7 +32,7 @@ jobs:
           IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG
 
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL=https://robo-api-prd.juri.capital/v1 \
+            --build-arg NEXT_PUBLIC_API_URL=https://robo-api.juri.capital/v1 \
             --build-arg NEXT_PUBLIC_MAINTENANCE_MODE=false \
             -t $IMAGE .
 
