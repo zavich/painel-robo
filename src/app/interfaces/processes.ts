@@ -243,22 +243,22 @@ interface ProcessOwner {
 
 export enum ProcessStatusEnum {
   // Status de processamento
-  PROCESSING = 'Processando',
-  PROCESSING_WITH_MOVIMENTS = 'PROCESSING_WITH_MOVIMENTS',
-  PROCESSING_WITH_DOCUMENTS = 'PROCESSING_WITH_DOCUMENTS',
-  PROCESS_WAITING_EXTRACTION_DOCUMENTS = 'PROCESS_WAITING_EXTRACTION_DOCUMENTS',
-  
+  PROCESSING = "Processando",
+  PROCESSING_WITH_MOVIMENTS = "PROCESSING_WITH_MOVIMENTS",
+  PROCESSING_WITH_DOCUMENTS = "PROCESSING_WITH_DOCUMENTS",
+  PROCESS_WAITING_EXTRACTION_DOCUMENTS = "PROCESS_WAITING_EXTRACTION_DOCUMENTS",
+
   // Status intermediários
-  EXTRACTION_MOVIMENTS_FINISHED = 'Extração de movimentações Finalizada',
-  EXTRACTION_DOCUMENTS_FINISHED = 'EXTRACTION_DOCUMENTS_FINISHED',
-  EXTRACTION_FINISHED = 'Extração finalizada',
-  
+  EXTRACTION_MOVIMENTS_FINISHED = "Extração de movimentações Finalizada",
+  EXTRACTION_DOCUMENTS_FINISHED = "EXTRACTION_DOCUMENTS_FINISHED",
+  EXTRACTION_FINISHED = "Extração finalizada",
+
   // Status de sucesso
-  SUCCESS = 'Success',
-  PROCESSED = 'Processado',
-  
+  SUCCESS = "Success",
+  PROCESSED = "Processado",
+
   // Status de erro
-  ERROR = 'Error',
+  ERROR = "Error",
 }
 
 export interface Process {
@@ -283,6 +283,7 @@ export interface Process {
   class: string;
   dealId: number;
   autosData: AutosData;
+  instanciasAutos: Instancia[];
   processExecution?: Process;
   filterValueSelectedSpreadsheet: {
     owner: string;
@@ -379,20 +380,23 @@ export interface Prompt {
   updatedAt?: string;
 }
 
-export const StageByCode: Record<number, 'PRE_ANALISE' | 'ANALISE' | 'CALCULO'> = {
-  781: 'PRE_ANALISE',
-  779: 'PRE_ANALISE',
-  777: 'PRE_ANALISE',
-  802: 'PRE_ANALISE',
-  769: 'ANALISE',
-  762: 'ANALISE',
-  755: 'ANALISE',
-  787: 'ANALISE',
-  770: 'CALCULO',
-  763: 'CALCULO',
-  756: 'CALCULO',
-  797: 'CALCULO',
-  849: 'CALCULO',
+export const StageByCode: Record<
+  number,
+  "PRE_ANALISE" | "ANALISE" | "CALCULO"
+> = {
+  781: "PRE_ANALISE",
+  779: "PRE_ANALISE",
+  777: "PRE_ANALISE",
+  802: "PRE_ANALISE",
+  769: "ANALISE",
+  762: "ANALISE",
+  755: "ANALISE",
+  787: "ANALISE",
+  770: "CALCULO",
+  763: "CALCULO",
+  756: "CALCULO",
+  797: "CALCULO",
+  849: "CALCULO",
 };
 
 export const EsteiraByStageId: Record<number, string> = {

@@ -1,332 +1,547 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useProcessAutoRefresh } from "@/app/hooks/useProcessAutoRefresh";
+import { getClaimant, getDefendant } from "@/app/utils/processPartsUtils";
+import { formatDate } from "@/app/utils/processUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Save, X } from "lucide-react";
-import { useProcessAutoRefresh } from "@/app/hooks/useProcessAutoRefresh";
-import { useState, useEffect } from "react";
-import { PipedriveFormCard, PipedriveFormData } from "@/components/process/PipedriveFormCard";
-import { mascararCNPJ } from "@/app/utils/masks";
-import { getProcessTitle } from "@/app/utils/processPartsUtils";
-import { toast } from "react-toastify";
-import { useUpdateProcessForm } from "@/app/api/hooks/process/useUpdateProcessForm";
-
-const FIELD_KEYS = {
-  calculoHomologado: "105998d73858eeca828ef7e47740a33e05e0765d",
-  calculoAutos: "7da05be1e1c53f0d7595f883512baf69cf832f88",
-  observacao: "4ff33f89281e645310c0c124414cf84de4624334",
-  execucaoProvisoria: "fc5f94cbf972eacef5050f1f53b4f88f1770f87c",
-} as const;
-
-// Função para formatar as empresas reclamadas
-function formatDefendantsForForm(companies: any[]): string {
-  if (!companies || companies.length === 0) return "";
-  
-  return companies
-    .map((company) => {
-      const cnpj = mascararCNPJ(company.cnpj);
-      const name = company.name?.toUpperCase() || "";
-      
-      // Determinar solvência
-      let solvency = "";
-      if (company.specialRule) {
-        // SpecialRule usa valores em minúsculas: "solvente" ou "insolvente"
-        solvency = company.specialRule === "solvente" ? "solvente" : "insolvente";
-      } else if (typeof company.score === "number") {
-        solvency = company.score >= 7 ? "solvente" : "insolvente";
-      }
-      
-      return `${name} (${cnpj}) - Solvência: ${solvency || "N/D"}`;
-    })
-    .join("\n");
-}
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlignmentType,
+  BorderStyle,
+  Document,
+  Footer,
+  Header,
+  HorizontalPositionRelativeFrom,
+  ImageRun,
+  Packer,
+  Paragraph,
+  TextRun,
+  TextWrappingType,
+  VerticalPositionRelativeFrom,
+} from "docx";
+import { FileText } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function AnalysisPage() {
-  const router = useRouter();
   const params = useParams();
   const id = params?.number as string;
 
-  const { process, isLoading, refetch } = useProcessAutoRefresh({
+  const { process, isLoading } = useProcessAutoRefresh({
     processId: id,
     enabled: false,
     intervalMs: 10000,
   });
-
-  const updateFormMutation = useUpdateProcessForm(process?.number);
-
-  const [formState, setFormState] = useState<PipedriveFormData>({
-    title: "",
-    processNumber: "",
-    executionNumber: "",
-    duplicated: "",
-    dl: "",
-    firstDegree: "",
-    secondDefendantResponsibility: "",
-    defendants: "",
-    analysis: "",
-    prazo: "",
-    abatimento: "",
-    observacao: "",
-    calculoAutos: "",
-    calculoAutosValue: "",
-    calculoHomologado: "",
-    execucaoProvisoria: "",
-    sucumbencia: "",
-    freeJustice: "",
-    conclusion: "",
-    observacaoPreAnalise: "",
+  const [form, setForm] = useState({
+    number: "",
+    cumSent: "",
+    claimant: "",
+    defendant: "",
+    phase: "",
+    court: "",
+    location: "",
+    distributionDate: "",
+    summary: "",
+    appeal: "",
+    riskAnalysis: "",
+    compliance: "",
+    totalCreditLift: "",
+    observation: "",
+    guaranteedJurisdiction: "",
+    chanceOfReversal: "",
+    substitutionByAuthor: "",
+    subsidiaryLiabilityPeriod: "",
+    feeAgreements: "",
   });
-
-  const [initialFormState, setInitialFormState] = useState<PipedriveFormData | null>(null);
-  const [hasChanges, setHasChanges] = useState(false);
-
   useEffect(() => {
     if (process) {
-      const processTitle = getProcessTitle(
-        process?.processParts || [], 
-        process?.number,
-        process?.title || (process as any)?.formPipedrive?.title,
-        false
-      );
-      
-      if (process?.formPipedrive) {
-        const newFormState = {
-          title: processTitle,
-          processNumber: process?.formPipedrive?.processNumber || process?.number || "",
-          executionNumber: process?.formPipedrive?.executionNumber || process?.calledByProvisionalLawsuitNumber || "",
-          duplicated: process?.formPipedrive?.duplicated || "",
-          dl: process?.formPipedrive?.dl || "",
-          firstDegree: process?.formPipedrive?.firstDegree || "",
-          secondDefendantResponsibility: process?.formPipedrive?.secondDefendantResponsibility || "",
-          defendants: formatDefendantsForForm(process?.companies || []) || process?.formPipedrive?.defendants || "",
-          analysis: extractPureAnalysis(process?.formPipedrive?.analysis || ""),
-          prazo: process?.parametersStepDeadlineInMonths
-            ? process.parametersStepDeadlineInMonths.toString()
-            : process?.formPipedrive?.prazo || "",
-          abatimento: process?.formPipedrive?.abatimento || "",
-          observacao: process?.observation?.description || process?.formPipedrive?.observacao || "",
-          observacaoPreAnalise: (process?.formPipedrive as any)?.observacaoPreAnalise || "",
-          calculoAutos: (process?.formPipedrive as any)?.calculoAutos || "",
-          calculoAutosValue: (process?.formPipedrive as any)?.calculoAutosValue || "",
-          calculoHomologado: (process?.formPipedrive as any)?.calculoHomologado || "",
-          execucaoProvisoria: (process?.formPipedrive as any)?.execucaoProvisoria || "",
-          sucumbencia: (process?.formPipedrive as any)?.sucumbencia || "",
-          freeJustice: (process?.formPipedrive as any)?.freeJustice || "",
-          conclusion: (process?.formPipedrive as any)?.conclusion || "",
-          stageLabel: process?.stage,
-        };
-        setFormState(newFormState);
-        setInitialFormState(newFormState);
-      } else {
-        const defendantParts = process?.processParts?.filter(part => 
-          part.polo === "PASSIVO" && 
-          (part.tipo?.toLowerCase() === "reclamado" || part.tipo?.toLowerCase() === "réu")
-        ) || [];
-        
-        const defendantNames = new Set(defendantParts.map(part => part.nome));
-        
-        const newFormState = {
-          title: processTitle,
-          processNumber: process?.number || "",
-          executionNumber: process?.calledByProvisionalLawsuitNumber || "",
-          duplicated: "",
-          dl: "",
-          firstDegree: "",
-          secondDefendantResponsibility: "",
-          defendants: formatDefendantsForForm(process?.companies || []) || "",
-          analysis: "",
-          prazo: process?.parametersStepDeadlineInMonths
-            ? process.parametersStepDeadlineInMonths.toString()
-            : "",
-          abatimento: "",
-          observacao: process?.observation?.description || "",
-          observacaoPreAnalise: "",
-          calculoAutos: "",
-          calculoAutosValue: "",
-          calculoHomologado: "",
-          execucaoProvisoria: "",
-          sucumbencia: "",
-          freeJustice: "",
-          conclusion: "",
-          stageLabel: process?.stage,
-        };
-        setFormState(newFormState);
-        setInitialFormState(newFormState);
-      }
+      setForm({
+        ...form,
+        number: process.number,
+        cumSent: process.processExecution?.number || "",
+        claimant: getClaimant(process.processParts || [])?.nome || "",
+        defendant: getDefendant(process.processParts || [])?.nome || "",
+        court: "TRT",
+        distributionDate:
+          formatDate(process?.instanciasAutos?.[0]?.data_distribuicao) || "",
+      });
     }
   }, [process]);
 
-  useEffect(() => {
-    if (initialFormState) {
-      const changed = JSON.stringify(formState) !== JSON.stringify(initialFormState);
-      setHasChanges(changed);
-    }
-  }, [formState, initialFormState]);
-
-  const mapFormToApiFormat = (formData: PipedriveFormData) => {
-    const { title, ...formDataWithoutTitle } = formData;
-    
-    const mappedData: any = { ...formDataWithoutTitle };
-    const fieldsToMap = Object.keys(FIELD_KEYS) as Array<keyof typeof FIELD_KEYS>;
-
-    fieldsToMap.forEach(fieldName => {
-      const fieldValue = formData[fieldName];
-      if (fieldValue) {
-        const key = FIELD_KEYS[fieldName];
-        
-        if (fieldName === "calculoAutos") {
-          if (formData.calculoAutos === "Sim" && formData.calculoAutosValue && formData.calculoAutosValue.trim() !== "") {
-            mappedData[key] = formData.calculoAutosValue;
-          } else {
-            mappedData[key] = fieldValue;
-          }
-        } else {
-          mappedData[key] = fieldValue;
-        }
-      }
-    });
-
-    if (formData.executionNumber) {
-      mappedData.executionNumber = formData.executionNumber;
-    }
-
-    return mappedData;
-  };
-
-  const handleSave = async () => {
-    try {
-      const mappedFormData = mapFormToApiFormat(formState);
-      
-      const dataToSend = {
-        ...mappedFormData,
-        title: process?.title || ""
-      };
-      
-      await updateFormMutation.mutateAsync({
-        processNumber: process!.number,
-        formData: dataToSend,
-      });
-
-      await refetch();
-      setInitialFormState(formState);
-      setHasChanges(false);
-      toast.success("Formulário de Análise salvo com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao salvar Formulário de Análise");
-      console.error("Erro:", error);
-    }
-  };
-
-  const handleClose = () => {
-    if (hasChanges) {
-      if (window.confirm("Você tem alterações não salvas. Deseja sair sem salvar?")) {
-        window.close();
-        setTimeout(() => router.back(), 100);
-      }
-    } else {
-      window.close();
-      setTimeout(() => router.back(), 100);
-    }
-  };
-
-  const extractPureAnalysis = (analysisText: string): string => {
-    if (!analysisText || !analysisText.trim()) return "";
-    
-    const isConcatenatedFormat = /^[A-Z\sX]+[\n]{2}Número processo:/m.test(analysisText);
-    
-    if (isConcatenatedFormat) {
-      const analysisMatch = analysisText.match(/Análise:\s*\n\n([\s\S]*?)(?=\n\n(?:Justiça gratuita:|Parâmetros Proposta|$))/i);
-      if (analysisMatch && analysisMatch[1]) {
-        return analysisMatch[1].trim();
-      }
-      const beforeJustice = analysisText.split(/Justiça gratuita:/i)[0];
-      const beforeParams = beforeJustice.split(/Parâmetros Proposta/i)[0];
-      const analysisSection = beforeParams.split(/Análise:\s*\n\n/i);
-      if (analysisSection.length > 1) {
-        return analysisSection[analysisSection.length - 1].trim();
-      }
-    }
-    
-    const oldMarkers = [
-      "\n\n---\n\n**Informações do Formulário:**",
-      "**Informações do Formulário:**",
-    ];
-    
-    let pureAnalysis = analysisText;
-    for (const marker of oldMarkers) {
-      const index = pureAnalysis.indexOf(marker);
-      if (index > 0) {
-        pureAnalysis = pureAnalysis.substring(0, index).trim();
-        break;
-      }
-    }
-    
-    return pureAnalysis;
-  };
-
+  const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
+  const fields = [
+    ["number", "RT nº"],
+    ["cumSent", "CumSent."],
+    ["claimant", "Reclamante"],
+    ["defendant", "Reclamada"],
+    ["phase", "Momento processual"],
+    ["court", "Vara de origem"],
+    ["location", "Localização dos autos"],
+    ["distributionDate", "Data distribuição"],
+  ];
+  const longFields = [
+    ["summary", "Resumo do Caso"],
+    ["appeal", "Recurso de Revista"],
+    ["riskAnalysis", "Análise de Risco"],
+    ["compliance", "Cumprimento de Sentença"],
+    ["totalCreditLift", "Levantamento do crédito total"],
+    ["observation", "Observação"],
+    ["guaranteedJurisdiction", "Juízo garantido?"],
+    ["chanceOfReversal", "Chance de reversão?"],
+    ["substitutionByAuthor", "Há substabelecimento pelo autor"],
+    [
+      "subsidiaryLiabilityPeriod",
+      "Há responsabilidade subsidiária, se sim, qual período?",
+    ],
+    ["feeAgreements", "Há contratos de honorários"],
+  ];
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="animate-pulse text-gray-600 dark:text-gray-400">Carregando...</div>
+        <div className="animate-pulse text-gray-600 dark:text-gray-400">
+          Carregando...
+        </div>
       </div>
     );
   }
+  const disable = [
+    "distributionDate",
+    "number",
+    "claimant",
+    "defendant",
+    "cumSent",
+    "court",
+  ];
 
+  const downloadDocx = async () => {
+    const response = await fetch("/logo-juri-capital.png");
+    const logoBlob = await response.blob();
+    const logo = await logoBlob.arrayBuffer();
+
+    // helpers FORA do children
+    const labelRow = (label: string, value?: string) =>
+      new Paragraph({
+        spacing: { after: 90 },
+        children: [
+          new TextRun({
+            text: label,
+            bold: true,
+            size: 22,
+          }),
+          new TextRun({
+            text: value || "",
+            size: 22,
+          }),
+        ],
+      });
+
+    const title = (text: string) =>
+      new Paragraph({
+        spacing: { before: 260, after: 140 },
+        children: [
+          new TextRun({
+            text,
+            bold: true,
+            size: 24,
+            underline: {},
+          }),
+        ],
+      });
+
+    const textBlock = (value?: string) =>
+      new Paragraph({
+        spacing: { after: 140 },
+        alignment: AlignmentType.JUSTIFIED,
+        children: [
+          new TextRun({
+            text: value || "",
+            size: 22,
+          }),
+        ],
+      });
+
+    const doc = new Document({
+      creator: "Juri Capital",
+      title: "Análise Jurídica",
+
+      sections: [
+        {
+          properties: {
+            page: {
+              margin: {
+                top: 1200,
+                right: 1000,
+                bottom: 1200,
+                left: 1000,
+              },
+            },
+          },
+
+          headers: {
+            default: new Header({
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.LEFT,
+                  spacing: {
+                    before: 0,
+                    after: 120,
+                    line: 240,
+                  },
+                  children: [
+                    new ImageRun({
+                      data: logo,
+                      transformation: {
+                        width: 140,
+                        height: 42,
+                      },
+                      floating: {
+                        horizontalPosition: {
+                          relative: HorizontalPositionRelativeFrom.PAGE,
+                          offset: 900,
+                        },
+                        verticalPosition: {
+                          relative: VerticalPositionRelativeFrom.PAGE,
+                          offset: 250,
+                        },
+                        wrap: {
+                          type: TextWrappingType.NONE,
+                        },
+                      },
+                    }),
+                  ],
+                }),
+
+                new Paragraph({
+                  border: {
+                    bottom: {
+                      color: "D9D9D9",
+                      space: 1,
+                      style: BorderStyle.SINGLE,
+                      size: 4,
+                    },
+                  },
+                }),
+              ],
+            }),
+          },
+
+          footers: {
+            default: new Footer({
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 80 },
+                  children: [
+                    new TextRun({
+                      text: "Site: Juri.capital | contato@juri.capital | Rua Groenlândia, 66 – Jardim América, São Paulo, SP",
+                      size: 18,
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          },
+
+          children: [
+            // CABEÇALHO DADOS
+            labelRow("RT nº.: ", form.number),
+            labelRow("CumSent.: ", form.cumSent),
+            labelRow("Reclamante: ", form.claimant),
+            labelRow("Reclamada: ", form.defendant),
+            labelRow("Momento processual: ", form.phase),
+            labelRow("Vara de origem: ", form.court),
+            labelRow("Localização dos autos: ", form.location),
+            labelRow("Data de distribuição no TST: ", form.distributionDate),
+
+            // RESUMO
+            title("RESUMO DO CASO"),
+            textBlock(form.summary),
+
+            // STATUS
+            title("STATUS DOS PEDIDOS"),
+            labelRow(
+              "• Pedidos deferidos e que possuem coisa julgada formal: ",
+              "",
+            ),
+            labelRow(
+              "• Pedidos deferidos, mas que são objeto de recurso pela reclamada: ",
+              "",
+            ),
+            labelRow("• Pedidos que são objetos do contrato de cessão: ", ""),
+
+            // REVISTA
+            title("RECURSO DE REVISTA"),
+            textBlock(form.appeal),
+
+            // RISCO
+            title("ANÁLISE DE RISCO"),
+            textBlock(form.riskAnalysis),
+
+            // CUMPRIMENTO
+            title("CUMPRIMENTO DE SENTENÇA"),
+            textBlock(form.compliance),
+            labelRow("Levantamento do crédito total: ", form.totalCreditLift),
+
+            // OBS
+            title("OBSERVAÇÃO"),
+            labelRow("Juízo garantido? ", form.guaranteedJurisdiction),
+            labelRow("Chance de reversão? ", form.chanceOfReversal),
+            labelRow(
+              "Há substabelecimento pelo autor: ",
+              form.substitutionByAuthor,
+            ),
+            labelRow(
+              "Há responsabilidade subsidiária, se sim, qual período? ",
+              form.subsidiaryLiabilityPeriod,
+            ),
+            labelRow("Há contratos de honorários: ", form.feeAgreements),
+
+            // CONCLUSÃO
+            title("CONCLUSÃO"),
+            textBlock(
+              "Pelo exposto, opino pela antecipação total/parcial dos créditos decorrentes da presente ação.",
+            ),
+
+            // TROQUE SOMENTE O BLOCO FINAL PELO ABAIXO
+
+            new Paragraph({
+              spacing: { before: 260, after: 80 },
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({
+                  text: "NOME",
+                  bold: true,
+                  size: 22,
+                }),
+              ],
+            }),
+
+            new Paragraph({
+              spacing: { after: 80 },
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({
+                  text: "OAB/SP",
+                  size: 22,
+                }),
+              ],
+            }),
+
+            new Paragraph({
+              spacing: { before: 120 },
+              alignment: AlignmentType.RIGHT,
+              children: [
+                new TextRun({
+                  text: "São Paulo, 16 de março de 2026.",
+                  size: 22,
+                }),
+              ],
+            }),
+          ],
+        },
+      ],
+    });
+
+    const blob = await Packer.toBlob(doc);
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "analise-juri-capital.docx";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <div className="mb-4 sm:mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClose}
-              className="flex items-center gap-2 w-fit"
-            >
-              <X className="h-4 w-4" />
-              Fechar
-            </Button>
-            <div>
-              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex flex-wrap items-center gap-2">
-                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-                <span>Formulário de Análise</span>
-                {hasChanges && (
-                  <span className="text-xs font-normal px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded">
-                    Não salvo
-                  </span>
-                )}
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Processo: {process?.number || id}
+    <div className="grid md:grid-cols-2 gap-4 p-4">
+      <Card className="rounded-2xl">
+        <CardContent className="p-4 space-y-3 max-h-[95vh] overflow-auto">
+          <h1 className="text-xl font-bold">Editor Juri Capital</h1>
+          {fields.map(([k, l]) => (
+            <div key={k}>
+              <label className="text-sm">{l}</label>
+              <Input
+                disabled={disable.includes(k)}
+                value={form[k]}
+                onChange={(e) => update(k, e.target.value)}
+              />
+            </div>
+          ))}
+          {longFields.map(([k, l]) => (
+            <div key={k}>
+              <label className="text-sm capitalize">{l}</label>
+              <Textarea
+                rows={4}
+                value={form[k]}
+                onChange={(e) => update(k, e.target.value)}
+              />
+            </div>
+          ))}
+          <Button onClick={downloadDocx} className="w-full">
+            <FileText className="w-4 h-4 mr-2" />
+            Baixar DOCX
+          </Button>
+        </CardContent>
+      </Card>
+      <div className="bg-neutral-200 p-3 h-screen overflow-hidden">
+        <div className="h-full overflow-auto flex justify-center">
+          <div
+            className="
+        bg-white shadow rounded
+        w-[620px]
+        min-h-[875px]
+        px-[42px]
+        pt-[42px]
+        pb-[52px]
+        text-[9px]
+        leading-[1.28]
+        relative
+        font-serif
+        text-black
+        origin-top
+      "
+          >
+            {/* HEADER */}
+            <div className="mb-4">
+              <img
+                src="/logo-juri-capital.png"
+                alt="Juri Capital"
+                className="h-[38px] object-contain"
+              />
+            </div>
+
+            {/* CAMPOS */}
+            <div className="space-y-[2px]">
+              <p>
+                <strong>RT nº.:</strong> {form.number}
+              </p>
+              <p>
+                <strong>CumSent.:</strong> {form.cumSent}
+              </p>
+              <p>
+                <strong>Reclamante:</strong> {form.claimant}
+              </p>
+              <p>
+                <strong>Reclamada:</strong> {form.defendant}
+              </p>
+              <p>
+                <strong>Momento processual:</strong> {form.phase}
+              </p>
+              <p>
+                <strong>Vara de origem:</strong> {form.court}
+              </p>
+              <p>
+                <strong>Localização dos autos:</strong> {form.location}
+              </p>
+              <p>
+                <strong>Data de distribuição no TST:</strong>{" "}
+                {form.distributionDate}
               </p>
             </div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-            <Button
-              onClick={handleSave}
-              disabled={!hasChanges || updateFormMutation.isPending}
-              className="bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
-            >
-              <Save className="h-4 w-4" />
-              {updateFormMutation.isPending ? "Salvando..." : "Salvar"}
-            </Button>
+
+            {/* RESUMO */}
+            <h2 className="mt-4 mb-1 font-bold underline uppercase text-[10px]">
+              Resumo do Caso
+            </h2>
+            <p className="text-justify whitespace-pre-line line-clamp-5">
+              {form.summary}
+            </p>
+
+            {/* STATUS */}
+            <h2 className="mt-4 mb-1 font-bold underline uppercase text-[10px]">
+              Status dos Pedidos
+            </h2>
+
+            <div className="space-y-[1px] pl-3">
+              <p>• Pedidos deferidos e que possuem coisa julgada formal</p>
+              <p>• Pedidos deferidos com recurso pela reclamada</p>
+              <p>• Pedidos objetos do contrato de cessão</p>
+            </div>
+
+            {/* REVISTA */}
+            <h2 className="mt-4 mb-1 font-bold underline uppercase text-[10px]">
+              Recurso de Revista
+            </h2>
+            <p className="text-justify whitespace-pre-line line-clamp-4">
+              {form.appeal}
+            </p>
+
+            {/* RISCO */}
+            <h2 className="mt-4 mb-1 font-bold underline uppercase text-[10px]">
+              Análise de Risco
+            </h2>
+            <p className="text-justify whitespace-pre-line line-clamp-4">
+              {form.riskAnalysis}
+            </p>
+
+            {/* CUMPRIMENTO */}
+            <h2 className="mt-4 mb-1 font-bold underline uppercase text-[10px]">
+              Cumprimento de Sentença
+            </h2>
+
+            <p className="text-justify whitespace-pre-line line-clamp-4">
+              {form.compliance}
+            </p>
+
+            <p className="mt-1">
+              <strong>Levantamento do crédito total:</strong>{" "}
+              {form.totalCreditLift}
+            </p>
+
+            {/* OBS */}
+            <h2 className="mt-4 mb-1 font-bold underline uppercase text-[10px]">
+              Observação
+            </h2>
+
+            <div className="space-y-[1px]">
+              <p>
+                <strong>Juízo garantido?</strong> {form.guaranteedJurisdiction}
+              </p>
+              <p>
+                <strong>Chance de reversão?</strong> {form.chanceOfReversal}
+              </p>
+              <p>
+                <strong>Substabelecimento:</strong> {form.substitutionByAuthor}
+              </p>
+              <p>
+                <strong>Resp. subsidiária:</strong>{" "}
+                {form.subsidiaryLiabilityPeriod}
+              </p>
+              <p>
+                <strong>Honorários:</strong> {form.feeAgreements}
+              </p>
+            </div>
+
+            {/* CONCLUSÃO */}
+            <h2 className="mt-4 mb-1 font-bold underline uppercase text-[10px]">
+              Conclusão
+            </h2>
+
+            <p className="text-justify line-clamp-3">
+              Pelo exposto, opino pela antecipação total/parcial dos créditos
+              decorrentes da presente ação.
+            </p>
+
+            {/* ASSINATURA */}
+            <div className="mt-6 text-center">
+              <p className="font-bold">NOME</p>
+              <p>OAB/SP</p>
+            </div>
+
+            <div className="mt-3 text-right">
+              São Paulo, 16 de março de 2026.
+            </div>
+
+            {/* FOOTER */}
+            <div className="absolute bottom-3 left-[42px] right-[42px] text-center text-[8px]">
+              Site: Juri.capital | contato@juri.capital | Rua Groenlândia, 66 –
+              Jardim América, São Paulo, SP
+            </div>
           </div>
         </div>
-
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
-            <PipedriveFormCard
-              form={{ ...formState, stageLabel: process?.stage }}
-              setForm={setFormState}
-              readOnly={false}
-              alwaysExpanded={true}
-            />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
 }
-
