@@ -15,12 +15,6 @@
       "essential": true,
       "mountPoints": [],
       "volumesFrom": [],
-      "secrets": [
-        {
-          "name": "NEXT_API_KEY_MASTER",
-          "valueFrom": "arn:aws:secretsmanager:us-east-2:339340413604:secret:painel-robo/prod:NEXT_API_KEY_MASTER::"
-        }
-      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
