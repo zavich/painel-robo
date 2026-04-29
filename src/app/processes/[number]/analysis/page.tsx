@@ -24,7 +24,28 @@ import {
 import { FileText } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-
+type FormType = {
+  number: string;
+  cumSent: string;
+  claimant: string;
+  defendant: string;
+  phase: string;
+  court: string;
+  location: string;
+  distributionDate: string;
+  summary: string;
+  appeal: string;
+  riskAnalysis: string;
+  compliance: string;
+  totalCreditLift: string;
+  observation: string;
+  guaranteedJurisdiction: string;
+  chanceOfReversal: string;
+  substitutionByAuthor: string;
+  subsidiaryLiabilityPeriod: string;
+  feeAgreements: string;
+};
+type FormKey = keyof FormType;
 export default function AnalysisPage() {
   const params = useParams();
   const id = params?.number as string;
@@ -34,7 +55,7 @@ export default function AnalysisPage() {
     enabled: false,
     intervalMs: 10000,
   });
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormType>({
     number: "",
     cumSent: "",
     claimant: "",
@@ -70,8 +91,8 @@ export default function AnalysisPage() {
     }
   }, [process]);
 
-  const update = (k, v) => setForm((s) => ({ ...s, [k]: v }));
-  const fields = [
+  const update = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
+  const fields: [FormKey, string][] = [
     ["number", "RT nº"],
     ["cumSent", "CumSent."],
     ["claimant", "Reclamante"],
@@ -81,7 +102,7 @@ export default function AnalysisPage() {
     ["location", "Localização dos autos"],
     ["distributionDate", "Data distribuição"],
   ];
-  const longFields = [
+  const longFields: [FormKey, string][] = [
     ["summary", "Resumo do Caso"],
     ["appeal", "Recurso de Revista"],
     ["riskAnalysis", "Análise de Risco"],
@@ -192,6 +213,7 @@ export default function AnalysisPage() {
                   },
                   children: [
                     new ImageRun({
+                      type: "png", // obrigatório para PNG
                       data: logo,
                       transformation: {
                         width: 140,
