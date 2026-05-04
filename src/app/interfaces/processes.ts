@@ -312,8 +312,8 @@ export interface Process {
   rejectionReason?: string;
   unreadByUsers?: string[];
   processStatus?: ProcessStatus;
-  isDocuments?: boolean;
-  isInstancias?: boolean;
+  hasDocuments?: boolean;
+  hasInstancias?: boolean;
   hasNewMovementsNow?: boolean;
   oldMoviments?: {
     primeiroGrau: number | null;
