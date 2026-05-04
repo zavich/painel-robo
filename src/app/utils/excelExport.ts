@@ -7,7 +7,7 @@ import { capitalizeWords } from "./format";
 export const exportToExcel = async (
   data: Process[],
   filename: string = "dados",
-  selectedColumns: string[] = []
+  selectedColumns: string[] = [],
 ) => {
   try {
     // Criar um novo workbook
@@ -16,34 +16,48 @@ export const exportToExcel = async (
     // Helper functions
     const getStageLabel = (stage?: string) => {
       switch (stage) {
-        case "PRE_ANALISE": return "Pré-Análise";
-        case "ANALISE": return "Análise";
-        case "CALCULO": return "Cálculo";
-        default: return "-";
+        case "PRE_ANALISE":
+          return "Pré-Análise";
+        case "ANALISE":
+          return "Análise";
+        case "CALCULO":
+          return "Cálculo";
+        default:
+          return "-";
       }
     };
 
     const formatCurrency = (value?: number) => {
       if (!value) return "R$ 0,00";
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
+      return new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
       }).format(value);
     };
 
     const formatDate = (date?: string) => {
       if (!date) return "-";
       try {
-        return new Date(date).toLocaleDateString('pt-BR');
+        return new Date(date).toLocaleDateString("pt-BR");
       } catch {
         return "-";
       }
     };
 
     // If no columns selected, export all
-    const columnsToExport = selectedColumns.length > 0 
-      ? selectedColumns 
-      : ["title", "number", "stage", "valueCase", "createdAt", "hasInstances", "hasDocuments", "owner"];
+    const columnsToExport =
+      selectedColumns.length > 0
+        ? selectedColumns
+        : [
+            "title",
+            "number",
+            "stage",
+            "valueCase",
+            "createdAt",
+            "hasInstances",
+            "hasDocuments",
+            "owner",
+          ];
 
     // Build column headers mapping
     const columnHeaders: Record<string, string> = {
@@ -61,44 +75,46 @@ export const exportToExcel = async (
     const exportData = data.map((item) => {
       const row: Record<string, any> = {};
 
-      columnsToExport.forEach(columnId => {
+      columnsToExport.forEach((columnId) => {
         const header = columnHeaders[columnId];
-        
+
         switch (columnId) {
           case "title":
-            const title = capitalizeWords(getProcessTitle(
-              item.processParts || [], 
-              item.number,
-              item.title || (item as any).formPipedrive?.title
-            ));
+            const title = capitalizeWords(
+              getProcessTitle(
+                item.processParts || [],
+                item.number,
+                item.title || (item as any).formPipedrive?.title,
+              ),
+            );
             const owner = item.processOwner?.user?.email;
             row[header] = owner ? `${title}\n(${owner})` : title;
             break;
-          
+
           case "number":
             row[header] = item.number || "-";
             break;
-          
+
           case "stage":
             row[header] = getStageLabel(item.stage);
             break;
-          
+
           case "valueCase":
             row[header] = formatCurrency(item.valueCase);
             break;
-          
+
           case "createdAt":
             row[header] = formatDate(item.createdAt);
             break;
-          
+
           case "hasInstances":
-            row[header] = item.isInstancias ? "✓" : "-";
+            row[header] = item.hasInstancias ? "✓" : "-";
             break;
-          
+
           case "hasDocuments":
-            row[header] = item.isDocuments ? "✓" : "-";
+            row[header] = item.hasDocuments ? "✓" : "-";
             break;
-          
+
           case "owner":
             row[header] = item.processOwner?.user?.email || "-";
             break;
@@ -123,10 +139,10 @@ export const exportToExcel = async (
       owner: 30,
     };
 
-    const colWidths = columnsToExport.map(colId => ({
-      wch: columnWidths[colId] || 20
+    const colWidths = columnsToExport.map((colId) => ({
+      wch: columnWidths[colId] || 20,
     }));
-    
+
     worksheet["!cols"] = colWidths;
     // Inserir linhas de resumo no início
     XLSX.utils.sheet_add_aoa(worksheet, [], {
@@ -155,7 +171,6 @@ export const exportToExcel = async (
 
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
     saveAs(blob, `${filename}-${timestamp}.xlsx`);
-
   } catch (error) {
     throw error;
   }
