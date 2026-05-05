@@ -227,11 +227,14 @@ export default function KanbanDashboard() {
       (filters.lossReason && filters.lossReason !== "all") ||
       (filters.contentFilter && filters.contentFilter !== "all") ||
       filters.startDate ||
-      filters.endDate;
+      filters.endDate ||
+      filters.emptyDocuments ||
+      filters.emptyInstances ||
+      filters.hasNewMovementsNow;
 
-    if (hasActiveFilters && page > 1) {
-      setPage(1);
-    }
+    // if (hasActiveFilters && page > 1) {
+    //   setPage(1);
+    // }
   }, [filters, page]);
 
   const allProcesses: Process[] = useMemo(() => {
