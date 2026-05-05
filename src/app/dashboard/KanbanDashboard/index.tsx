@@ -67,7 +67,7 @@ export default function KanbanDashboard() {
   const apiFilters = useMemo(() => {
     const baseFilters: any = {
       page,
-      limit: 10,
+      limit: 25,
     };
 
     if (filters.search && String(filters.search) !== "") {
@@ -485,17 +485,8 @@ export default function KanbanDashboard() {
     return selectedProcessIds.size;
   }, [selectAllMode, selectedProcessIds.size, totalProcessesInDB]);
 
-  function handleOpenCompany(company: Company) {
-    setSelectedCompany(company);
-    setShowCompanyModal(true);
-  }
-
   const filteredProcesses: Process[] = useMemo(() => {
     return allProcesses.filter((process) => {
-      // Only apply frontend filtering for filters that are not handled by the backend
-      // Backend handles: search, status, startDate, endDate, lossReason, emptyDocuments, emptyInstances, hasNewMovementsNow
-      // Frontend handles: stageDateFrom, stageDateTo
-
       if (filters.stageDateFrom || filters.stageDateTo) {
         const processDate = process.createdAt
           ? parseISO(process.createdAt)
