@@ -101,7 +101,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-card border border-border rounded-2xl shadow-xl p-8">
+    <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-8">
       {/* HEADER */}
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
@@ -130,13 +130,13 @@ const LoginForm = () => {
           <Label className="text-sm text-foreground">E-mail</Label>
 
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
 
             <Input
               {...register("email")}
               placeholder="seu@email.com"
               className={cn(
-                "pl-10 h-11 bg-muted border-border text-foreground focus-visible:ring-2 focus-visible:ring-secondary",
+                "pl-10 h-11 bg-white/70 border border-white/30 text-gray-900 placeholder:text-gray-500 focus-visible:ring-2 focus-visible:ring-secondary/60",
                 errors.email && "border-destructive",
               )}
             />
@@ -149,18 +149,18 @@ const LoginForm = () => {
 
         {/* PASSWORD */}
         <div className="space-y-2">
-          <Label className="text-sm text-foreground">Senha</Label>
+          <Label className="text-sm text-gray-800">Senha</Label>
 
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
 
             <Input
               {...register("password")}
               type={showPassword ? "text" : "password"}
               placeholder="Digite sua senha"
               className={cn(
-                "pl-10 pr-10 h-11 bg-muted border-border text-foreground focus-visible:ring-2 focus-visible:ring-secondary",
-                errors.password && "border-destructive",
+                "pl-10 h-11 bg-white/70 border border-white/30 text-gray-900 placeholder:text-gray-500 focus-visible:ring-2 focus-visible:ring-secondary/60",
+                errors.email && "border-destructive",
               )}
             />
 
@@ -195,8 +195,9 @@ const LoginForm = () => {
         {/* BUTTON */}
         <Button
           type="submit"
+          variant="secondary"
           disabled={isLoading || !isValid}
-          className="w-full h-11 font-semibold bg-secondary text-secondary-foreground hover:brightness-95 transition"
+          className="w-full h-11 font-semibold shadow-md shadow-secondary/30 hover:shadow-lg hover:-translate-y-[1px] transition-all"
         >
           {isLoading ? "Entrando..." : "Entrar"}
         </Button>
@@ -204,29 +205,29 @@ const LoginForm = () => {
 
       {/* DIVIDER */}
       <div className="my-8 flex items-center">
-        <div className="flex-1 border-t border-border" />
-        <span className="px-3 text-xs text-muted-foreground">ou</span>
-        <div className="flex-1 border-t border-border" />
+        <div className="flex-1 border-t border-white/20" />
+        <span className="px-3 text-xs text-gray-500">ou</span>
+        <div className="flex-1 border-t border-white/20" />
       </div>
 
       {/* ACTION */}
       <Button
         variant="outline"
-        className="w-full border-border text-foreground hover:bg-muted"
+        className="w-full border-white/30 text-gray-800 hover:bg-white/60 "
       >
         Solicitar acesso
       </Button>
 
       {/* FEATURES */}
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-muted">
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-white/20 bg-white/60 backdrop-blur-sm">
           <Shield className="h-4 w-4 text-secondary" />
-          <span className="text-xs text-muted-foreground">Seguro</span>
+          <span className="text-xs text-gray-700">Seguro</span>
         </div>
 
-        <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-muted">
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-white/20 bg-white/60 backdrop-blur-sm">
           <Gavel className="h-4 w-4 text-secondary" />
-          <span className="text-xs text-muted-foreground">Confiável</span>
+          <span className="text-xs text-gray-700">Confiável</span>
         </div>
       </div>
     </div>
