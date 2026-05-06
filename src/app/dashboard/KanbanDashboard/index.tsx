@@ -1,14 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import Loading, { ManagementPageSkeleton } from "@/components/Loading";
-import { FiltersBar } from "@/components/FiltersBar";
+import {
+  Activity,
+  ActivityType,
+} from "@/app/api/hooks/process/useCreateActivity";
+import { useProcessFetch } from "@/app/api/hooks/process/useInsertProcess";
+import { useRejectionReasons } from "@/app/api/hooks/process/useRejectionReasons";
 import { useProcesses } from "@/app/api/hooks/processes/useProcesses";
+import { useAssignableUsers } from "@/app/api/hooks/users/useAssignableUsers";
 import { useFilter } from "@/app/hooks/filter/useFilter";
-import { parseISO, isWithinInterval } from "date-fns";
-import { Company, Process } from "@/app/interfaces/processes";
-import { useSearchParams } from "next/navigation";
-import { CompanyModalDialog } from "@/components/process/CompanyModalDialog";
+import { useToast } from "@/app/hooks/use-toast";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
+import { Process } from "@/app/interfaces/processes";
 import { UserRolesEnum } from "@/app/interfaces/user";
+import { exportToExcel } from "@/app/utils/excelExport";
+import { capitalizeWords } from "@/app/utils/format";
+import { getProcessTitle } from "@/app/utils/processPartsUtils";
+import { ExportColumnsDialog } from "@/components/ExportColumnsDialog";
+import { FiltersBar } from "@/components/FiltersBar";
+import InsertProcessModal from "@/components/process/InsertProcessModal";
+import { MassEditPanel } from "@/components/process/MassEditPanel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Table,
   TableBody,
@@ -17,37 +30,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { getProcessTitle } from "@/app/utils/processPartsUtils";
-import { capitalizeWords } from "@/app/utils/format";
-import { MassEditPanel } from "@/components/process/MassEditPanel";
-import { useAssignableUsers } from "@/app/api/hooks/users/useAssignableUsers";
-import { useRejectionReasons } from "@/app/api/hooks/process/useRejectionReasons";
-import {
-  Activity,
-  ActivityType,
-} from "@/app/api/hooks/process/useCreateActivity";
-import { Download } from "lucide-react";
-import { useToast } from "@/app/hooks/use-toast";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { exportToExcel } from "@/app/utils/excelExport";
-import { ExportColumnsDialog } from "@/components/ExportColumnsDialog";
-import { Pagination } from "@/components/ui/pagination";
+import { isWithinInterval, parseISO } from "date-fns";
+import { Download } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export default function KanbanDashboard() {
   const { user } = useAuth();
   const { filters, setFilter, resetFilters } = useFilter();
   const searchParams = useSearchParams();
-  const [activeId] = useState<string | null>(null);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const { fetchData } = useProcessFetch();
   const [page, setPage] = useState<number>(1);
   const [, setBreadcrumbFixed] = useState(false);
   const [showScrollTopButton, setShowScrollTopButton] = useState(false);
@@ -59,6 +57,7 @@ export default function KanbanDashboard() {
   );
   const [showMassEditPanel, setShowMassEditPanel] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isInsertModalOpen, setIsInsertModalOpen] = useState(false);
   const breadcrumbRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { data: usersData } = useAssignableUsers();
@@ -565,12 +564,6 @@ export default function KanbanDashboard() {
     selectAllMode,
   ]);
 
-  const isAdmin = user?.role === UserRolesEnum.ADMIN;
-
-  const activeProcess = activeId
-    ? allProcesses.find((p: Process) => p._id === activeId)
-    : null;
-
   useEffect(() => {
     const handleScroll = () => {
       if (breadcrumbRef.current) {
@@ -629,6 +622,44 @@ export default function KanbanDashboard() {
     [filters],
   );
 
+  const handleOpenInsertModal = () => {
+    setIsInsertModalOpen(true);
+  };
+
+  const handleCloseInsertModal = () => {
+    setIsInsertModalOpen(false);
+  };
+
+  const handleInsertProcess = async (
+    processNumber: string,
+    file: File | null,
+  ) => {
+    try {
+      if (processNumber) {
+        const res = await fetchData({
+          type: "number",
+          value: [processNumber],
+        });
+      } else {
+        await fetchData({
+          type: "upload",
+          file: file as File,
+        });
+      }
+      toast({
+        title: "Processo inserido com sucesso!",
+        description: `O processo ${processNumber} foi inserido e está sendo processado. Ele aparecerá na lista em breve.`,
+      });
+      handleCloseInsertModal();
+    } catch (error) {
+      toast({
+        title: "Erro ao inserir processo",
+        description: "Ocorreu um erro ao inserir o processo. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div
       style={{
@@ -638,6 +669,15 @@ export default function KanbanDashboard() {
     >
       <main className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-8">
         <>
+          <div className="mb-4 flex items-center justify-end">
+            <Button
+              variant="default"
+              onClick={handleOpenInsertModal}
+              className="ml-4"
+            >
+              Inserir Processo
+            </Button>
+          </div>
           <div className="mb-8">
             <FiltersBar
               filters={{
@@ -671,25 +711,6 @@ export default function KanbanDashboard() {
               isLoading={isLoading && page === 1}
             />
           </div>
-          {/* Removed detailed counters cards as requested */}
-          {/* Initial loading overlay - only show on first load without filters */}
-          {/* {isLoading &&
-              page === 1 &&
-              !filters.search &&
-              filters.status === "all" &&
-              (!filters.type || filters.type === "all") &&
-              (!filters.lossReason || filters.lossReason === "all") &&
-              !filters.startDate &&
-              !filters.endDate &&
-              !filters.emptyDocuments &&
-              !filters.emptyInstances &&
-              !filters.hasNewMovementsNow && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
-                  <div className="rounded-2xl shadow-2xl p-8 border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <Loading message="Carregando processos..." />
-                  </div>
-                </div>
-              )} */}
 
           {/* Skeleton loading for filtered results */}
           {isLoading &&
@@ -980,7 +1001,6 @@ export default function KanbanDashboard() {
                                     );
                                     newSet.delete(process._id);
                                     setSelectedProcessIds(newSet);
-                                    setSelectAllMode(null);
                                   } else {
                                     const newSet = new Set(selectedProcessIds);
                                     if (isSelected) {
@@ -1228,11 +1248,11 @@ export default function KanbanDashboard() {
             </div>
           )}
 
-          <CompanyModalDialog
+          {/* <CompanyModalDialog
             cnpj={selectedCompany?.cnpj || ""}
             isOpen={showCompanyModal}
             onClose={() => setShowCompanyModal(false)}
-          />
+          /> */}
         </>
       </main>
 
@@ -1285,6 +1305,13 @@ export default function KanbanDashboard() {
         onExport={handleExportWithColumns}
         totalProcesses={filteredProcesses.length}
         totalProcessesInDB={totalProcessesInDB}
+      />
+
+      {/* Modal para inserir processo */}
+      <InsertProcessModal
+        isOpen={isInsertModalOpen}
+        onClose={handleCloseInsertModal}
+        onSubmit={handleInsertProcess}
       />
     </div>
   );
