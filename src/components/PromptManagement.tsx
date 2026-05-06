@@ -28,56 +28,72 @@ export function PromptManagement() {
 
   const totalCount = promptsData?.total || 0;
   const totalPages = promptsData?.totalPages || 1;
-  const startIndex = promptsData?.page && promptsData?.limit
-    ? (promptsData.page - 1) * promptsData.limit + 1
-    : 1;
-  const endIndex = promptsData?.page && promptsData?.limit
-    ? Math.min(promptsData.page * promptsData.limit, totalCount)
-    : totalCount;
+  const startIndex =
+    promptsData?.page && promptsData?.limit
+      ? (promptsData.page - 1) * promptsData.limit + 1
+      : 1;
+  const endIndex =
+    promptsData?.page && promptsData?.limit
+      ? Math.min(promptsData.page * promptsData.limit, totalCount)
+      : totalCount;
 
   return (
     <section className="mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+        <div className="w-12 h-12 bg-gradient-to-br from-secondary to-accent dark:from-secondary dark:to-accent rounded-2xl flex items-center justify-center shadow-lg">
           <FileText className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h2 className={`text-3xl font-bold ${
-            theme === "dark" ? "text-gray-100" : "text-gray-900"
-          }`}>Gestão de Prompts</h2>
-          <p className={`mt-1 ${
-            theme === "dark" ? "text-gray-400" : "text-gray-600"
-          }`}>Crie e gerencie prompts personalizados para análise</p>
+          <h2
+            className={`text-3xl font-bold ${
+              theme === "dark" ? "text-gray-100" : "text-gray-900"
+            }`}
+          >
+            Gestão de Prompts
+          </h2>
+          <p
+            className={`mt-1 ${
+              theme === "dark" ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            Crie e gerencie prompts personalizados para análise
+          </p>
         </div>
       </div>
 
       {/* Search Section */}
-      <div className={`rounded-2xl shadow-lg p-6 mb-8 ${
-        theme === "dark" 
-          ? "bg-gray-800 border-gray-700 border" 
-          : "bg-white border-gray-200 border"
-      }`}>
+      <div
+        className={`rounded-2xl shadow-lg p-6 mb-8 ${
+          theme === "dark"
+            ? "bg-gray-800 border-gray-700 border"
+            : "bg-white border-gray-200 border"
+        }`}
+      >
         <div className="flex items-center gap-3 mb-4">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-            theme === "dark" ? "bg-blue-900/50" : "bg-blue-50"
-          }`}>
-            <Search className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-blue-600"}`} />
+          <div className="w-8 h-8 bg-gradient-to-br from-secondary to-accent rounded-lg flex items-center justify-center shadow-sm">
+            <Search className="h-4 w-4 text-white" />
           </div>
-          <h3 className={`text-lg font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>Buscar Prompts</h3>
+          <h3
+            className={`text-lg font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}
+          >
+            Buscar Prompts
+          </h3>
         </div>
         <div className="relative">
-          <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 ${
-            theme === "dark" ? "text-gray-500" : "text-gray-400"
-          }`} />
+          <Search
+            className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 ${
+              theme === "dark" ? "text-secondary-foreground" : "text-secondary"
+            }`}
+          />
           <Input
             placeholder="Buscar por tipo ou conteúdo do prompt..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={`pl-12 h-12 rounded-xl transition-all duration-200 shadow-sm ${
               theme === "dark"
-                ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-400"
-                : "border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-primary focus:ring-primary"
+                : "border-gray-200 focus:border-primary focus:ring-primary bg-white"
             }`}
           />
         </div>
@@ -86,20 +102,22 @@ export function PromptManagement() {
       {/* Actions Section */}
       <div className="flex justify-end mb-4">
         <Button
-          className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 h-12 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+          className="bg-gradient-to-r from-secondary to-accent text-white hover:from-secondary hover:to-accent h-12 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
           onClick={() => setShowPromptModal(true)}
         >
-          <Plus className="h-5 w-5 mr-2" />
+          <Plus className="h-5 w-5 mr-2 text-white" />
           Novo Prompt
         </Button>
       </div>
 
       {/* Table Section */}
-      <div className={`rounded-2xl shadow-lg overflow-hidden ${
-        theme === "dark" 
-          ? "bg-gray-800 border-gray-700 border" 
-          : "bg-white border-gray-200 border"
-      }`}>
+      <div
+        className={`rounded-2xl shadow-lg overflow-hidden ${
+          theme === "dark"
+            ? "bg-gray-800 border-gray-700 border"
+            : "bg-white border-gray-200 border"
+        }`}
+      >
         <PromptTable
           data={promptsData?.prompts || []}
           onEdit={undefined}

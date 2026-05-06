@@ -238,8 +238,8 @@ export function CompanyModalDialog({
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700">
         <DialogHeader className="flex flex-row items-center justify-between pb-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg">
-              <Building2 className="h-6 w-6 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-br from-secondary to-secondary-light dark:from-secondary dark:to-secondary-light rounded-2xl flex items-center justify-center shadow-lg">
+              <Building2 className="h-6 w-6 text-secondary dark:text-secondary-foreground" />
             </div>
             <div>
               <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -256,7 +256,7 @@ export function CompanyModalDialog({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 rounded-xl border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:border-blue-200 dark:hover:border-blue-700"
+                className="flex items-center gap-2 rounded-xl border-border dark:border-border hover:bg-primary/10 dark:hover:bg-primary-foreground/10 hover:border-primary dark:hover:border-primary-foreground"
               >
                 <Edit className="h-4 w-4" />
                 Editar
@@ -267,7 +267,7 @@ export function CompanyModalDialog({
                   variant="outline"
                   size="sm"
                   onClick={handleCancel}
-                  className="flex items-center gap-2 rounded-xl border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex items-center gap-2 rounded-xl border-border dark:border-border hover:bg-card/10 dark:hover:bg-card-foreground/10"
                 >
                   <X className="h-4 w-4" />
                   Cancelar
@@ -275,7 +275,7 @@ export function CompanyModalDialog({
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 hover:from-blue-600 hover:to-indigo-700 dark:hover:from-blue-700 dark:hover:to-indigo-800 rounded-xl"
+                  className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary-light dark:from-primary dark:to-primary-light hover:from-primary hover:to-primary-light rounded-xl"
                 >
                   <Save className="h-4 w-4" />
                   Salvar
@@ -290,8 +290,8 @@ export function CompanyModalDialog({
           <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <div className="w-8 h-8 bg-secondary/10 dark:bg-secondary-foreground/10 rounded-lg flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-secondary dark:text-secondary-foreground" />
                 </div>
                 Dados da Empresa
               </CardTitle>

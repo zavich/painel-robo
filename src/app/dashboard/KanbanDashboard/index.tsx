@@ -679,7 +679,7 @@ export default function KanbanDashboard() {
           <div className="mb-4 flex items-center justify-end">
             <Button
               onClick={handleOpenInsertModal}
-              className="ml-4 bg-yellow-500 text-black hover:bg-yellow-600 shadow-md focus:ring-2 focus:ring-yellow-500/30"
+              className="ml-4 bg-gradient-to-r from-secondary to-accent text-white shadow-md focus:ring-2 focus:ring-secondary/30 hover:from-secondary hover:to-accent"
             >
               Inserir Processo
             </Button>

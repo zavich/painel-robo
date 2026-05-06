@@ -55,44 +55,54 @@ export function PromptModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`max-w-2xl rounded-2xl shadow-2xl ${
-        theme === "dark" 
-          ? "bg-gray-800 border-gray-700" 
-          : "bg-white border-gray-200"
-      }`}>
+      <DialogContent
+        className={`max-w-2xl rounded-2xl shadow-2xl ${
+          theme === "dark"
+            ? "bg-gray-800 border-gray-700"
+            : "bg-white border-gray-200"
+        }`}
+      >
         <DialogHeader className="pb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-secondary to-accent dark:from-secondary dark:to-accent rounded-xl flex items-center justify-center">
               <FileText className="h-5 w-5 text-white" />
             </div>
             <div>
-              <DialogTitle className={`text-2xl font-bold ${
-                theme === "dark" ? "text-gray-100" : "text-gray-900"
-              }`}>
+              <DialogTitle
+                className={`text-2xl font-bold ${
+                  theme === "dark" ? "text-gray-100" : "text-gray-900"
+                }`}
+              >
                 {prompt ? "Editar Prompt" : "Novo Prompt"}
               </DialogTitle>
-              <p className={`mt-1 ${
-                theme === "dark" ? "text-gray-400" : "text-gray-600"
-              }`}>
-                {prompt ? "Modifique as informações do prompt" : "Crie um novo prompt personalizado"}
+              <p
+                className={`mt-1 ${
+                  theme === "dark" ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {prompt
+                  ? "Modifique as informações do prompt"
+                  : "Crie um novo prompt personalizado"}
               </p>
             </div>
           </div>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           <div className="space-y-3">
-            <label className={`block text-sm font-semibold ${
-              theme === "dark" ? "text-gray-100" : "text-gray-900"
-            }`}>
+            <label
+              className={`block text-sm font-semibold ${
+                theme === "dark" ? "text-gray-100" : "text-gray-900"
+              }`}
+            >
               Tipo do Prompt
             </label>
             <input
               type="text"
               className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 shadow-sm ${
-                theme === "dark" 
-                  ? "border-gray-600 focus:ring-blue-400 bg-gray-700 text-gray-100" 
-                  : "border-gray-200 focus:ring-blue-500 bg-white"
+                theme === "dark"
+                  ? "border-gray-600 focus:ring-primary bg-gray-700 text-gray-100"
+                  : "border-gray-200 focus:ring-primary bg-white"
               }`}
               value={type}
               onChange={(e) => setType(e.target.value)}
@@ -100,18 +110,20 @@ export function PromptModal({
               disabled={loading}
             />
           </div>
-          
+
           <div className="space-y-3">
-            <label className={`block text-sm font-semibold ${
-              theme === "dark" ? "text-gray-100" : "text-gray-900"
-            }`}>
+            <label
+              className={`block text-sm font-semibold ${
+                theme === "dark" ? "text-gray-100" : "text-gray-900"
+              }`}
+            >
               Conteúdo do Prompt
             </label>
             <textarea
               className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 shadow-sm resize-none ${
-                theme === "dark" 
-                  ? "border-gray-600 focus:ring-blue-400 bg-gray-700 text-gray-100" 
-                  : "border-gray-200 focus:ring-blue-500 bg-white"
+                theme === "dark"
+                  ? "border-gray-600 focus:ring-primary bg-gray-700 text-gray-100"
+                  : "border-gray-200 focus:ring-primary bg-white"
               }`}
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -121,14 +133,16 @@ export function PromptModal({
             />
           </div>
         </div>
-        
-        <div className={`flex justify-end gap-3 pt-6 border-t ${
-          theme === "dark" ? "border-gray-700" : "border-gray-200"
-        }`}>
+
+        <div
+          className={`flex justify-end gap-3 pt-6 border-t ${
+            theme === "dark" ? "border-gray-700" : "border-gray-200"
+          }`}
+        >
           <button
             className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 ${
-              theme === "dark" 
-                ? "bg-gray-700 hover:bg-gray-600 text-gray-200" 
+              theme === "dark"
+                ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
             }`}
             onClick={onClose}
@@ -137,7 +151,7 @@ export function PromptModal({
             Cancelar
           </button>
           <button
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 font-medium transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl"
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-secondary to-accent text-white hover:from-secondary hover:to-accent font-medium transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl"
             onClick={handleSave}
             disabled={loading || !type || !text}
           >

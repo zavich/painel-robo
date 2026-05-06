@@ -34,7 +34,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Processos", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Métricas", href: "/dashboard/metrics", icon: BarChart3 },
+  // { label: "Métricas", href: "/dashboard/metrics", icon: BarChart3 },
   { label: "Empresas", href: "/dashboard/companies", icon: Building2 },
   {
     label: "Prompts",
@@ -42,12 +42,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: MessageSquareText,
     adminOnly: true,
   },
-  {
-    label: "Motivos de Recusa",
-    href: "/dashboard/reason-loss",
-    icon: ShieldAlert,
-    adminOnly: true,
-  },
+  // {
+  //   label: "Motivos de Recusa",
+  //   href: "/dashboard/reason-loss",
+  //   icon: ShieldAlert,
+  //   adminOnly: true,
+  // },
 ];
 
 export function MainShell({ children }: MainShellProps) {
