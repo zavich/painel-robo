@@ -77,8 +77,8 @@ export default function KanbanDashboard() {
       baseFilters.status = String(filters.status);
     }
 
-    if (filters.type && String(filters.type) !== "all") {
-      baseFilters.type = String(filters.type);
+    if (filters.classProcess && String(filters.classProcess) !== "all") {
+      baseFilters.classProcess = String(filters.classProcess);
     }
 
     if (filters.startDate) {
@@ -112,6 +112,17 @@ export default function KanbanDashboard() {
       filters.hasNewMovementsNow
     ) {
       baseFilters.hasNewMovementsNow = true;
+    }
+    if (filters.hasSecondInstance !== undefined && filters.hasSecondInstance) {
+      baseFilters.hasSecondInstance = true;
+    }
+
+    if (filters.hasAutos !== undefined && filters.hasAutos) {
+      baseFilters.hasAutos = true;
+    }
+
+    if (filters.hasAcordao !== undefined && filters.hasAcordao) {
+      baseFilters.hasAcordao = true;
     }
 
     return baseFilters;
@@ -166,6 +177,18 @@ export default function KanbanDashboard() {
       params.hasNewMovementsNow = true;
     }
 
+    if (filters.hasSecondInstance !== undefined && filters.hasSecondInstance) {
+      params.hasSecondInstance = true;
+    }
+
+    if (filters.hasAutos !== undefined && filters.hasAutos) {
+      params.hasAutos = true;
+    }
+
+    if (filters.hasAcordao !== undefined && filters.hasAcordao) {
+      params.hasAcordao = true;
+    }
+
     return params;
   }, [filters, rejectionReasons]);
   const { data, isLoading } = useProcesses(apiFilters);
@@ -216,25 +239,6 @@ export default function KanbanDashboard() {
       });
     }
   }, [data, page]);
-
-  // Reset page to 1 when filters change and there are active filters
-  useEffect(() => {
-    const hasActiveFilters =
-      filters.search ||
-      filters.status !== "all" ||
-      (filters.type && filters.type !== "all") ||
-      (filters.lossReason && filters.lossReason !== "all") ||
-      (filters.contentFilter && filters.contentFilter !== "all") ||
-      filters.startDate ||
-      filters.endDate ||
-      filters.emptyDocuments ||
-      filters.emptyInstances ||
-      filters.hasNewMovementsNow;
-
-    // if (hasActiveFilters && page > 1) {
-    //   setPage(1);
-    // }
-  }, [filters, page]);
 
   const allProcesses: Process[] = useMemo(() => {
     // Use current page processes only
@@ -587,10 +591,10 @@ export default function KanbanDashboard() {
         typeof filters.status === "string"
           ? filters.status
           : String(filters.status ?? "all"),
-      type:
-        typeof filters.type === "string"
-          ? filters.type
-          : String(filters.type ?? "all"),
+      classProcess:
+        typeof filters.classProcess === "string"
+          ? filters.classProcess
+          : String(filters.classProcess ?? "all"),
       startDate:
         typeof filters.startDate === "string"
           ? new Date(filters.startDate)
@@ -618,6 +622,9 @@ export default function KanbanDashboard() {
       emptyDocuments: filters.emptyDocuments || false,
       emptyInstances: filters.emptyInstances || false,
       hasNewMovementsNow: filters.hasNewMovementsNow || false,
+      hasSecondInstance: filters.hasSecondInstance || false,
+      hasAutos: filters.hasAutos || false,
+      hasAcordao: filters.hasAcordao || false,
     }),
     [filters],
   );
@@ -683,7 +690,7 @@ export default function KanbanDashboard() {
               filters={{
                 search: normalizedFilters.search,
                 status: normalizedFilters.status,
-                type: normalizedFilters.type,
+                classProcess: normalizedFilters.classProcess,
                 startDate: normalizedFilters.startDate,
                 endDate: normalizedFilters.endDate,
                 lossReason: normalizedFilters.lossReason,
@@ -693,6 +700,9 @@ export default function KanbanDashboard() {
                 hasNewMovementsNow: Boolean(
                   normalizedFilters.hasNewMovementsNow,
                 ),
+                hasSecondInstance: Boolean(normalizedFilters.hasSecondInstance),
+                hasAutos: Boolean(normalizedFilters.hasAutos),
+                hasAcordao: Boolean(normalizedFilters.hasAcordao),
               }}
               onFiltersChange={(newFilters) => {
                 Object.entries(newFilters).forEach(([key, value]) =>

@@ -1,22 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useRejectionReasons } from "@/app/api/hooks/process/useRejectionReasons";
+import { useTheme } from "@/app/hooks/use-theme-client";
+import { Situation } from "@/app/interfaces/processes";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -25,423 +13,47 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  Activity,
   CalendarIcon,
-  Filter,
-  Search,
-  X,
-  FileText,
-  Layers,
   Check,
   ChevronDown,
   ChevronDownIcon,
-  Activity,
-  AlertCircle,
-  Clock,
+  FileText,
+  Filter,
+  Layers,
+  Link,
+  Search,
+  X,
 } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { Situation, StageProcess } from "@/app/interfaces/processes";
-import { useRejectionReasons } from "@/app/api/hooks/process/useRejectionReasons";
-import { useTheme } from "@/app/hooks/use-theme-client";
-
-// MultiSelect Component
-interface MultiSelectProps {
-  options: { key: string; label: string }[];
-  selected: string[];
-  onSelectionChange: (selected: string[]) => void;
-  placeholder?: string;
-  searchPlaceholder?: string;
-  emptyMessage?: string;
-  className?: string;
-  disabled?: boolean;
-  maxDisplayItems?: number;
-}
-
-function MultiSelect({
-  options,
-  selected,
-  onSelectionChange,
-  placeholder = "Selecionar opções...",
-  searchPlaceholder = "Buscar...",
-  emptyMessage = "Nenhuma opção encontrada.",
-  className,
-  disabled = false,
-  maxDisplayItems = 2,
-}: MultiSelectProps) {
-  const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [focusedIndex, setFocusedIndex] = useState(-1);
-  const { theme } = useTheme();
-
-  const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(searchValue.toLowerCase()),
-  );
-
-  const handleSelect = (value: string) => {
-    const newSelected = selected.includes(value)
-      ? selected.filter((item) => item !== value)
-      : [...selected, value];
-    onSelectionChange(newSelected);
-  };
-
-  const handleRemove = (value: string) => {
-    onSelectionChange(selected.filter((item) => item !== value));
-  };
-
-  const handleClearAll = () => {
-    onSelectionChange([]);
-  };
-
-  const handleSelectAll = () => {
-    onSelectionChange(filteredOptions.map((option) => option.key));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!open) return;
-
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        setFocusedIndex((prev) =>
-          prev < filteredOptions.length - 1 ? prev + 1 : 0,
-        );
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        setFocusedIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredOptions.length - 1,
-        );
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
-          handleSelect(filteredOptions[focusedIndex].key);
-        }
-        break;
-      case "Escape":
-        setOpen(false);
-        break;
-    }
-  };
-
-  // Reset focused index when options change
-  useEffect(() => {
-    setFocusedIndex(-1);
-  }, [searchValue, filteredOptions.length]);
-
-  return (
-    <div className={cn("w-full", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            onKeyDown={handleKeyDown}
-            className={cn(
-              "w-full justify-between h-11 rounded-xl transition-all duration-200 group",
-              theme === "dark"
-                ? "border-slate-600 bg-slate-800/50 text-white hover:border-blue-400 hover:bg-slate-800"
-                : "border-slate-200 hover:border-blue-300 hover:bg-white/80 bg-white",
-              selected.length > 0 && "border-blue-400 bg-blue-50/50",
-              open && "ring-2 ring-blue-200 ring-offset-2",
-            )}
-            disabled={disabled}
-          >
-            <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-              {selected.length === 0 ? (
-                <span
-                  className={cn(
-                    "text-sm font-medium",
-                    theme === "dark" ? "text-gray-400" : "text-gray-500",
-                  )}
-                >
-                  {placeholder}
-                </span>
-              ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  {selected.slice(0, maxDisplayItems).map((value) => {
-                    const option = options.find((opt) => opt.key === value);
-                    return (
-                      <span
-                        key={value}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
-                          "hover:scale-105 hover:shadow-sm",
-                          theme === "dark"
-                            ? "bg-blue-900/60 text-blue-100 border border-blue-600/50"
-                            : "bg-blue-100 text-blue-800 border border-blue-200",
-                        )}
-                      >
-                        <span className="truncate max-w-[120px]">
-                          {option?.label}
-                        </span>
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemove(value);
-                          }}
-                          className={cn(
-                            "ml-0.5 hover:bg-blue-200/50 rounded-full p-0.5 cursor-pointer transition-colors",
-                            theme === "dark"
-                              ? "hover:bg-blue-700/50"
-                              : "hover:bg-blue-200/50",
-                          )}
-                        >
-                          <X className="h-3 w-3" />
-                        </span>
-                      </span>
-                    );
-                  })}
-                  {selected.length > maxDisplayItems && (
-                    <span
-                      className={cn(
-                        "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
-                        "hover:scale-105 hover:shadow-sm",
-                        theme === "dark"
-                          ? "bg-gray-700/60 text-gray-300 border border-gray-600/50"
-                          : "bg-gray-100 text-gray-600 border border-gray-200",
-                      )}
-                    >
-                      +{selected.length - maxDisplayItems} mais
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2 ml-2">
-              {selected.length > 0 && (
-                <span
-                  className={cn(
-                    "text-xs font-semibold px-2 py-1 rounded-full",
-                    theme === "dark"
-                      ? "bg-blue-600 text-blue-100"
-                      : "bg-blue-600 text-white",
-                  )}
-                >
-                  {selected.length}
-                </span>
-              )}
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-transform duration-200",
-                  open && "rotate-180",
-                  theme === "dark" ? "text-slate-400" : "text-slate-500",
-                )}
-              />
-            </div>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className={cn(
-            "w-full p-0 rounded-xl shadow-2xl border-0 animate-in fade-in-0 zoom-in-95 duration-200",
-            theme === "dark"
-              ? "bg-slate-800/95 backdrop-blur-md"
-              : "bg-white/95 backdrop-blur-md",
-          )}
-          align="start"
-        >
-          <div className="rounded-xl">
-            <div className="p-4 border-b border-gray-200/20">
-              <div className="flex items-center gap-3">
-                <Search className="h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder={searchPlaceholder}
-                  value={searchValue}
-                  onChange={(e) => {
-                    setSearchValue(e.target.value);
-                  }}
-                  className={cn(
-                    "h-10 border-0 bg-transparent text-sm placeholder:text-gray-500 focus:ring-0 flex-1",
-                    theme === "dark"
-                      ? "text-white placeholder:text-gray-400"
-                      : "text-gray-900 placeholder:text-gray-500",
-                  )}
-                />
-                {filteredOptions.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSelectAll}
-                    className={cn(
-                      "h-7 px-2 text-xs font-medium rounded-md transition-all duration-200",
-                      theme === "dark"
-                        ? "hover:bg-blue-900/30 text-blue-300 hover:text-blue-200"
-                        : "hover:bg-blue-50 text-blue-600 hover:text-blue-700",
-                    )}
-                  >
-                    Selecionar todos
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="max-h-72 overflow-y-auto">
-              {filteredOptions.length === 0 ? (
-                <div className="py-8 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <div
-                      className={cn(
-                        "w-12 h-12 rounded-full flex items-center justify-center",
-                        theme === "dark" ? "bg-gray-700/50" : "bg-gray-100",
-                      )}
-                    >
-                      <Search className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <p className="text-sm text-gray-500 font-medium">
-                      {emptyMessage}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-2">
-                  {filteredOptions.map((option, index) => {
-                    const isSelected = selected.includes(option.key);
-                    const isFocused = index === focusedIndex;
-                    return (
-                      <div
-                        key={option.key}
-                        onClick={() => handleSelect(option.key)}
-                        className={cn(
-                          "group flex items-center cursor-pointer rounded-lg transition-all duration-200 ease-in-out mx-1",
-                          "hover:scale-[1.01] hover:shadow-sm",
-                          isFocused && "ring-2 ring-blue-300 ring-offset-1",
-                          theme === "dark"
-                            ? cn(
-                                "hover:bg-slate-700/50 hover:border-slate-600/50 border border-transparent",
-                                isFocused &&
-                                  "bg-slate-700/30 border-slate-600/50",
-                                isSelected &&
-                                  "bg-blue-900/30 border-blue-700/50",
-                              )
-                            : cn(
-                                "hover:bg-slate-50 hover:border-slate-200 border border-transparent",
-                                isFocused && "bg-slate-50 border-slate-200",
-                                isSelected && "bg-blue-50 border-blue-200",
-                              ),
-                        )}
-                      >
-                        <div className="flex items-center gap-3 flex-1 px-4 py-3">
-                          <div className="flex-shrink-0">
-                            <Checkbox
-                              checked={isSelected}
-                              className={cn(
-                                "h-4 w-4 transition-all duration-200",
-                                "data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600",
-                                "data-[state=checked]:scale-105",
-                              )}
-                            />
-                          </div>
-                          <span
-                            className={cn(
-                              "text-sm flex-1 transition-colors duration-200 leading-relaxed font-medium",
-                              theme === "dark"
-                                ? cn(
-                                    "text-slate-200 group-hover:text-slate-100",
-                                    isSelected && "text-blue-200",
-                                  )
-                                : cn(
-                                    "text-slate-700 group-hover:text-slate-900",
-                                    isSelected && "text-blue-700",
-                                  ),
-                            )}
-                          >
-                            {option.label}
-                          </span>
-                          {isSelected && (
-                            <div className="flex-shrink-0">
-                              <Check className="h-4 w-4 text-blue-600 transition-all duration-200 scale-105" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            {selected.length > 0 && (
-              <div
-                className={cn(
-                  "flex items-center justify-between px-4 py-4 border-t bg-gradient-to-r from-blue-50/30 to-slate-50/30",
-                  theme === "dark"
-                    ? "border-slate-700/50 bg-gradient-to-r from-blue-900/20 to-slate-900/20"
-                    : "border-slate-200/50",
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "w-3 h-3 rounded-full animate-pulse",
-                      theme === "dark" ? "bg-blue-400" : "bg-blue-500",
-                    )}
-                  />
-                  <div className="flex flex-col">
-                    <span
-                      className={cn(
-                        "text-sm font-semibold",
-                        theme === "dark" ? "text-slate-200" : "text-slate-700",
-                      )}
-                    >
-                      {selected.length} selecionado
-                      {selected.length !== 1 ? "s" : ""}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-xs",
-                        theme === "dark" ? "text-slate-400" : "text-slate-500",
-                      )}
-                    >
-                      {filteredOptions.length} opções disponíveis
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onSelectionChange([])}
-                    className={cn(
-                      "h-8 px-3 text-xs font-medium rounded-lg transition-all duration-200",
-                      "hover:scale-105 hover:shadow-sm",
-                      theme === "dark"
-                        ? "hover:bg-red-900/30 text-red-400 hover:text-red-300"
-                        : "hover:bg-red-50 text-red-600 hover:text-red-700",
-                    )}
-                  >
-                    <X className="h-3 w-3 mr-1.5" />
-                    Limpar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSelectAll}
-                    className={cn(
-                      "h-8 px-3 text-xs font-medium rounded-lg transition-all duration-200",
-                      "hover:scale-105 hover:shadow-sm",
-                      theme === "dark"
-                        ? "hover:bg-blue-900/30 text-blue-300 hover:text-blue-200"
-                        : "hover:bg-blue-50 text-blue-600 hover:text-blue-700",
-                    )}
-                  >
-                    <Check className="h-3 w-3 mr-1.5" />
-                    Todos
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-}
+import React, { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 export interface FilterValues {
   search?: string;
   status?: string;
-  type?: string;
   startDate?: Date;
   endDate?: Date;
   lossReason?: string;
@@ -449,21 +61,14 @@ export interface FilterValues {
   emptyDocuments?: boolean;
   emptyInstances?: boolean;
   hasNewMovementsNow?: boolean;
+  hasSecondInstance?: boolean;
+  classProcess?: string;
+  hasAutos?: boolean;
+  hasAcordao?: boolean;
 }
 
 export interface FiltersBarProps {
-  filters: {
-    search: string;
-    status: string;
-    type?: string;
-    startDate?: Date;
-    endDate?: Date;
-    lossReason?: string;
-    contentFilter?: string;
-    emptyDocuments?: boolean;
-    emptyInstances?: boolean;
-    hasNewMovementsNow?: boolean;
-  };
+  filters: FilterValues;
   onFiltersChange: (filters: any) => void;
   onApplyFilters: () => void;
   onClearFilters: () => void;
@@ -474,18 +79,21 @@ function isDefaultFilters(filters: FilterValues) {
   return (
     (filters.search === "" || !filters.search) &&
     (filters.status === "all" || !filters.status) &&
-    (filters.type === "all" || !filters.type) &&
+    (filters.classProcess === "all" || !filters.classProcess) &&
     (filters.lossReason === "all" || !filters.lossReason) &&
     (filters.contentFilter === "all" || !filters.contentFilter) &&
     !filters.startDate &&
-    !filters.endDate
+    !filters.endDate &&
+    !filters.emptyDocuments &&
+    !filters.hasSecondInstance &&
+    !filters.hasAutos &&
+    !filters.hasAcordao
   );
 }
 
 const defaultFilters: FilterValues = {
   search: "",
   status: "all",
-  type: "all",
   startDate: undefined,
   endDate: undefined,
   lossReason: "all",
@@ -493,21 +101,21 @@ const defaultFilters: FilterValues = {
   emptyDocuments: false,
   emptyInstances: false,
   hasNewMovementsNow: false,
+  hasSecondInstance: false,
+  classProcess: "all",
+  hasAutos: false,
+  hasAcordao: false,
 };
 
 export function FiltersBar({
   filters,
   onFiltersChange,
   onApplyFilters,
-  onClearFilters,
   isLoading = false,
 }: FiltersBarProps) {
   const [mounted, setMounted] = useState(false);
   const [dateModalOpen, setDateModalOpen] = useState(false);
   const { theme } = useTheme();
-
-  const { data: rejectionReasons, isLoading: loadingReasons } =
-    useRejectionReasons();
 
   useEffect(() => {
     setMounted(true);
@@ -546,7 +154,6 @@ export function FiltersBar({
     // Auto-apply filters for status, type, lossReason, contentFilter changes and date changes (immediate)
     if (
       key === "status" ||
-      key === "type" ||
       key === "lossReason" ||
       key === "contentFilter" ||
       key === "startDate" ||
@@ -561,11 +168,14 @@ export function FiltersBar({
     return (
       filters.search ||
       filters.status !== "all" ||
-      (filters.type && filters.type !== "all") ||
+      (filters.classProcess && filters.classProcess !== "all") ||
       (filters.lossReason && filters.lossReason !== "all") ||
       (filters.contentFilter && filters.contentFilter !== "all") ||
       filters.startDate ||
-      filters.endDate
+      filters.endDate ||
+      filters.hasSecondInstance ||
+      filters.hasAutos ||
+      filters.hasAcordao
     );
   };
 
@@ -595,7 +205,31 @@ export function FiltersBar({
       </Card>
     );
   }
+  type ContentFilterKeys =
+    | "emptyDocuments"
+    | "hasSecondInstance"
+    | "hasAutos"
+    | "hasAcordao";
 
+  const contentOptions: { label: string; value: ContentFilterKeys }[] = [
+    { label: "Sem documentos", value: "emptyDocuments" },
+    { label: "Contém segunda instancia", value: "hasSecondInstance" },
+    { label: "Contém autos", value: "hasAutos" },
+    { label: "Contém acórdão", value: "hasAcordao" },
+  ];
+  function getSelectedLabel(filters: FilterValues) {
+    const selected = [];
+
+    if (filters.emptyDocuments) selected.push("Sem documentos");
+    if (filters.hasSecondInstance) selected.push("Contém segunda instancia");
+    if (filters.hasAutos) selected.push("Contém autos");
+    if (filters.hasAcordao) selected.push("Contém acórdão");
+
+    if (selected.length === 0) return "Selecionar filtros...";
+    if (selected.length === 1) return selected[0];
+
+    return `${selected.length} selecionados`;
+  }
   return (
     <Card
       className={`border shadow-lg ${
@@ -963,175 +597,6 @@ export function FiltersBar({
               </Dialog>
             </div>
 
-            {/* Type (Etapa) Dropdown */}
-            {/* <div className="w-full lg:flex-1 lg:min-w-[140px] lg:max-w-[180px]">
-              <Label
-                htmlFor="type"
-                className={`text-sm font-semibold mb-2 block ${
-                  theme === "dark" ? "text-gray-300" : "text-gray-900"
-                }`}
-              >
-                Etapa
-              </Label>
-              <Select
-                value={filters.type || "all"}
-                onValueChange={(value) => updateFilter("type", value)}
-              >
-                <SelectTrigger className={`w-full h-12 rounded-xl transition-all duration-200 shadow-sm ${
-                  theme === "dark"
-                    ? "border-gray-600 bg-gray-800 text-white focus:border-blue-400"
-                    : "border-gray-200 focus:border-blue-500 bg-white"
-                }`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className={`rounded-xl shadow-lg border ${
-                  theme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-white"
-                }`}>
-                  <SelectItem value="all" className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                      Todas
-                    </div>
-                  </SelectItem>
-                  <SelectItem value={StageProcess.PRE_ANALYSIS} className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                      Pré-Análise
-                    </div>
-                  </SelectItem>
-                  <SelectItem value={StageProcess.ANALYSIS} className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                      Análise
-                    </div>
-                  </SelectItem>
-                  <SelectItem value={StageProcess.CALCULATION} className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      Cálculo
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div> */}
-
-            {/* Status Dropdown */}
-            {/* <div className="w-full lg:flex-1 lg:min-w-[140px] lg:max-w-[180px]">
-              <Label
-                htmlFor="status"
-                className={`text-sm font-semibold mb-2 block ${
-                  theme === "dark" ? "text-gray-300" : "text-gray-900"
-                }`}
-              >
-                Status
-              </Label>
-              <Select
-                value={filters.status}
-                onValueChange={(value) => updateFilter("status", value)}
-              >
-                <SelectTrigger
-                  className={`w-full h-12 rounded-xl transition-all duration-200 shadow-sm ${
-                    theme === "dark"
-                      ? "border-gray-600 bg-gray-800 text-white focus:border-blue-400"
-                      : "border-gray-200 focus:border-blue-500 bg-white"
-                  }`}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent
-                  className={`rounded-xl shadow-lg border ${
-                    theme === "dark"
-                      ? "border-gray-700 bg-gray-800"
-                      : "border-gray-200 bg-white"
-                  }`}
-                >
-                  <SelectItem value="all" className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                      Todos
-                    </div>
-                  </SelectItem>
-                  <SelectItem value={Situation.APPROVED} className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      Aprovado
-                    </div>
-                  </SelectItem>
-                  <SelectItem value={Situation.LOSS} className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                      Rejeitado
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div> */}
-            {/* Loss Reason Filter - Select - Only show when status is LOSS */}
-            {filters.status === Situation.LOSS && (
-              <div className="w-full lg:flex-1 lg:min-w-[180px] lg:max-w-[220px]">
-                <Label
-                  className={`text-sm font-semibold mb-2 block ${
-                    theme === "dark" ? "text-gray-300" : "text-gray-900"
-                  }`}
-                >
-                  Motivo de Perda
-                </Label>
-
-                {loadingReasons ? (
-                  <div className="flex items-center gap-2 p-4">
-                    <div className="w-4 h-4 border-2 border-purple-200 border-t-purple-500 rounded-full animate-spin"></div>
-                    <span
-                      className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}
-                    >
-                      Carregando motivos...
-                    </span>
-                  </div>
-                ) : (
-                  <Select
-                    value={filters.lossReason || "all"}
-                    onValueChange={(value) => updateFilter("lossReason", value)}
-                    disabled={loadingReasons}
-                  >
-                    <SelectTrigger
-                      className={`w-full h-12 rounded-xl transition-all duration-200 shadow-sm ${
-                        theme === "dark"
-                          ? "border-gray-600 bg-gray-800 text-white focus:border-purple-400"
-                          : "border-gray-200 focus:border-purple-500 bg-white"
-                      }`}
-                    >
-                      <SelectValue placeholder="Selecionar motivo de perda..." />
-                    </SelectTrigger>
-                    <SelectContent
-                      className={`rounded-xl shadow-lg border ${
-                        theme === "dark"
-                          ? "border-gray-700 bg-gray-800"
-                          : "border-gray-200 bg-white"
-                      }`}
-                    >
-                      <SelectItem value="all" className="rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                          Todos
-                        </div>
-                      </SelectItem>
-                      {(rejectionReasons || []).map((reason) => (
-                        <SelectItem
-                          key={reason.key}
-                          value={reason.key}
-                          className="rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                            {reason.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            )}
-
             {/* Content Filter - Select */}
             <div className="w-full lg:flex-1 lg:min-w-[180px] lg:max-w-[220px]">
               <Label
@@ -1141,26 +606,73 @@ export function FiltersBar({
               >
                 Filtros de Conteúdo
               </Label>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`w-full h-12 justify-between rounded-xl shadow-sm ${
+                      theme === "dark"
+                        ? "border-gray-600 bg-gray-800 text-white"
+                        : "border-gray-200 bg-white"
+                    }`}
+                  >
+                    {getSelectedLabel(filters)}
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent
+                  className={`w-full rounded-xl shadow-lg border ${
+                    theme === "dark"
+                      ? "border-gray-700 bg-gray-800"
+                      : "border-gray-200 bg-white"
+                  }`}
+                >
+                  {contentOptions.map((option) => (
+                    <DropdownMenuCheckboxItem
+                      key={option.value}
+                      checked={filters[option.value]}
+                      onCheckedChange={(checked) => {
+                        const newFilters = {
+                          ...filters,
+                          [option.value]: checked,
+                        };
+
+                        onFiltersChange(newFilters);
+                        onApplyFilters();
+                      }}
+                      className="rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        {option.value === "emptyDocuments" && (
+                          <FileText className="h-4 w-4 text-cyan-500" />
+                        )}
+                        {option.label}
+                      </div>
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="w-full lg:flex-1 lg:min-w-[180px] lg:max-w-[220px]">
+              <Label
+                className={`text-sm font-semibold mb-2 block ${
+                  theme === "dark" ? "text-gray-300" : "text-gray-900"
+                }`}
+              >
+                Classe do Processo
+              </Label>
               <Select
-                value={filters.contentFilter || "all"}
+                value={filters.classProcess || "all"}
                 onValueChange={(value) => {
-                  // Reset all content filters
+                  // Reset all process class filters
                   const newFilters = {
                     ...filters,
-                    contentFilter: value,
-                    emptyDocuments: false,
-                    emptyInstances: false,
-                    hasNewMovementsNow: false,
+                    classProcess: value,
                   };
 
                   // Set the selected filter to true
-                  if (value === "emptyDocuments") {
-                    newFilters.emptyDocuments = true;
-                  } else if (value === "emptyInstances") {
-                    newFilters.emptyInstances = true;
-                  } else if (value === "hasNewMovementsNow") {
-                    newFilters.hasNewMovementsNow = true;
-                  }
+                  newFilters.classProcess = value;
 
                   onFiltersChange(newFilters);
                   onApplyFilters();
@@ -1188,24 +700,21 @@ export function FiltersBar({
                       Todos
                     </div>
                   </SelectItem>
-                  <SelectItem value="emptyDocuments" className="rounded-lg">
+                  <SelectItem value="MAIN" className="rounded-lg">
                     <div className="flex items-center gap-3">
                       <FileText className="h-4 w-4 text-cyan-500" />
-                      Sem documentos
+                      Processo Principal
                     </div>
                   </SelectItem>
-                  {/* <SelectItem value="emptyInstances" className="rounded-lg">
+                  <SelectItem
+                    value="PROVISIONAL_EXECUTION"
+                    className="rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
-                      <Layers className="h-4 w-4 text-teal-500" />
-                      Sem instâncias
+                      <Link className="h-4 w-4 text-cyan-500" />
+                      Execução Provisória
                     </div>
                   </SelectItem>
-                  <SelectItem value="hasNewMovementsNow" className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Activity className="h-4 w-4 text-amber-500" />
-                      Novas movimentações
-                    </div>
-                  </SelectItem> */}
                 </SelectContent>
               </Select>
             </div>
@@ -1248,7 +757,7 @@ export function FiltersBar({
                   Status
                 </div>
               )} */}
-              {filters.type && filters.type !== "all" && (
+              {/* {filters.type && filters.type !== "all" && (
                 <div
                   className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl border ${
                     theme === "dark"
@@ -1258,7 +767,7 @@ export function FiltersBar({
                 >
                   Etapa
                 </div>
-              )}
+              )} */}
               {filters.startDate && (
                 <div
                   className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl border ${

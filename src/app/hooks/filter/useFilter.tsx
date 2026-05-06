@@ -8,7 +8,7 @@ type FilterContextType = {
   filters: FilterState;
   setFilter: (
     key: string,
-    value: string | number | boolean | string[] | null | undefined
+    value: string | number | boolean | string[] | null | undefined,
   ) => void;
   resetFilters: () => void;
 };
@@ -26,7 +26,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
 
   const setFilter = (
     key: string,
-    value: string | number | boolean | string[] | null | undefined
+    value: string | number | boolean | string[] | null | undefined,
   ) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -46,6 +46,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
       emptyDocuments: false,
       emptyInstances: false,
       hasNewMovementsNow: false,
+      hasSecondInstance: false,
     });
   };
   return (
