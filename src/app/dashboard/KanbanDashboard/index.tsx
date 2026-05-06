@@ -674,13 +674,12 @@ export default function KanbanDashboard() {
         transition: "margin-right 0.3s ease-in-out",
       }}
     >
-      <main className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-8">
+      <main className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-8 bg-gradient-to-b from-background via-background to-muted/30">
         <>
           <div className="mb-4 flex items-center justify-end">
             <Button
-              variant="default"
               onClick={handleOpenInsertModal}
-              className="ml-4"
+              className="ml-4 bg-yellow-500 text-black hover:bg-yellow-600 shadow-md focus:ring-2 focus:ring-yellow-500/30"
             >
               Inserir Processo
             </Button>
@@ -735,7 +734,7 @@ export default function KanbanDashboard() {
               filters.hasNewMovementsNow) && (
               <div className="space-y-8">
                 {/* List/Table Skeleton */}
-                <div className="backdrop-blur-sm rounded-2xl border shadow-lg overflow-hidden bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
+                <div className="rounded-2xl border overflow-hidden bg-card/80 backdrop-blur-xl border-border shadow-xl">
                   <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="h-6 w-48 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
                   </div>
@@ -754,7 +753,7 @@ export default function KanbanDashboard() {
                   <div className="rounded-2xl shadow-lg p-6 border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 border-4 rounded-full animate-spin border-blue-200 dark:border-blue-400 border-t-blue-500"></div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                      <span className="font-medium text-foreground">
                         Aplicando filtros...
                       </span>
                     </div>
@@ -838,7 +837,7 @@ export default function KanbanDashboard() {
             /* List/Table View */
             <div className="backdrop-blur-sm rounded-2xl border shadow-lg overflow-hidden bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
               <div className="px-6 py-4 border-b flex items-center justify-between border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                <h2 className="text-lg font-semibold text-foreground tracking-tight">
                   Lista de Processos
                 </h2>
                 <div className="flex items-center gap-3">
@@ -846,13 +845,13 @@ export default function KanbanDashboard() {
                     variant="outline"
                     size="sm"
                     onClick={handleOpenExportDialog}
-                    className="gap-2 border-gray-300 hover:bg-gray-100 text-gray-700 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-gray-300"
+                    className="gap-2 border-border bg-background hover:bg-primary/10 text-foreground"
                     disabled={filteredProcesses.length === 0}
                   >
                     <Download className="w-4 h-4" />
                     <span className="hidden sm:inline">Exportar</span>
                   </Button>
-                  <div className="px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  <div className="px-3 py-1 rounded-full text-sm font-semibold border transition-colors bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-300 dark:border-yellow-500/20">
                     {(() => {
                       const total = totalProcessesInDB;
                       return `${total} ${total === 1 ? "processo" : "processos"}`;
@@ -864,7 +863,7 @@ export default function KanbanDashboard() {
               {/* Action Bar - Shows when items are selected */}
               {selectedCount > 0 && (
                 <div className="px-6 py-3 border-b flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border-gray-200 dark:border-gray-700">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-medium text-foreground">
                     {selectedCount} selecionado{selectedCount !== 1 ? "s" : ""}
                   </span>
                   <div className="flex-1" />
@@ -875,8 +874,8 @@ export default function KanbanDashboard() {
               {selectAllMode === "page" &&
                 allVisibleSelected &&
                 totalProcessesInDB > filteredProcesses.length && (
-                  <div className="px-6 py-3 border-b flex items-center gap-3 bg-blue-50 dark:bg-blue-900/30 border-gray-200 dark:border-gray-700">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <div className="px-6 py-3 border-b flex items-center gap-3 bg-primary/10 border-primary/20 dark:border-gray-700">
+                    <span className="text-sm text-foreground">
                       {filteredProcesses.length} processo
                       {filteredProcesses.length !== 1 ? "s" : ""} selecionado
                       {filteredProcesses.length !== 1 ? "s" : ""} nesta página.
@@ -892,7 +891,7 @@ export default function KanbanDashboard() {
 
               {/* Banner showing all selected */}
               {selectAllMode === "all" && (
-                <div className="px-6 py-3 border-b flex items-center gap-3 bg-blue-50 dark:bg-blue-900/30 border-gray-200 dark:border-gray-700">
+                <div className="px-6 py-3 border-b flex items-center gap-3 bg-primary/10 border-primary/20 dark:border-gray-700">
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                     Todos os {totalProcessesInDB} processos estão selecionados.
                   </span>
@@ -996,7 +995,7 @@ export default function KanbanDashboard() {
                               key={process._id}
                               className={`transition-all duration-150 cursor-pointer ${
                                 isSelected
-                                  ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700/50"
+                                  ? "bg-primary/10 border-primary/30 dark:border-blue-700/50"
                                   : "hover:bg-gray-50 border-gray-200 dark:hover:bg-gray-700/50 dark:border-gray-700"
                               }`}
                             >
@@ -1059,7 +1058,7 @@ export default function KanbanDashboard() {
                                 }
                               >
                                 <div className="flex flex-col gap-1">
-                                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                  <span className="text-sm font-semibold text-foreground">
                                     {capitalizeWords(
                                       getProcessTitle(
                                         process.processParts || [],
@@ -1081,7 +1080,7 @@ export default function KanbanDashboard() {
                                   (window.location.href = `/processes/${process.number}`)
                                 }
                               >
-                                <span className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                                <span className="text-xs font-mono text-muted-foreground">
                                   {process.number}
                                 </span>
                               </TableCell>
@@ -1108,7 +1107,7 @@ export default function KanbanDashboard() {
                                   (window.location.href = `/processes/${process.number}`)
                                 }
                               >
-                                <span className="text-xs text-gray-600 dark:text-gray-400">
+                                <span className="text-xs text-muted-foreground">
                                   {process.createdAt
                                     ? new Date(
                                         process.createdAt,
@@ -1125,7 +1124,7 @@ export default function KanbanDashboard() {
                                 {process.hasInstancias ? (
                                   <Badge
                                     variant="outline"
-                                    className="border-blue-500 text-blue-700 bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:bg-blue-950/30"
+                                    className="border-primary text-primary bg-primary/10 dark:border-blue-500 dark:text-blue-400 dark:bg-blue-950/30"
                                   >
                                     ✓
                                   </Badge>
@@ -1144,7 +1143,7 @@ export default function KanbanDashboard() {
                                 {process.hasDocuments ? (
                                   <Badge
                                     variant="outline"
-                                    className="border-green-500 text-green-700 bg-green-50 dark:border-green-500 dark:text-green-400 dark:bg-green-950/30"
+                                    className="border-emerald-500 text-emerald-600 bg-emerald-500/10 dark:border-green-500 dark:text-green-400 dark:bg-green-950/30"
                                   >
                                     ✓
                                   </Badge>
@@ -1198,7 +1197,7 @@ export default function KanbanDashboard() {
                                               variant="outline"
                                               className={`text-xs ${
                                                 isCompleted
-                                                  ? "border-green-500 text-green-700 bg-green-50 dark:border-green-500 dark:text-green-400 dark:bg-green-950/30"
+                                                  ? "border-emerald-500 text-emerald-600 bg-emerald-500/10 dark:border-green-500 dark:text-green-400 dark:bg-green-950/30"
                                                   : "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-950/30"
                                               }`}
                                               title={`${label}${isCompleted ? " - Concluída" : " - Pendente"}`}
@@ -1282,7 +1281,7 @@ export default function KanbanDashboard() {
       {showScrollTopButton && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 z-40 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl shadow-xl p-3 hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
+          className="fixed bottom-6 z-40 bg-primary text-primary-foreground rounded-2xl shadow-xl p-3 hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
           style={{
             right: showMassEditPanel ? "calc(420px + 1.5rem)" : "1.5rem",
             transition: "right 0.3s ease-in-out",

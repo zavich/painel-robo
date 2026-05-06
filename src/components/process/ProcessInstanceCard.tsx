@@ -33,31 +33,33 @@ export function ProcessInstanceCard({
   const getColorClass = () => {
     switch (instance) {
       case "1grau":
-        return "from-blue-500 to-blue-600";
+        return "from-primary to-primary-light";
       case "2grau":
-        return "from-purple-500 to-purple-600";
+        return "from-secondary to-accent";
       case "tst":
-        return "from-orange-500 to-orange-600";
+        return "from-success to-success-light";
       default:
-        return "from-gray-500 to-gray-600";
+        return "from-muted to-muted-foreground";
     }
   };
 
   return (
     <Card
       className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] ${
-        isActive 
-          ? 'border-2 border-blue-500 ring-4 ring-blue-200 dark:ring-blue-900/30' 
-          : 'border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
+        isActive
+          ? "border-2 border-primary ring-4 ring-primary/20 dark:ring-primary-foreground/30"
+          : "border border-border dark:border-border hover:border-primary dark:hover:border-primary-foreground"
       }`}
       onClick={onClick}
     >
       <CardHeader className="pb-2 px-2 sm:px-3 pt-2">
         <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-          <div className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-lg bg-gradient-to-br ${getColorClass()} flex items-center justify-center text-white shadow-md flex-shrink-0`}>
+          <div
+            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-lg bg-gradient-to-br ${getColorClass()} flex items-center justify-center text-white shadow-md flex-shrink-0`}
+          >
             {getIcon()}
           </div>
-          <CardTitle className="text-xs sm:text-sm md:text-base font-bold text-gray-900 dark:text-gray-100 truncate">
+          <CardTitle className="text-xs sm:text-sm md:text-base font-bold text-foreground dark:text-card-foreground truncate">
             {title}
           </CardTitle>
         </div>
@@ -65,4 +67,3 @@ export function ProcessInstanceCard({
     </Card>
   );
 }
-

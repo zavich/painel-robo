@@ -183,7 +183,7 @@ export function ProcessHeader({
   // Conteúdo do meio da primeira linha: Reclamante vs Reclamada (editável com 2 campos)
   const middleContent = isEditingTitle ? (
     <div className="flex items-center gap-2 w-full max-w-4xl">
-      <User2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+      <User2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary dark:text-primary flex-shrink-0" />
       <Input
         ref={claimantInputRef}
         value={editedClaimant}
@@ -205,7 +205,7 @@ export function ProcessHeader({
       <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm font-semibold flex-shrink-0">
         VS
       </span>
-      <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+      <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary dark:text-primary flex-shrink-0" />
       <Input
         ref={defendantInputRef}
         value={editedDefendant}
@@ -253,7 +253,7 @@ export function ProcessHeader({
   ) : (
     // Mostrar título no formato: "👤 NOME VS 🏢 EMPRESA"
     <div className="flex items-center gap-2 min-w-0 max-w-full group">
-      <User2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+      <User2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary dark:text-primary flex-shrink-0" />
       {(() => {
         // Se há título gerado e não é vazio, usar ele
         if (
@@ -276,17 +276,17 @@ export function ProcessHeader({
             return (
               <>
                 <span
-                  className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                  className="font-semibold text-foreground text-xs sm:text-sm truncate min-w-0"
                   title={parts[0]}
                 >
                   {capitalizeWords(parts[0])}
                 </span>
-                <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">
+                <span className="text-muted-foreground text-xs sm:text-sm flex-shrink-0">
                   Vs
                 </span>
-                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 <span
-                  className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                  className="font-semibold text-foreground text-xs sm:text-sm truncate min-w-0"
                   title={parts.slice(1).join(" VS ")}
                 >
                   {capitalizeWords(parts.slice(1).join(" VS "))}
@@ -297,7 +297,7 @@ export function ProcessHeader({
             // Só um nome (sem separador)
             return (
               <span
-                className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                className="font-semibold text-foreground text-xs sm:text-sm truncate min-w-0"
                 title={displayTitle}
               >
                 {capitalizeWords(displayTitle)}
@@ -316,17 +316,17 @@ export function ProcessHeader({
           return (
             <>
               <span
-                className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                className="font-semibold text-foreground text-xs sm:text-sm truncate min-w-0"
                 title={claimantName}
               >
                 {capitalizeWords(claimantName)}
               </span>
-              <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">
+              <span className="text-muted-foreground text-xs sm:text-sm flex-shrink-0">
                 Vs
               </span>
-              <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <span
-                className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+                className="font-semibold text-foreground text-xs sm:text-sm truncate min-w-0"
                 title={defendantName}
               >
                 {capitalizeWords(defendantName)}
@@ -339,17 +339,17 @@ export function ProcessHeader({
         return (
           <>
             <span
-              className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+              className="font-semibold text-foreground text-xs sm:text-sm truncate min-w-0"
               title={claimantName}
             >
               {capitalizeWords(claimantName) || "-"}
             </span>
-            <span className="text-gray-400 dark:text-gray-500 text-xs sm:text-sm flex-shrink-0">
+            <span className="text-muted-foreground text-xs sm:text-sm flex-shrink-0">
               Vs
             </span>
-            <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             <span
-              className="font-semibold text-gray-900 dark:text-gray-100 text-xs sm:text-sm truncate min-w-0"
+              className="font-semibold text-foreground text-xs sm:text-sm truncate min-w-0"
               title={defendantName}
             >
               {capitalizeWords(defendantName)}
@@ -364,9 +364,9 @@ export function ProcessHeader({
               size="sm"
               variant="ghost"
               onClick={onStartEditTitle}
-              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-50 dark:hover:bg-blue-900/30"
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 dark:hover:bg-primary-foreground/10"
             >
-              <Edit2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              <Edit2 className="h-3.5 w-3.5 text-primary dark:text-primary" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
@@ -421,13 +421,13 @@ export function ProcessHeader({
                       );
                     }
                   }}
-                  className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors group"
+                  className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-primary/10 dark:bg-primary-foreground/10 border border-primary rounded-md cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors group"
                 >
-                  <Link2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600 dark:text-blue-400" />
-                  <span className="font-mono font-bold text-blue-700 dark:text-blue-300 text-[10px] sm:text-xs whitespace-nowrap">
+                  <Link2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary" />
+                  <span className="font-mono font-bold text-primary dark:text-primary text-[10px] sm:text-xs whitespace-nowrap">
                     {process?.processMain?.number}
                   </span>
-                  <ExternalLink className="h-3 w-3 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ExternalLink className="h-3 w-3 text-primary dark:text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -442,16 +442,16 @@ export function ProcessHeader({
               <TooltipTrigger asChild>
                 <div
                   onClick={handleCopyProcessNumber}
-                  className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors group"
+                  className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-primary/10 dark:bg-primary-foreground/10 border border-primary rounded-md cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors group"
                 >
-                  <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600 dark:text-blue-400" />
-                  <span className="font-mono font-bold text-blue-700 dark:text-blue-300 text-[10px] sm:text-xs whitespace-nowrap">
+                  <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary" />
+                  <span className="font-mono font-bold text-primary dark:text-primary text-[10px] sm:text-xs whitespace-nowrap">
                     {process?.number}
                   </span>
                   {copied ? (
                     <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
                   ) : (
-                    <Copy className="h-3 w-3 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Copy className="h-3 w-3 text-primary dark:text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
               </TooltipTrigger>
@@ -520,16 +520,16 @@ export function ProcessHeader({
             <TooltipTrigger asChild>
               <div
                 onClick={handleCopyProcessNumber}
-                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors group"
+                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-primary/10 dark:bg-primary-foreground/10 border border-primary rounded-md cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors group"
               >
-                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-blue-600 dark:text-blue-400" />
-                <span className="font-mono font-bold text-blue-700 dark:text-blue-300 text-[10px] sm:text-xs whitespace-nowrap">
+                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary" />
+                <span className="font-mono font-bold text-primary dark:text-primary text-[10px] sm:text-xs whitespace-nowrap">
                   {process?.number}
                 </span>
                 {copied ? (
                   <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
                 ) : (
-                  <Copy className="h-3 w-3 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Copy className="h-3 w-3 text-primary dark:text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </div>
             </TooltipTrigger>
@@ -539,7 +539,7 @@ export function ProcessHeader({
           </Tooltip>
         )}
 
-        <span className="hidden sm:inline text-gray-300 dark:text-gray-600 text-xs sm:text-sm">
+        <span className="hidden sm:inline text-muted-foreground text-xs sm:text-sm">
           |
         </span>
 
@@ -548,9 +548,9 @@ export function ProcessHeader({
           variant="ghost"
           size="sm"
           onClick={() => setShowPartsModal(true)}
-          className="flex items-center gap-1 sm:gap-1.5 h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 flex-shrink-0"
+          className="flex items-center gap-1 sm:gap-1.5 h-7 sm:h-8 px-2 sm:px-3 text-[10px] sm:text-xs hover:bg-primary/10 dark:hover:bg-primary-foreground/10 flex-shrink-0"
         >
-          <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+          <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
           <span className="whitespace-nowrap">
             <span className="hidden sm:inline">
               Ver Todas ({activeParts.length + passiveParts.length})
@@ -563,8 +563,8 @@ export function ProcessHeader({
 
         {isRefetching && !isSyncing && (
           <div className="flex items-center gap-1 ml-1 sm:ml-2">
-            <RefreshCw className="h-3 w-3 text-blue-500 dark:text-blue-400 animate-spin" />
-            <span className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 font-medium">
+            <RefreshCw className="h-3 w-3 text-primary animate-spin" />
+            <span className="text-[10px] sm:text-xs text-primary font-medium">
               Atualizando...
             </span>
           </div>
@@ -891,136 +891,6 @@ export function ProcessHeader({
     </>
   );
 
-  // Botões para mobile - apenas principais
-  const mobileActions = (
-    <div className="flex flex-col gap-2 w-full">
-      {/* Reclamante vs Reclamada - Mobile */}
-      {isEditingTitle ? (
-        <div className="flex flex-col gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-          <Label className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-            Editando Título
-          </Label>
-          <div className="space-y-2">
-            <div>
-              <Label className="text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                👤 Reclamante
-              </Label>
-              <Input
-                ref={claimantInputRef}
-                value={editedClaimant}
-                onChange={onClaimantChange}
-                placeholder="Nome do reclamante"
-                className="text-xs font-semibold"
-                disabled={isSavingTitle}
-              />
-            </div>
-            <div>
-              <Label className="text-[10px] text-gray-600 dark:text-gray-400 mb-1">
-                🏢 Empresa
-              </Label>
-              <Input
-                ref={defendantInputRef}
-                value={editedDefendant}
-                onChange={onDefendantChange}
-                placeholder="Nome da empresa"
-                className="text-xs font-semibold"
-                disabled={isSavingTitle}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={onSaveTitle}
-              disabled={
-                isSavingTitle ||
-                (!editedClaimant?.trim() && !editedDefendant?.trim())
-              }
-              className="flex-1 bg-green-600 hover:bg-green-700"
-            >
-              {isSavingTitle ? (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-2 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-3.5 w-3.5 mr-2" />
-                  Salvar
-                </>
-              )}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onCancelEditTitle}
-              disabled={isSavingTitle}
-              className="flex-1"
-            >
-              <X className="h-3.5 w-3.5 mr-2" />
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      ) : (
-        // Mobile: Mostrar título (customizado ou gerado) com estilo padrão
-        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 min-w-0">
-          <User2 className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-          <span
-            className="font-semibold text-gray-900 dark:text-gray-100 text-xs truncate min-w-0 flex-1"
-            title={displayTitle}
-          >
-            {displayTitle.toUpperCase() ||
-              `${claimantName.toUpperCase()} VS ${defendantName.toUpperCase()}`}
-          </span>
-          <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-          {onStartEditTitle && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onStartEditTitle}
-              className="h-6 w-6 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 ml-auto flex-shrink-0"
-            >
-              <Edit2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-            </Button>
-          )}
-        </div>
-      )}
-
-      {onViewPreAnalysis && (
-        <Button
-          variant="outline"
-          className="w-full justify-start text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 hover:bg-yellow-100 hover:text-yellow-800 hover:border-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300 font-medium"
-          onClick={onViewPreAnalysis}
-        >
-          <FileSearch className="h-4 w-4 mr-2" />
-          Pré-Análise
-        </Button>
-      )}
-      {onViewAnalysis && (
-        <Button
-          variant="outline"
-          className="w-full justify-start text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 dark:hover:bg-orange-900/30 dark:hover:text-orange-300 font-medium"
-          onClick={onViewAnalysis}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Análise
-        </Button>
-      )}
-      {process?.situation === Situation.LOSS && (
-        <Button
-          variant="outline"
-          className="w-full justify-start text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 font-medium"
-          onClick={onReopen}
-          disabled={isPending}
-        >
-          <Clock className="h-4 w-4 mr-2" />
-          Reabrir Processo
-        </Button>
-      )}
-    </div>
-  );
-
   const { theme } = useTheme();
   const [processMenuOpen, setProcessMenuOpen] = useState(false);
 
@@ -1197,7 +1067,7 @@ export function ProcessHeader({
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Users className="h-5 w-5 text-primary dark:text-primary" />
               Partes e Empresas do Processo
             </DialogTitle>
           </DialogHeader>
@@ -1213,16 +1083,16 @@ export function ProcessHeader({
                   {activeParts.map((part, idx) => (
                     <div
                       key={idx}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm"
+                      className="bg-card dark:bg-card border border-border dark:border-border rounded-lg p-3 text-sm"
                     >
                       <Badge variant="outline" className="mb-2 text-xs">
                         {part.tipo}
                       </Badge>
-                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">
+                      <p className="font-medium text-foreground dark:text-card-foreground mb-1 break-words">
                         {part.nome}
                       </p>
                       {part.documento?.numero && (
-                        <p className="text-gray-600 dark:text-gray-400 text-xs break-all">
+                        <p className="text-muted-foreground dark:text-muted text-xs break-all">
                           {part.documento.tipo === "CPF"
                             ? `CPF: ${formatCpf(part.documento.numero)}`
                             : `${part.documento.tipo}: ${part.documento.numero}`}
@@ -1245,16 +1115,16 @@ export function ProcessHeader({
                   {passiveParts.map((part, idx) => (
                     <div
                       key={idx}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm"
+                      className="bg-card dark:bg-card border border-border dark:border-border rounded-lg p-3 text-sm"
                     >
                       <Badge variant="outline" className="mb-2 text-xs">
                         {part.tipo}
                       </Badge>
-                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">
+                      <p className="font-medium text-foreground dark:text-card-foreground mb-1 break-words">
                         {part.nome}
                       </p>
                       {part.documento?.numero && (
-                        <p className="text-gray-600 dark:text-gray-400 text-xs break-all">
+                        <p className="text-muted-foreground dark:text-muted text-xs break-all">
                           {part.documento.tipo === "CPF"
                             ? `CPF: ${formatCpf(part.documento.numero)}`
                             : `${part.documento.tipo}: ${part.documento.numero}`}
@@ -1269,8 +1139,8 @@ export function ProcessHeader({
             {/* Empresas */}
             {companies.length > 0 && (
               <div className="min-w-0">
-                <h4 className="font-semibold text-sm mb-3 text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                  <Building2 className="h-4 w-4 flex-shrink-0" />
+                <h4 className="font-semibold text-sm mb-3 text-primary dark:text-primary flex items-center gap-2">
+                  <Building2 className="h-4 w-4 flex-shrink-0 text-primary dark:text-primary" />
                   Empresas Envolvidas ({companies.length})
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1281,12 +1151,12 @@ export function ProcessHeader({
                         onCompanyClick?.(company);
                         setShowPartsModal(false);
                       }}
-                      className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3 text-sm cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                      className="bg-primary/10 dark:bg-primary-foreground/10 border border-primary dark:border-primary-foreground rounded-lg p-3 text-sm cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors"
                     >
-                      <p className="font-medium text-gray-900 dark:text-gray-100 mb-1 break-words">
+                      <p className="font-medium text-foreground dark:text-card-foreground mb-1 break-words">
                         {company.name}
                       </p>
-                      <p className="text-gray-600 dark:text-gray-400 mb-2 text-xs break-all">
+                      <p className="text-muted-foreground dark:text-muted mb-2 text-xs break-all">
                         CNPJ: {mascararCNPJ(company.cnpj)}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
@@ -1317,7 +1187,7 @@ export function ProcessHeader({
                         {!company.specialRule && (
                           <Badge
                             variant="outline"
-                            className="text-xs text-gray-500 dark:text-gray-400"
+                            className="text-xs text-muted-foreground dark:text-muted"
                           >
                             Solvência: N/D
                           </Badge>
@@ -1333,8 +1203,8 @@ export function ProcessHeader({
             {activeParts.length === 0 &&
               passiveParts.length === 0 &&
               companies.length === 0 && (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <div className="text-center py-8 text-muted-foreground dark:text-muted">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50 text-primary dark:text-primary" />
                   <p>Nenhuma parte ou empresa encontrada para este processo.</p>
                 </div>
               )}

@@ -192,7 +192,7 @@ export function FiltersBar({
       <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50/50">
         <CardContent className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center shadow-sm">
               <Filter className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
@@ -225,7 +225,7 @@ export function FiltersBar({
     if (filters.hasAutos) selected.push("Contém autos");
     if (filters.hasAcordao) selected.push("Contém acórdão");
 
-    if (selected.length === 0) return "Selecionar filtros...";
+    if (selected.length === 0) return "Selecionar filtros";
     if (selected.length === 1) return selected[0];
 
     return `${selected.length} selecionados`;
@@ -241,7 +241,7 @@ export function FiltersBar({
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+          <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-lg flex items-center justify-center shadow-sm">
             <Filter className="h-4 w-4 text-white" />
           </div>
           <div className="flex-1">
@@ -255,10 +255,10 @@ export function FiltersBar({
               </h3>
               {isLoading && (
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+                  <div className="w-3 h-3 border-2 border-yellow-200 border-t-yellow-500 rounded-full animate-spin"></div>
                   <span
                     className={`text-xs font-medium ${
-                      theme === "dark" ? "text-blue-400" : "text-blue-600"
+                      theme === "dark" ? "text-yellow-400" : "text-yellow-600"
                     }`}
                   >
                     Aplicando...
@@ -299,8 +299,8 @@ export function FiltersBar({
                   onChange={(e) => updateFilter("search", e.target.value)}
                   className={`pl-12 h-12 rounded-xl transition-all duration-200 shadow-sm ${
                     theme === "dark"
-                      ? "border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-400"
-                      : "border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                      ? "border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:border-yellow-400 focus:ring-yellow-400"
+                      : "border-gray-200 focus:border-yellow-500 focus:ring-yellow-500 bg-white"
                   }`}
                 />
               </div>
@@ -342,78 +342,88 @@ export function FiltersBar({
                   <button
                     type="button"
                     className={cn(
-                      `w-full h-9 rounded-xl transition-all duration-200 shadow-sm flex items-center justify-between gap-2 px-3 border ${
-                        theme === "dark"
-                          ? "border-gray-600 bg-gray-800 text-white hover:border-blue-400 hover:bg-gray-700 focus:border-blue-400 focus:outline-none"
-                          : "border-gray-200 hover:border-blue-500 hover:bg-blue-50 bg-white focus:border-blue-500 focus:outline-none"
-                      }`,
+                      "w-full justify-start text-left font-normal h-10 rounded-lg transition-colors border flex items-center gap-2 px-3",
+                      theme === "dark"
+                        ? "border-gray-600 bg-gray-800 text-gray-200 hover:bg-gray-700/30 focus:border-yellow-400"
+                        : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 focus:border-yellow-500",
                       !filters.startDate &&
-                        !filters.endDate &&
                         (theme === "dark" ? "text-gray-400" : "text-gray-500"),
                     )}
                   >
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <CalendarIcon className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate text-sm">
-                        {filters.startDate && filters.endDate
-                          ? `${format(filters.startDate, "dd/MM/yyyy", { locale: ptBR })} - ${format(filters.endDate, "dd/MM/yyyy", { locale: ptBR })}`
-                          : filters.startDate
-                            ? `A partir de ${format(filters.startDate, "dd/MM/yyyy", { locale: ptBR })}`
-                            : filters.endDate
-                              ? `Até ${format(filters.endDate, "dd/MM/yyyy", { locale: ptBR })}`
-                              : "Selecionar período"}
-                      </span>
-                    </div>
+                    <CalendarIcon className="h-4 w-4 flex-shrink-0 opacity-70" />
+
+                    <span className="truncate text-sm flex-1">
+                      {filters.startDate && filters.endDate
+                        ? `${format(filters.startDate, "dd/MM/yyyy", { locale: ptBR })} - ${format(filters.endDate, "dd/MM/yyyy", { locale: ptBR })}`
+                        : filters.startDate
+                          ? `A partir de ${format(filters.startDate, "dd/MM/yyyy", { locale: ptBR })}`
+                          : filters.endDate
+                            ? `Até ${format(filters.endDate, "dd/MM/yyyy", { locale: ptBR })}`
+                            : "Selecionar período"}
+                    </span>
+
                     <ChevronDownIcon className="h-4 w-4 opacity-50 flex-shrink-0" />
                   </button>
                 </DialogTrigger>
+
                 <DialogContent
-                  className={`rounded-xl shadow-lg ${
+                  className={cn(
+                    "rounded-xl shadow-lg border",
                     theme === "dark"
-                      ? "bg-gray-800 border-gray-700"
-                      : "bg-white border-gray-200"
-                  }`}
+                      ? "bg-gray-800 border-gray-700 text-gray-100"
+                      : "bg-white border-gray-200 text-gray-900",
+                  )}
                 >
                   <DialogHeader>
                     <DialogTitle
-                      className={`${theme === "dark" ? "text-white" : "text-gray-900"}`}
+                      className={
+                        theme === "dark" ? "text-white" : "text-gray-900"
+                      }
                     >
                       Filtrar por Período
                     </DialogTitle>
+
                     <DialogDescription
-                      className={`${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}
+                      className={
+                        theme === "dark" ? "text-gray-400" : "text-gray-600"
+                      }
                     >
                       Selecione o período inicial e final para filtrar os
                       processos
                     </DialogDescription>
                   </DialogHeader>
+
                   <div className="space-y-6 py-4">
-                    {/* Start Date */}
+                    {/* START DATE */}
                     <div className="space-y-2">
                       <Label
-                        className={`text-sm font-semibold ${
+                        className={
                           theme === "dark" ? "text-gray-300" : "text-gray-900"
-                        }`}
+                        }
                       >
                         Data Inicial
                       </Label>
+
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
-                              `w-full justify-start text-left font-normal h-10 rounded-lg transition-all duration-200 ${
-                                theme === "dark"
-                                  ? "border-gray-600 bg-gray-800 text-white hover:border-blue-400 hover:bg-gray-700"
-                                  : "border-gray-200 hover:border-blue-500 hover:bg-blue-50 bg-white"
-                              }`,
+                              "w-full justify-start text-left font-normal h-10 rounded-lg transition-all duration-200 border flex items-center gap-2 px-3",
+
+                              theme === "dark"
+                                ? "border-gray-600 bg-gray-800 text-gray-200 hover:bg-yellow-500/10 hover:border-yellow-400 hover:text-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-500/20"
+                                : "border-gray-200 bg-white text-gray-700 hover:bg-yellow-50 hover:border-yellow-400 hover:text-gray-900 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20",
+
+                              // estado vazio
                               !filters.startDate &&
                                 (theme === "dark"
                                   ? "text-gray-400"
                                   : "text-gray-500"),
                             )}
                           >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
+
                             {filters.startDate
                               ? format(filters.startDate, "dd/MM/yyyy", {
                                   locale: ptBR,
@@ -421,12 +431,14 @@ export function FiltersBar({
                               : "Data inicial"}
                           </Button>
                         </PopoverTrigger>
+
                         <PopoverContent
-                          className={`w-auto p-0 rounded-xl shadow-lg border ${
+                          className={cn(
+                            "w-auto p-0 rounded-xl shadow-lg border",
                             theme === "dark"
                               ? "border-gray-700 bg-gray-800"
-                              : "border-gray-200 bg-white"
-                          }`}
+                              : "border-gray-200 bg-white",
+                          )}
                           align="start"
                         >
                           <Calendar
@@ -440,32 +452,36 @@ export function FiltersBar({
                       </Popover>
                     </div>
 
-                    {/* End Date */}
+                    {/* END DATE */}
                     <div className="space-y-2">
                       <Label
-                        className={`text-sm font-semibold ${
+                        className={
                           theme === "dark" ? "text-gray-300" : "text-gray-900"
-                        }`}
+                        }
                       >
                         Data Final
                       </Label>
+
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
-                              `w-full justify-start text-left font-normal h-10 rounded-lg transition-all duration-200 ${
-                                theme === "dark"
-                                  ? "border-gray-600 bg-gray-800 text-white hover:border-blue-400 hover:bg-gray-700"
-                                  : "border-gray-200 hover:border-blue-500 hover:bg-blue-50 bg-white"
-                              }`,
-                              !filters.endDate &&
+                              "w-full justify-start text-left font-normal h-10 rounded-lg transition-all duration-200 border flex items-center gap-2 px-3",
+
+                              theme === "dark"
+                                ? "border-gray-600 bg-gray-800 text-gray-200 hover:bg-yellow-500/10 hover:border-yellow-400 hover:text-white focus:border-yellow-400 focus:ring-2 focus:ring-yellow-500/20"
+                                : "border-gray-200 bg-white text-gray-700 hover:bg-yellow-50 hover:border-yellow-400 hover:text-gray-900 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20",
+
+                              // estado vazio
+                              !filters.startDate &&
                                 (theme === "dark"
                                   ? "text-gray-400"
                                   : "text-gray-500"),
                             )}
                           >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
+
                             {filters.endDate
                               ? format(filters.endDate, "dd/MM/yyyy", {
                                   locale: ptBR,
@@ -473,12 +489,14 @@ export function FiltersBar({
                               : "Data final"}
                           </Button>
                         </PopoverTrigger>
+
                         <PopoverContent
-                          className={`w-auto p-0 rounded-xl shadow-lg border ${
+                          className={cn(
+                            "w-auto p-0 rounded-xl shadow-lg border",
                             theme === "dark"
                               ? "border-gray-700 bg-gray-800"
-                              : "border-gray-200 bg-white"
-                          }`}
+                              : "border-gray-200 bg-white",
+                          )}
                           align="start"
                         >
                           <Calendar
@@ -497,28 +515,34 @@ export function FiltersBar({
                       </Popover>
                     </div>
 
-                    {/* Date Shortcuts */}
+                    {/* SHORTCUTS */}
                     <div
-                      className={`pt-4 border-t ${
-                        theme === "dark" ? "border-gray-700" : "border-gray-200"
-                      }`}
+                      className={cn(
+                        "pt-4 border-t",
+                        theme === "dark"
+                          ? "border-gray-700"
+                          : "border-gray-200",
+                      )}
                     >
                       <Label
-                        className={`text-sm font-semibold mb-3 block ${
+                        className={
                           theme === "dark" ? "text-gray-300" : "text-gray-900"
-                        }`}
+                        }
                       >
                         Atalhos
                       </Label>
-                      <div className="flex flex-wrap gap-2">
+
+                      <div className="flex flex-wrap gap-2 mt-3">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={`h-9 px-3 text-xs rounded-lg transition-colors ${
+                          className={cn(
+                            "h-9 px-3 text-xs rounded-lg transition-all duration-200",
+
                             theme === "dark"
-                              ? "hover:bg-gray-700 hover:text-blue-300 text-gray-300"
-                              : "hover:bg-blue-50 hover:text-blue-700"
-                          }`}
+                              ? "text-gray-300 hover:bg-yellow-500/10 hover:text-yellow-300"
+                              : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700",
+                          )}
                           onClick={() => {
                             const today = new Date();
                             const lastWeek = new Date(
@@ -530,14 +554,17 @@ export function FiltersBar({
                         >
                           Última semana
                         </Button>
+
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={`h-9 px-3 text-xs rounded-lg transition-colors ${
+                          className={cn(
+                            "h-9 px-3 text-xs rounded-lg transition-all duration-200",
+
                             theme === "dark"
-                              ? "hover:bg-gray-700 hover:text-blue-300 text-gray-300"
-                              : "hover:bg-blue-50 hover:text-blue-700"
-                          }`}
+                              ? "text-gray-300 hover:bg-yellow-500/10 hover:text-yellow-300"
+                              : "text-gray-600 hover:bg-yellow-50 hover:text-yellow-700",
+                          )}
                           onClick={() => {
                             const today = new Date();
                             const lastMonth = new Date(
@@ -551,14 +578,16 @@ export function FiltersBar({
                         >
                           Último mês
                         </Button>
+
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={`h-9 px-3 text-xs rounded-lg transition-colors ${
+                          className={cn(
+                            "h-9 px-3 text-xs rounded-lg transition-colors",
                             theme === "dark"
-                              ? "hover:bg-gray-700 hover:text-red-300 text-gray-300"
-                              : "hover:bg-red-50 hover:text-red-700"
-                          }`}
+                              ? "text-gray-300 hover:bg-gray-700/30"
+                              : "text-gray-600 hover:bg-red-50 hover:text-red-600",
+                          )}
                           onClick={() => {
                             updateFilter("startDate", undefined);
                             updateFilter("endDate", undefined);
@@ -569,15 +598,20 @@ export function FiltersBar({
                       </div>
                     </div>
 
-                    {/* Apply Button */}
+                    {/* ACTIONS */}
                     <div className="flex justify-end gap-2 pt-2">
                       <Button
                         variant="outline"
                         onClick={() => setDateModalOpen(false)}
-                        className={theme === "dark" ? "border-gray-600" : ""}
+                        className={
+                          theme === "dark"
+                            ? "border-gray-600 text-gray-200"
+                            : ""
+                        }
                       >
                         Fechar
                       </Button>
+
                       <Button
                         onClick={() => {
                           onApplyFilters();
@@ -585,7 +619,7 @@ export function FiltersBar({
                         }}
                         className={
                           theme === "dark"
-                            ? "bg-blue-600 hover:bg-blue-700"
+                            ? "bg-yellow-500 hover:bg-yellow-600 text-black"
                             : ""
                         }
                       >
@@ -598,7 +632,7 @@ export function FiltersBar({
             </div>
 
             {/* Content Filter - Select */}
-            <div className="w-full lg:flex-1 lg:min-w-[180px] lg:max-w-[220px]">
+            <div className="w-full lg:flex-1 lg:min-w-[190px] lg:max-w-[220px]">
               <Label
                 className={`text-sm font-semibold mb-2 block ${
                   theme === "dark" ? "text-gray-300" : "text-gray-900"
@@ -611,22 +645,31 @@ export function FiltersBar({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className={`w-full h-12 justify-between rounded-xl shadow-sm ${
+                    className={cn(
+                      "rounded-lg transition-all duration-200 w-full justify-start focus:outline-none focus:ring-2 focus:ring-yellow-500/20 bg-white",
+
                       theme === "dark"
-                        ? "border-gray-600 bg-gray-800 text-white"
-                        : "border-gray-200 bg-white"
-                    }`}
+                        ? "text-gray-200 hover:bg-gray-700 hover:text-white focus:bg-gray-700"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:bg-yellow-50",
+
+                      "data-[state=checked]:bg-yellow-100 data-[state=checked]:text-yellow-700",
+                    )}
                   >
-                    {getSelectedLabel(filters)}
+                    <span className="truncate">
+                      {getSelectedLabel(filters)}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent
-                  className={`w-full rounded-xl shadow-lg border ${
+                  align="start"
+                  className={cn(
+                    "w-[220px] rounded-xl shadow-lg border p-1",
                     theme === "dark"
                       ? "border-gray-700 bg-gray-800"
-                      : "border-gray-200 bg-white"
-                  }`}
+                      : "border-gray-200 bg-white",
+                  )}
                 >
                   {contentOptions.map((option) => (
                     <DropdownMenuCheckboxItem
@@ -641,12 +684,14 @@ export function FiltersBar({
                         onFiltersChange(newFilters);
                         onApplyFilters();
                       }}
-                      className="rounded-lg"
+                      className={cn(
+                        "rounded-lg transition-colors",
+                        theme === "dark"
+                          ? "text-gray-200 hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white data-[state=checked]:bg-yellow-900/40 data-[state=checked]:text-yellow-300"
+                          : "text-gray-700 hover:bg-yellow-50 hover:text-gray-900 focus:bg-yellow-50 focus:text-gray-900 data-[state=checked]:bg-yellow-100 data-[state=checked]:text-yellow-700",
+                      )}
                     >
                       <div className="flex items-center gap-2">
-                        {option.value === "emptyDocuments" && (
-                          <FileText className="h-4 w-4 text-cyan-500" />
-                        )}
                         {option.label}
                       </div>
                     </DropdownMenuCheckboxItem>
@@ -654,7 +699,7 @@ export function FiltersBar({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="w-full lg:flex-1 lg:min-w-[180px] lg:max-w-[220px]">
+            <div className="w-full lg:flex-1 lg:min-w-[190px] lg:max-w-[220px]">
               <Label
                 className={`text-sm font-semibold mb-2 block ${
                   theme === "dark" ? "text-gray-300" : "text-gray-900"
@@ -662,56 +707,77 @@ export function FiltersBar({
               >
                 Classe do Processo
               </Label>
+
               <Select
                 value={filters.classProcess || "all"}
                 onValueChange={(value) => {
-                  // Reset all process class filters
-                  const newFilters = {
+                  onFiltersChange({
                     ...filters,
                     classProcess: value,
-                  };
-
-                  // Set the selected filter to true
-                  newFilters.classProcess = value;
-
-                  onFiltersChange(newFilters);
+                  });
                   onApplyFilters();
                 }}
               >
                 <SelectTrigger
-                  className={`w-full h-12 rounded-xl transition-all duration-200 shadow-sm ${
+                  className={cn(
+                    "w-full h-12 rounded-lg transition-colors justify-start",
                     theme === "dark"
-                      ? "border-gray-600 bg-gray-800 text-white focus:border-cyan-400"
-                      : "border-gray-200 focus:border-cyan-500 bg-white"
-                  }`}
+                      ? "border-gray-600 bg-gray-800 text-gray-200 hover:bg-gray-750 focus:bg-gray-700 focus:text-white"
+                      : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 focus:bg-yellow-50 focus:text-gray-900",
+                  )}
                 >
                   <SelectValue placeholder="Selecionar filtro de conteúdo..." />
                 </SelectTrigger>
+
                 <SelectContent
-                  className={`rounded-xl shadow-lg border ${
+                  className={cn(
+                    "rounded-xl shadow-lg border p-1 w-[220px]",
                     theme === "dark"
                       ? "border-gray-700 bg-gray-800"
-                      : "border-gray-200 bg-white"
-                  }`}
+                      : "border-gray-200 bg-white",
+                  )}
                 >
-                  <SelectItem value="all" className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                  <SelectItem
+                    value="all"
+                    className={cn(
+                      "rounded-lg transition-colors",
+                      theme === "dark"
+                        ? "text-gray-200 data-[highlighted]:bg-gray-700/40 data-[highlighted]:text-white data-[state=checked]:bg-gray-700/60"
+                        : "text-gray-700 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 data-[state=checked]:bg-yellow-100 data-[state=checked]:text-yellow-700",
+                    )}
+                  >
+                    <div className="flex items-center gap-2 text-inherit">
+                      <div className="w-3 h-3 rounded-full bg-gray-400" />
                       Todos
                     </div>
                   </SelectItem>
-                  <SelectItem value="MAIN" className="rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-cyan-500" />
+
+                  <SelectItem
+                    value="MAIN"
+                    className={cn(
+                      "rounded-lg transition-colors",
+                      theme === "dark"
+                        ? "text-gray-200 data-[highlighted]:bg-gray-700/40 data-[highlighted]:text-white data-[state=checked]:bg-gray-700/60"
+                        : "text-gray-700 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 data-[state=checked]:bg-yellow-100 data-[state=checked]:text-yellow-700",
+                    )}
+                  >
+                    <div className="flex items-center gap-2 text-inherit">
+                      <FileText className="h-4 w-4 text-gray-500" />
                       Processo Principal
                     </div>
                   </SelectItem>
+
                   <SelectItem
                     value="PROVISIONAL_EXECUTION"
-                    className="rounded-lg"
+                    className={cn(
+                      "rounded-lg transition-colors",
+                      theme === "dark"
+                        ? "text-gray-200 data-[highlighted]:bg-gray-700/40 data-[highlighted]:text-white data-[state=checked]:bg-gray-700/60"
+                        : "text-gray-700 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 data-[state=checked]:bg-yellow-100 data-[state=checked]:text-yellow-700",
+                    )}
                   >
-                    <div className="flex items-center gap-3">
-                      <Link className="h-4 w-4 text-cyan-500" />
+                    <div className="flex items-center gap-2 text-inherit">
+                      <Link className="h-4 w-4 text-gray-500" />
                       Execução Provisória
                     </div>
                   </SelectItem>
@@ -738,36 +804,14 @@ export function FiltersBar({
                 <div
                   className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl border ${
                     theme === "dark"
-                      ? "bg-blue-900/50 text-blue-300 border-blue-700"
-                      : "bg-blue-50 text-blue-700 border-blue-200"
+                      ? "bg-yellow-900/50 text-yellow-300 border-yellow-700"
+                      : "bg-yellow-50 text-yellow-700 border-yellow-200"
                   }`}
                 >
                   <Search className="h-4 w-4" />
                   Busca
                 </div>
               )}
-              {/* {filters.status !== "all" && (
-                <div
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl border ${
-                    theme === "dark"
-                      ? "bg-indigo-900/50 text-indigo-300 border-indigo-700"
-                      : "bg-indigo-50 text-indigo-700 border-indigo-200"
-                  }`}
-                >
-                  Status
-                </div>
-              )} */}
-              {/* {filters.type && filters.type !== "all" && (
-                <div
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl border ${
-                    theme === "dark"
-                      ? "bg-pink-900/50 text-pink-300 border-pink-700"
-                      : "bg-pink-50 text-pink-700 border-pink-200"
-                  }`}
-                >
-                  Etapa
-                </div>
-              )} */}
               {filters.startDate && (
                 <div
                   className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl border ${
@@ -790,45 +834,6 @@ export function FiltersBar({
                 >
                   <CalendarIcon className="h-4 w-4" />
                   Data fim
-                </div>
-              )}
-              {filters.lossReason && filters.lossReason !== "all" && (
-                <div
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl border ${
-                    theme === "dark"
-                      ? "bg-purple-900/50 text-purple-300 border-purple-700"
-                      : "bg-purple-50 text-purple-700 border-purple-200"
-                  }`}
-                >
-                  Motivo de Perda
-                </div>
-              )}
-              {filters.contentFilter && filters.contentFilter !== "all" && (
-                <div
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-xl border ${
-                    theme === "dark"
-                      ? "bg-cyan-900/50 text-cyan-300 border-cyan-700"
-                      : "bg-cyan-50 text-cyan-700 border-cyan-200"
-                  }`}
-                >
-                  {filters.contentFilter === "emptyDocuments" && (
-                    <>
-                      <FileText className="h-4 w-4" />
-                      Sem documentos
-                    </>
-                  )}
-                  {filters.contentFilter === "emptyInstances" && (
-                    <>
-                      <Layers className="h-4 w-4" />
-                      Sem instâncias
-                    </>
-                  )}
-                  {filters.contentFilter === "hasNewMovementsNow" && (
-                    <>
-                      <Activity className="h-4 w-4" />
-                      Novas movimentações
-                    </>
-                  )}
                 </div>
               )}
             </div>

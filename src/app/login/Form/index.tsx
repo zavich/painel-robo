@@ -1,33 +1,24 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useTheme } from "@/app/hooks/use-theme-client";
+import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
+  AlertCircle,
   Eye,
   EyeOff,
-  Mail,
+  Gavel,
   Lock,
-  AlertCircle,
+  Mail,
   Scale,
   Shield,
-  Gavel,
 } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { SigninRequestType } from "@/app/interfaces/user";
-import { useAuth } from "@/app/hooks/user/auth/useAuth";
-import { useTheme } from "@/app/hooks/use-theme-client";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 // Schema de validação
 const loginSchema = z.object({
@@ -50,7 +41,6 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const { signIn } = useAuth();
-  const { theme } = useTheme();
 
   const {
     register,
@@ -70,10 +60,8 @@ const LoginForm = () => {
   });
 
   const watchedEmail = watch("email");
-  const watchedPassword = watch("password");
   const watchedRememberMe = watch("rememberMe");
 
-  // Carregar dados salvos do localStorage
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
     const savedRememberMe = localStorage.getItem("rememberMe") === "true";
@@ -84,7 +72,6 @@ const LoginForm = () => {
     }
   }, [setValue]);
 
-  // Salvar/remover dados do localStorage baseado no checkbox
   useEffect(() => {
     if (watchedRememberMe && watchedEmail) {
       localStorage.setItem("rememberedEmail", watchedEmail);
@@ -101,226 +88,145 @@ const LoginForm = () => {
     clearErrors();
 
     try {
-      await signIn({
-        email: data.email,
-        password: data.password,
-      });
+      await signIn(data);
     } catch (error: any) {
-      const errorMessage =
+      setLoginError(
         error?.response?.data?.message ||
-        error?.message ||
-        "Erro ao fazer login. Verifique suas credenciais.";
-
-      setLoginError(errorMessage);
+          error?.message ||
+          "Erro ao fazer login.",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Validação em tempo real para feedback visual
-  const getFieldStatus = (fieldName: keyof LoginFormData) => {
-    if (errors[fieldName]) return "error";
-    if (isDirty && !errors[fieldName]) return "success";
-    return "default";
-  };
-
   return (
-    <div
-      className={`w-full max-w-md mx-auto ${theme === "dark" ? "bg-gray-800/50" : "bg-gray-800/50"} backdrop-blur-sm rounded-2xl border shadow-2xl p-8 ${
-        theme === "dark" ? "border-gray-700" : "border-gray-700"
-      }`}
-    >
-      {/* Header */}
+    <div className="w-full max-w-md mx-auto bg-card border border-border rounded-2xl shadow-xl p-8">
+      {/* HEADER */}
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
-          <div
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
-              theme === "dark"
-                ? "bg-gradient-to-br from-blue-500 to-purple-600"
-                : "bg-gradient-to-br from-blue-500 to-purple-600"
-            }`}
-          >
-            <Scale className="h-8 w-8 text-white" />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-secondary shadow-md">
+            <Scale className="h-8 w-8 text-secondary-foreground" />
           </div>
         </div>
-        <h1 className="text-3xl font-bold mb-2 text-gray-100">Juri Capital</h1>
-        <p className="text-sm text-gray-400">
-          Entre com suas credenciais para acessar sua conta
-        </p>
+
+        <h1 className="text-2xl font-bold text-foreground">Juri Capital</h1>
+
+        <p className="text-sm text-muted-foreground">Acesse sua conta</p>
       </div>
 
-      {/* Error Message */}
+      {/* ERROR */}
       {loginError && (
-        <div className="mb-6 p-4 rounded-xl border flex items-center space-x-3 bg-red-900/20 border-red-800">
-          <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-          <p className="text-sm font-medium text-red-300">{loginError}</p>
+        <div className="mb-6 p-4 rounded-xl border border-destructive bg-destructive/10 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+          <p className="text-sm text-destructive">{loginError}</p>
         </div>
       )}
 
-      {/* Form */}
+      {/* FORM */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Email Field */}
+        {/* EMAIL */}
         <div className="space-y-2">
-          <Label
-            htmlFor="email"
-            className="text-sm font-semibold text-gray-100"
-          >
-            E-mail
-          </Label>
+          <Label className="text-sm text-foreground">E-mail</Label>
+
           <div className="relative">
-            <Mail
-              className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-                getFieldStatus("email") === "error"
-                  ? "text-red-500"
-                  : "text-gray-400"
-              }`}
-            />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
             <Input
               {...register("email")}
-              id="email"
-              type="email"
               placeholder="seu@email.com"
-              className={`pl-10 h-11 bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-blue-500/20 focus:border-blue-500 ${
-                getFieldStatus("email") === "error"
-                  ? "border-red-500 focus:ring-red-500/20"
-                  : ""
-              }`}
-              disabled={isLoading}
+              className={cn(
+                "pl-10 h-11 bg-muted border-border text-foreground focus-visible:ring-2 focus-visible:ring-secondary",
+                errors.email && "border-destructive",
+              )}
             />
           </div>
+
           {errors.email && (
-            <div className="flex items-center space-x-2 text-red-400">
-              <AlertCircle className="h-3 w-3 flex-shrink-0" />
-              <span className="text-xs">{errors.email.message}</span>
-            </div>
+            <p className="text-xs text-destructive">{errors.email.message}</p>
           )}
         </div>
 
-        {/* Password Field */}
+        {/* PASSWORD */}
         <div className="space-y-2">
-          <Label
-            htmlFor="password"
-            className="text-sm font-semibold text-gray-100"
-          >
-            Senha
-          </Label>
+          <Label className="text-sm text-foreground">Senha</Label>
+
           <div className="relative">
-            <Lock
-              className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-                getFieldStatus("password") === "error"
-                  ? "text-red-500"
-                  : "text-gray-400"
-              }`}
-            />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
             <Input
               {...register("password")}
-              id="password"
               type={showPassword ? "text" : "password"}
               placeholder="Digite sua senha"
-              className={`pl-10 pr-10 h-11 bg-gray-700/50 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-blue-500/20 focus:border-blue-500 ${
-                getFieldStatus("password") === "error"
-                  ? "border-red-500 focus:ring-red-500/20"
-                  : ""
-              }`}
-              disabled={isLoading}
+              className={cn(
+                "pl-10 pr-10 h-11 bg-muted border-border text-foreground focus-visible:ring-2 focus-visible:ring-secondary",
+                errors.password && "border-destructive",
+              )}
             />
+
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200 disabled:opacity-50 text-gray-400 hover:text-gray-300"
-              disabled={isLoading}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showPassword ? <EyeOff /> : <Eye />}
             </button>
           </div>
+
           {errors.password && (
-            <div className="flex items-center space-x-2 text-red-400">
-              <AlertCircle className="h-3 w-3 flex-shrink-0" />
-              <span className="text-xs">{errors.password.message}</span>
-            </div>
+            <p className="text-xs text-destructive">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
-        {/* Remember Me & Forgot Password */}
+        {/* REMEMBER */}
         <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              {...register("rememberMe")}
-              id="remember"
-              className="w-4 h-4"
-              disabled={isLoading}
-            />
-            <Label
-              htmlFor="remember"
-              className="cursor-pointer select-none font-medium transition-colors text-gray-300 hover:text-gray-200"
-            >
-              Lembrar-me
-            </Label>
+          <div className="flex items-center gap-2">
+            <Checkbox {...register("rememberMe")} />
+            <Label className="text-muted-foreground">Lembrar-me</Label>
           </div>
-          <a
-            href="#"
-            className="font-semibold transition-colors duration-200 hover:underline text-blue-400 hover:text-blue-300"
-          >
+
+          <a className="text-secondary hover:underline cursor-pointer">
             Esqueci minha senha
           </a>
         </div>
 
-        {/* Submit Button */}
+        {/* BUTTON */}
         <Button
           type="submit"
-          className="w-full h-11 font-semibold text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg active:scale-[0.98] bg-blue-600 hover:bg-blue-700 text-white"
           disabled={isLoading || !isValid}
+          className="w-full h-11 font-semibold bg-secondary text-secondary-foreground hover:brightness-95 transition"
         >
-          {isLoading ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Entrando...</span>
-            </div>
-          ) : (
-            "Entrar na Conta"
-          )}
+          {isLoading ? "Entrando..." : "Entrar"}
         </Button>
       </form>
 
-      {/* Divider */}
-      <div className="my-8">
-        <div className="relative border-gray-700">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-700"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-800 text-gray-400">ou</span>
-          </div>
-        </div>
+      {/* DIVIDER */}
+      <div className="my-8 flex items-center">
+        <div className="flex-1 border-t border-border" />
+        <span className="px-3 text-xs text-muted-foreground">ou</span>
+        <div className="flex-1 border-t border-border" />
       </div>
 
-      {/* Request Access */}
-      <div className="text-center">
-        <p className="text-sm mb-4 text-gray-400">
-          Ainda não possui uma conta?
-        </p>
-        <Button
-          variant="outline"
-          className="w-full h-10 font-semibold transition-all duration-200 hover:shadow-md active:scale-[0.98] border-gray-600 text-gray-300 hover:bg-gray-700"
-          disabled={isLoading}
-        >
-          Solicitar Acesso
-        </Button>
-      </div>
+      {/* ACTION */}
+      <Button
+        variant="outline"
+        className="w-full border-border text-foreground hover:bg-muted"
+      >
+        Solicitar acesso
+      </Button>
 
-      {/* Features */}
-      <div className="mt-8 grid grid-cols-2 gap-4">
-        <div className="flex items-center space-x-2 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
-          <Shield className="h-4 w-4 text-blue-400" />
-          <span className="text-xs font-medium text-gray-300">Seguro</span>
+      {/* FEATURES */}
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-muted">
+          <Shield className="h-4 w-4 text-secondary" />
+          <span className="text-xs text-muted-foreground">Seguro</span>
         </div>
-        <div className="flex items-center space-x-2 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
-          <Gavel className="h-4 w-4 text-blue-400" />
-          <span className="text-xs font-medium text-gray-300">Confiável</span>
+
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-muted">
+          <Gavel className="h-4 w-4 text-secondary" />
+          <span className="text-xs text-muted-foreground">Confiável</span>
         </div>
       </div>
     </div>

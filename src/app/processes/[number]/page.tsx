@@ -652,7 +652,6 @@ export default function ProcessDetailsEditPage() {
   };
 
   const claimant = getClaimant(process?.processParts || []);
-  const claimantAttorney = getClaimantAttorney(process?.processParts || []);
   const initialPetition = process?.documents?.find(
     (doc) => doc.title === "Petição Inicial",
   );
@@ -1224,8 +1223,10 @@ export default function ProcessDetailsEditPage() {
                   <Card className="h-full flex flex-col">
                     <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        <CardTitle>Dados do TST</CardTitle>
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-primary">
+                          Dados do TST
+                        </CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col min-h-0 overflow-y-auto">
@@ -1272,7 +1273,7 @@ export default function ProcessDetailsEditPage() {
                               >
                                 <div className="flex items-center gap-2 mb-1">
                                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  <span className="font-medium text-sm">
+                                  <span className="font-medium text-sm text-muted-foreground">
                                     {mov.data}
                                   </span>
                                 </div>
@@ -1833,7 +1834,7 @@ export default function ProcessDetailsEditPage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="execution-number"
-                  className="text-sm font-semibold"
+                  className="text-sm font-semibold text-foreground"
                 >
                   Número da Execução Provisória
                 </Label>
@@ -1843,12 +1844,12 @@ export default function ProcessDetailsEditPage() {
                   placeholder="Ex: 0000000-00.0000.0.00.0000"
                   value={executionNumberInput}
                   onChange={(e) => setExecutionNumberInput(e.target.value)}
-                  className="w-full"
+                  className="w-full bg-card text-card-foreground border-border"
                   disabled={isInsertExecutionLoading}
                 />
               </div>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+              <div className="bg-secondary/10 dark:bg-secondary-foreground/10 border border-secondary dark:border-secondary-foreground rounded-lg p-3">
+                <p className="text-sm text-secondary dark:text-secondary-foreground">
                   <strong>Atenção:</strong> Certifique-se de que o número da
                   execução provisória está correto antes de vincular.
                 </p>
