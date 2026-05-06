@@ -38,6 +38,7 @@ import { StatusExtractionInsight } from "@/app/interfaces/processes";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { useAddPipedriveNote } from "@/app/api/hooks/process/useAddPipedriveNote";
 import { toast } from "react-toastify";
+import { useFetchPDF } from "@/app/api/hooks/process/useFetchPDF";
 
 interface DocumentsCardProps {
   documents: DocumentExtract[];
@@ -56,6 +57,7 @@ export function DocumentsCard({
   onManagePrompts,
 }: DocumentsCardProps) {
   const [openCalcModal, setOpenCalcModal] = useState(false);
+  const { fetchPDF } = useFetchPDF();
   const [calcInitial] = useState<any>(null);
   const [calcDocTitle] = useState<string>("");
   const [numPages, setNumPages] = useState<number>(0);
@@ -667,24 +669,27 @@ export function DocumentsCard({
                   size="sm"
                   onClick={async () => {
                     if (!document?.temp_link) return;
+
                     try {
-                      const response = await fetch(document.temp_link, {
-                        mode: "cors",
-                      });
-                      if (!response.ok) throw new Error("fetch failed");
-                      const blob = await response.blob();
+                      const blob = await fetchPDF(document.temp_link);
+
+                      if (!blob) throw new Error("Erro ao baixar");
+
                       const url = window.URL.createObjectURL(blob);
+
                       const a = window.document.createElement("a");
                       a.href = url;
-                      a.download = document.title.endsWith(".pdf")
+                      a.download = document.title?.endsWith(".pdf")
                         ? document.title
                         : `${document.title}.pdf`;
+
                       window.document.body.appendChild(a);
                       a.click();
                       a.remove();
+
                       window.URL.revokeObjectURL(url);
                     } catch (err) {
-                      window.open(document.temp_link, "_blank");
+                      console.error(err);
                     }
                   }}
                   className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"
