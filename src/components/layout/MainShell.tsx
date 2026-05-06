@@ -1,25 +1,23 @@
 "use client";
 
-import { ReactNode, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import Image from "next/image";
-import {
-  LayoutDashboard,
-  Building2,
-  MessageSquareText,
-  ShieldAlert,
-  BarChart3,
-  LogOut,
-  Moon,
-  Sun,
-  Menu,
-  X,
-} from "lucide-react";
 import { useTheme } from "@/app/hooks/use-theme-client";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
-import { Button } from "@/components/ui/button";
 import { UserRolesEnum } from "@/app/interfaces/user";
 import { NotificationsBell } from "@/components/notifications/NotificationsBell";
+import { Button } from "@/components/ui/button";
+import {
+  Building2,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  MessageSquareText,
+  Moon,
+  Sun,
+  X,
+} from "lucide-react";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useState } from "react";
 
 interface MainShellProps {
   children: ReactNode;
@@ -179,7 +177,8 @@ export function MainShell({ children }: MainShellProps) {
         {/* Main */}
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
           {/* Header */}
-          <header className="sticky top-0 z-10 backdrop-blur-xl border-b bg-background/95 border-border">
+
+          <header className="md:hidden sticky top-0 z-10 backdrop-blur-xl border-b bg-background/95 border-border">
             <div className="h-16 flex items-center px-4 sm:px-6">
               <Button
                 variant="ghost"
@@ -208,7 +207,7 @@ export function MainShell({ children }: MainShellProps) {
               >
                 <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between">
                   <Image
-                    src="/logo-juri-capital.png"
+                    src="/logowhite-juri-capital.png"
                     alt="ProSolutti"
                     width={140}
                     height={38}

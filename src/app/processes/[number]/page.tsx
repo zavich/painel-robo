@@ -1297,39 +1297,43 @@ export default function ProcessDetailsEditPage() {
             </div>
 
             {/* Sidebar - Documents Card e Activities Card com tabs */}
-            <div className="lg:col-span-4 h-[500px] sm:h-[600px] lg:h-[calc(100vh-200px)] order-2">
+            <div className=" z-0 lg:col-span-4 h-[500px] sm:h-[600px] lg:h-[calc(100vh-200px)] order-2">
               <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                {/* Tabs para alternar entre Documentos e Atividades */}
+                {/* Tabs */}
                 <div className="flex border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-50 dark:bg-gray-900/50">
+                  {/* DOCUMENTOS */}
                   <button
                     onClick={() => setActiveRightTab("documents")}
-                    className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative ${
+                    className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 relative ${
                       activeRightTab === "documents"
-                        ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                        ? "text-secondary"
+                        : "text-gray-600 dark:text-gray-400 hover:text-secondary"
                     }`}
                   >
                     <span className="relative z-10">Documentos</span>
+
                     {activeRightTab === "documents" && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
                     )}
                   </button>
+
                   <button
                     onClick={() => setActiveRightTab("activities")}
-                    className={`flex-1 px-4 py-3 text-sm font-medium transition-colors relative ${
+                    className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 relative ${
                       activeRightTab === "activities"
-                        ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                        ? "text-secondary"
+                        : "text-gray-600 dark:text-gray-400 hover:text-secondary"
                     }`}
                   >
                     <span className="relative z-10">Atividades</span>
+
                     {activeRightTab === "activities" && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></div>
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary" />
                     )}
                   </button>
                 </div>
 
-                {/* Conteúdo baseado na tab ativa */}
+                {/* Conteúdo */}
                 <div className="flex-1 min-h-0 overflow-hidden">
                   {activeRightTab === "documents" ? (
                     <DocumentsCard
@@ -1342,7 +1346,6 @@ export default function ProcessDetailsEditPage() {
                       processNumber={process?.number || ""}
                       dealId={process?.dealId}
                       onManagePrompts={() => {
-                        // Abrir gerenciamento de prompts em nova aba para não perder contexto
                         window.open(`/dashboard?view=prompts`, "_blank");
                       }}
                     />
@@ -1411,7 +1414,7 @@ export default function ProcessDetailsEditPage() {
               <Button
                 variant="default"
                 onClick={handleAcceptUpdate}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary-light"
               >
                 Atualizar Dados
               </Button>
@@ -1516,8 +1519,8 @@ export default function ProcessDetailsEditPage() {
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                  <div className="mt-3 p-3 bg-primary/10 dark:bg-primary/20 border border-primary/20 rounded-lg">
+                    <p className="text-sm text-primary dark:text-primary-foreground font-medium">
                       {process?.processStatus?.name ===
                       ProcessStatusEnum.EXTRACTION_FINISHED
                         ? "⚠️ Para visualizar os novos documentos, clique em 'Recarregar Dados' abaixo."
