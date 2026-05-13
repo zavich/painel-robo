@@ -20,10 +20,12 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
 }) => {
   const [processNumber, setProcessNumber] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [capturedCount, setCapturedCount] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMessage(null);
+    setCapturedCount(null);
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
@@ -31,16 +33,33 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
       if (fileExtension !== "csv" && fileExtension !== "xlsx") {
         setErrorMessage("Por favor, envie um arquivo no formato CSV ou XLSX.");
         setSelectedFile(null);
+        setCapturedCount(null);
         return;
       }
+
+      // Helper: conta todas ocorrências do padrão em um array de células
+      const processNumberPattern =
+        "\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}";
+      const processNumberRegex = new RegExp(processNumberPattern);
+      const processNumberRegexGlobal = new RegExp(processNumberPattern, "g");
+      const countMatchesInArray = (arr: any[]) =>
+        arr.reduce((sum, cell) => {
+          const s = String(cell || "");
+          const matches = s.match(processNumberRegexGlobal);
+          return sum + (matches ? matches.length : 0);
+        }, 0);
 
       if (fileExtension === "csv") {
         Papa.parse(file, {
           complete: (result) => {
+            // Flatten rows and count matches (considera múltiplas ocorrências por célula)
+            const flattened: any[] = ([] as any[]).concat(...result.data);
+            const count = countMatchesInArray(flattened);
+
             const isValid = result.data.every((row: any) => {
-              const processNumberRegex =
-                /^\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}$/;
-              return row.some((cell: string) => processNumberRegex.test(cell));
+              return row.some((cell: string) =>
+                processNumberRegex.test(String(cell)),
+              );
             });
 
             if (!isValid) {
@@ -48,8 +67,10 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
                 "O arquivo CSV contém dados inválidos. Certifique-se de que os números de processo estão no formato correto.",
               );
               setSelectedFile(null);
+              setCapturedCount(null);
             } else {
               setSelectedFile(file);
+              setCapturedCount(count);
             }
           },
           error: () => {
@@ -57,47 +78,62 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
               "Erro ao processar o arquivo CSV. Tente novamente.",
             );
             setSelectedFile(null);
+            setCapturedCount(null);
           },
         });
       } else if (fileExtension === "xlsx") {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: "array" });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        reader.onload = async (e) => {
+          try {
+            const arrayBuffer = e.target?.result as ArrayBuffer;
+            const workbook = XLSX.read(arrayBuffer, { type: "array" });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
 
-          const isValid = rows
-            .filter((row: any) =>
-              row.some((cell: string) => cell && cell.trim() !== ""),
-            )
-            .every((row: any, rowIndex: number) => {
-              const processNumberRegex =
-                /^\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}$/;
-              // Filtra células vazias antes de validar
-              const filteredRow = row.filter(
-                (cell: string) => cell && cell.trim() !== "",
+            // Converter a planilha para CSV para facilitar parsing
+            const csv = XLSX.utils.sheet_to_csv(worksheet);
+
+            const lines = csv
+              .split(/\r?\n/)
+              .map((l) => l.trim())
+              .filter(Boolean);
+
+            const rows = lines.map((line) =>
+              line.split(/;|,/).map((cell) => String(cell).trim()),
+            );
+
+            const allNonEmpty = rows
+              .filter((r) => r.length > 0)
+              .every((row) => row.every((cell) => String(cell).trim() !== ""));
+
+            // contar ocorrências usando a função que considera múltiplas ocorrências por célula
+            const flattened = ([] as string[]).concat(...rows);
+            const count = countMatchesInArray(flattened);
+            const hasValidProcessNumber = count > 0;
+
+            if (!allNonEmpty || !hasValidProcessNumber) {
+              setErrorMessage(
+                "O arquivo XLSX contém dados inválidos. Certifique-se de que os números de processo estão no formato correto.",
               );
+              setSelectedFile(null);
+              setCapturedCount(null);
+              return;
+            }
 
-              const isRowValid = filteredRow.some((cell: string) =>
-                processNumberRegex.test(cell),
-              );
-              return isRowValid;
-            });
-
-          if (!isValid) {
+            setSelectedFile(file);
+            setCapturedCount(count);
+          } catch (err) {
             setErrorMessage(
-              "O arquivo XLSX contém dados inválidos. Certifique-se de que os números de processo estão no formato correto.",
+              "Erro ao processar o arquivo XLSX. Tente novamente.",
             );
             setSelectedFile(null);
-          } else {
-            setSelectedFile(file);
+            setCapturedCount(null);
           }
         };
         reader.onerror = () => {
           setErrorMessage("Erro ao processar o arquivo XLSX. Tente novamente.");
           setSelectedFile(null);
+          setCapturedCount(null);
         };
         reader.readAsArrayBuffer(file);
       }
@@ -112,6 +148,7 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
     }
     setProcessNumber("");
     setSelectedFile(null);
+    setCapturedCount(null);
     onClose();
   };
 
@@ -119,6 +156,7 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
     setProcessNumber("");
     setSelectedFile(null);
     setErrorMessage(null);
+    setCapturedCount(null);
     onClose();
   };
 
@@ -160,13 +198,19 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
             <input
               id="fileUpload"
               type="file"
-              accept=".csv, .xlsx"
+              accept=",.csv, .xlsx"
               onChange={handleFileChange}
               className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
             {selectedFile && (
               <p className="text-sm text-gray-600 mt-2">
                 Arquivo selecionado: {selectedFile.name}
+                {capturedCount !== null && (
+                  <span className="block text-sm text-gray-700 mt-1">
+                    {capturedCount} processo{capturedCount !== 1 ? "s" : ""}{" "}
+                    detectado{capturedCount !== 1 ? "s" : ""} no arquivo
+                  </span>
+                )}
               </p>
             )}
             {errorMessage && (
