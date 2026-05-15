@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "entrypoint": "docs/brain/INDEX.md",
+  "adapters": [],
+  "core": {
+    "project": "docs/brain/project.md",
+    "architecture": "docs/brain/architecture.md",
+    "applicationMap": "docs/brain/application-map.md",
+    "coverage": "docs/brain/coverage.md",
+    "debugIndex": "docs/brain/debug-index.md",
+    "riskMap": "docs/brain/risk-map.md",
+    "taskRouter": "docs/brain/task-router.md",
+    "testMatrix": "docs/brain/test-matrix.md"
+  },
+  "specs": {
+    "apiHooks": "docs/brain/specs/api-hooks.md",
+    "dataContracts": "docs/brain/specs/data-contracts.md",
+    "stageMapping": "docs/brain/specs/stage-mapping.md",
+    "stateManagement": "docs/brain/specs/state-management.md",
+    "envVars": "docs/brain/specs/env-vars.md",
+    "websocket": "docs/brain/specs/websocket.md",
+    "routes": "docs/brain/specs/routes.md",
+    "thirdParty": "docs/brain/specs/third-party.md"
+  },
+  "features": {
+    "kanban-dashboard": {
+      "docs": ["docs/brain/features/kanban-dashboard.md"],
+      "entrypoints": [
+        "src/app/dashboard/page.tsx",
+        "src/components/KanbanBoard.tsx",
+        "src/components/KanbanColumn.tsx",
+        "src/components/KanbanCard.tsx"
+      ]
+    },
+    "process-detail": {
+      "docs": ["docs/brain/features/process-detail.md"],
+      "entrypoints": [
+        "src/app/processes/[number]/page.tsx",
+        "src/components/process/ProcessHeader.tsx",
+        "src/components/process/ProcessInfoCard.tsx"
+      ]
+    },
+    "auth-users": {
+      "docs": ["docs/brain/features/auth-users.md"],
+      "entrypoints": [
+        "src/app/login/page.tsx",
+        "src/app/hooks/user/auth/"
+      ]
+    }
+  },
+  "engineering": {
+    "conventions": "docs/brain/engineering/conventions.md",
+    "testing": "docs/brain/engineering/testing.md",
+    "infrastructure": "docs/brain/engineering/infrastructure.md"
+  },
+  "generatedDocs": {
+    "readme": "docs/brain/generated/README.md"
+  },
+  "incidents": {
+    "readme": "docs/brain/incidents/README.md",
+    "template": "docs/brain/templates/incident.md"
+  },
+  "runbooks": [
+    "docs/brain/runbooks/README.md"
+  ],
+  "decisions": [
+    "docs/brain/decisions/README.md",
+    "docs/brain/decisions/ADR-0001-brain-progressivo.md"
+  ],
+  "templates": [
+    "docs/brain/templates/runbook.md",
+    "docs/brain/templates/decision.md",
+    "docs/brain/templates/incident.md"
+  ],
+  "globalWorkflows": [
+    "docs/brain/workflows/investigacao-progressiva.md"
+  ]
+}
