@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type FilterState = {
   [key: string]: string | number | boolean | string[] | null | undefined;
@@ -95,17 +94,26 @@ function parseValueFromParam(key: string, value: string | null) {
 }
 
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  // Não usar hooks de next/navigation que exigem Suspense (evita erro em páginas estáticas como /404)
+  // Ler URL diretamente do window quando disponível
+  // const router = useRouter();
+  // const pathname = usePathname();
+  // const searchParams = useSearchParams();
+
+  // removidos: useRouter/usePathname/useSearchParams para evitar bailout de CSR durante pre-render
+  // usaremos window.location e history quando disponíveis
+
+  // const router = useRouter();
+  // const pathname = usePathname();
+  // const searchParams = useSearchParams();
 
   // Synchronous initialization a partir da query string para evitar
   // hidratação diferente entre servidor e cliente.
   const computeInitialFilters = (): FilterState => {
     try {
-      const params = searchParams;
-      if (!params) return { ...DEFAULT_FILTERS };
+      if (typeof window === "undefined") return { ...DEFAULT_FILTERS };
 
+      const params = new URLSearchParams(window.location.search);
       const newFilters: FilterState = { ...DEFAULT_FILTERS };
       for (const key of params.keys()) {
         const val = params.get(key);
@@ -136,13 +144,10 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window === "undefined") return;
       const params = serializeFiltersToSearchParams(nextFilters);
       const qs = params.toString();
-      const url = qs ? `${pathname}?${qs}` : `${pathname}`;
-      // Use router.replace quando disponível, senão fallback para history.replaceState
-      if (router && typeof (router as any).replace === "function") {
-        (router as any)?.replace(url);
-      } else {
-        window.history.replaceState(null, "", url);
-      }
+      const path = window.location.pathname || "/";
+      const url = qs ? `${path}?${qs}` : `${path}`;
+      // Usar history.replaceState diretamente para evitar depender de hooks de next/navigation
+      window.history.replaceState(null, "", url);
     } catch (err) {
       // ignore
       console.error("Erro ao sincronizar filtros para URL", err);
@@ -157,7 +162,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     syncFiltersToUrl(filters);
-  }, [filters, pathname, router]);
+  }, [filters]);
 
   const setFilter = (
     key: string,
