@@ -37,9 +37,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { isWithinInterval, parseISO } from "date-fns";
-import { Download } from "lucide-react";
+import { Download, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { hasError } from "@/app/utils/processSyncStatus";
 
 export default function KanbanDashboard() {
   const { user } = useAuth();
@@ -1057,21 +1058,51 @@ export default function KanbanDashboard() {
                                   (window.location.href = `/processes/${process.number}`)
                                 }
                               >
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-sm font-semibold text-foreground">
-                                    {capitalizeWords(
-                                      getProcessTitle(
-                                        process.processParts || [],
-                                        process.number,
-                                        process.title ||
-                                          (process as any).formPipedrive?.title,
-                                      ),
-                                    )}
-                                  </span>
-                                  {process.processOwner?.user?.email && (
-                                    <span className="text-xs text-gray-600 dark:text-gray-500">
-                                      {process.processOwner.user.email}
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex flex-col gap-1 min-w-0">
+                                    <span className="text-sm font-semibold text-foreground truncate">
+                                      {capitalizeWords(
+                                        getProcessTitle(
+                                          process.processParts || [],
+                                          process.number,
+                                          process.title ||
+                                            (process as any).formPipedrive
+                                              ?.title,
+                                        ),
+                                      )}
                                     </span>
+                                    {process.processOwner?.user?.email && (
+                                      <span className="text-xs text-gray-600 dark:text-gray-500 truncate">
+                                        {process.processOwner.user.email}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Indicador de erro (aparece na tabela) */}
+                                  {hasError(process.processStatus) && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="ml-2 p-1 rounded-md text-red-700 bg-red-50/90 dark:bg-red-900/80 cursor-help">
+                                          <AlertCircle className="h-4 w-4" />
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent
+                                        side="top"
+                                        className="max-w-xs bg-red-50 text-red-900 border border-red-200 dark:bg-red-800 dark:text-red-100 dark:border-red-700 shadow-sm"
+                                      >
+                                        <div className="text-sm">
+                                          <div className="font-medium mb-1">
+                                            Problema no processamento
+                                          </div>
+                                          <div className="text-xs">
+                                            {process.processStatus
+                                              ?.errorReason ||
+                                              process.processStatus?.log ||
+                                              process.processStatus?.name}
+                                          </div>
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
                                   )}
                                 </div>
                               </TableCell>
