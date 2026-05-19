@@ -1,5 +1,10 @@
+import { jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+const AUTH_COOKIE = "prosolutti_accessToken";
+
+const PUBLIC_PATHS = ["/login", "/maintenance", "/api/auth"];
 
 const getMaintenanceMode = () => {
   return (
@@ -10,7 +15,11 @@ const getMaintenanceMode = () => {
   );
 };
 
-export function middleware(request: NextRequest) {
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isMaintenancePage = pathname === "/maintenance";
 
@@ -27,7 +36,6 @@ export function middleware(request: NextRequest) {
 
   // 🚧 Se estiver em manutenção
   if (isMaintenanceMode) {
-    // Permite arquivos estáticos
     if (
       pathname.startsWith("/_next") ||
       pathname.startsWith("/favicon.ico") ||
@@ -36,7 +44,6 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // Se não estiver na página de manutenção, redireciona
     if (!isMaintenancePage) {
       return NextResponse.redirect(new URL("/maintenance", request.url));
     }
@@ -49,7 +56,28 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  return NextResponse.next();
+  // ✅ Rotas públicas: não verificar token
+  if (isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  // 🔐 Verificação JWT server-side (SEG-011)
+  const token = request.cookies.get(AUTH_COOKIE)?.value;
+
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET_KEY);
+    await jwtVerify(token, secret);
+    return NextResponse.next();
+  } catch {
+    // Token expirado ou inválido — limpa o cookie e redireciona
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.delete(AUTH_COOKIE);
+    return response;
+  }
 }
 
 export const config = {

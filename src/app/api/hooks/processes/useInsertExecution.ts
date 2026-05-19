@@ -11,7 +11,7 @@ export function useInsertExecution() {
 		setError(null);
 		setSuccess(false);
 		try {
-			const payload: any = { lawsuitExecution };
+			const payload: { lawsuitExecution: string; pipedriveFieldValue?: string } = { lawsuitExecution };
 			if (pipedriveFieldValue) {
 				payload.pipedriveFieldValue = pipedriveFieldValue;
 			}
@@ -21,14 +21,15 @@ export function useInsertExecution() {
 				payload,
 				{
 					headers: {
-						Authorization: "zUqttTlQ4j0Ob0odbmDDQ96bjKgz6Z",
+						Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_KEY || ""}`,
 						"Content-Type": "application/json",
 					},
 				}
 			);
 			setSuccess(true);
-		} catch (err: any) {
-			setError(err?.response?.data?.message || err.message || "Erro desconhecido");
+		} catch (err: unknown) {
+			const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
+			setError(axiosError?.response?.data?.message || axiosError?.message || "Erro desconhecido");
 		} finally {
 			setIsLoading(false);
 		}

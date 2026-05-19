@@ -36,10 +36,10 @@ export default function PreAnalysisPage() {
   // Atualizar observação quando o processo carregar
   useEffect(() => {
     if (process?.formPipedrive) {
-      const initialObservacao = (process.formPipedrive as any)?.observacaoPreAnalise || "";
-      const initialValue = (process.formPipedrive as any)?.value || "";
-      const initialCalculoAutos = (process.formPipedrive as any)?.calculoAutos || "";
-      const initialCalculoAutosValue = (process.formPipedrive as any)?.calculoAutosValue || "";
+      const initialObservacao = process.formPipedrive.observacaoPreAnalise || "";
+      const initialValue = process.formPipedrive.value || "";
+      const initialCalculoAutos = process.formPipedrive.calculoAutos || "";
+      const initialCalculoAutosValue = process.formPipedrive.calculoAutosValue || "";
       setObservacaoPreAnalise(initialObservacao);
       setValue(initialValue);
       setCalculoAutos(initialCalculoAutos);
@@ -49,10 +49,10 @@ export default function PreAnalysisPage() {
 
   // Detectar mudanças
   useEffect(() => {
-    const originalObservacao = (process?.formPipedrive as any)?.observacaoPreAnalise || "";
-    const originalValue = (process?.formPipedrive as any)?.value || "";
-    const originalCalculoAutos = (process?.formPipedrive as any)?.calculoAutos || "";
-    const originalCalculoAutosValue = (process?.formPipedrive as any)?.calculoAutosValue || "";
+    const originalObservacao = process?.formPipedrive?.observacaoPreAnalise || "";
+    const originalValue = process?.formPipedrive?.value || "";
+    const originalCalculoAutos = process?.formPipedrive?.calculoAutos || "";
+    const originalCalculoAutosValue = process?.formPipedrive?.calculoAutosValue || "";
     setHasChanges(
       observacaoPreAnalise !== originalObservacao || 
       value !== originalValue ||
@@ -67,7 +67,7 @@ export default function PreAnalysisPage() {
       const FIELD_KEY_CALCULO_AUTOS = "7da05be1e1c53f0d7595f883512baf69cf832f88"; // Cálculo nos autos
       
       // Enviar dados do formulário + title do processo (se existir)
-      const dataToSend: any = {
+      const dataToSend: Record<string, string | number> = {
         [FIELD_KEY_OBSERVACAO]: observacaoPreAnalise,
         observacaoPreAnalise: observacaoPreAnalise,
         value: parseFloat(value) || 0,

@@ -42,8 +42,8 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
         "\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}";
       const processNumberRegex = new RegExp(processNumberPattern);
       const processNumberRegexGlobal = new RegExp(processNumberPattern, "g");
-      const countMatchesInArray = (arr: any[]) =>
-        arr.reduce((sum, cell) => {
+      const countMatchesInArray = (arr: unknown[]) =>
+        arr.reduce((sum: number, cell: unknown) => {
           const s = String(cell || "");
           const matches = s.match(processNumberRegexGlobal);
           return sum + (matches ? matches.length : 0);
@@ -53,11 +53,11 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
         Papa.parse(file, {
           complete: (result) => {
             // Flatten rows and count matches (considera múltiplas ocorrências por célula)
-            const flattened: any[] = ([] as any[]).concat(...result.data);
+            const flattened: unknown[] = ([] as unknown[]).concat(...result.data);
             const count = countMatchesInArray(flattened);
 
-            const isValid = result.data.every((row: any) => {
-              return row.some((cell: string) =>
+            const isValid = (result.data as unknown[][]).every((row) => {
+              return row.some((cell) =>
                 processNumberRegex.test(String(cell)),
               );
             });

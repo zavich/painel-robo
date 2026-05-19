@@ -27,9 +27,7 @@ export function useCreateMassActivity() {
       return response;
     },
     onSuccess: async () => {
-      // Invalidar queries relacionadas aos processos
-      await queryClient.invalidateQueries({ queryKey: ['process'], type: 'all' });
-      await queryClient.invalidateQueries({ queryKey: ['processes'], type: 'all' });
+      await queryClient.invalidateQueries({ queryKey: ['processes'] });
     },
     retry: false,
   });

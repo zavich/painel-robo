@@ -2,15 +2,16 @@ import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCard } from "@/components/KanbanCard";
 import Loading from "@/components/Loading";
 import { CompanyModalDialog } from "./process/CompanyModalDialog";
+import { Process, Company } from "@/app/interfaces/processes";
 
 export interface KanbanBoardProps {
   stages: { id: string; title: string; color: string }[];
-  getProcessesByStage: (stage: string) => any[];
-  handleOpenCompany: (company: any) => void;
-  activeProcess: any;
+  getProcessesByStage: (stage: string) => Process[];
+  handleOpenCompany: (company: Company) => void;
+  activeProcess: Process | null;
   isLoading: boolean;
   page: number;
-  selectedCompany: any;
+  selectedCompany: Company | null;
   showCompanyModal: boolean;
   setShowCompanyModal: (open: boolean) => void;
   isAdmin?: boolean;

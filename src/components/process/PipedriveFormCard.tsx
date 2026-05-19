@@ -1,3 +1,4 @@
+import DOMPurify from "isomorphic-dompurify";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -222,8 +223,8 @@ export function PipedriveFormCard({
           <Label className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{label}</Label>
           <div className="bg-muted dark:bg-gray-700 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm font-medium text-primary dark:text-gray-100 min-h-[120px]">
             {value ? (
-              <div 
-                dangerouslySetInnerHTML={{ __html: value }} 
+              <div
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
                 className="prose prose-sm max-w-none dark:prose-invert"
               />
             ) : (

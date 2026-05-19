@@ -27,7 +27,7 @@ export async function getRejectionReasons() {
     // Garantir que sempre retorna um array e mapear para o formato esperado
     if (!Array.isArray(data)) return [];
     // Mapear de { _id, key, label } para { key, label }
-    return data.map((item: any) => ({
+    return data.map((item: RejectionReason) => ({
       key: item.key,
       label: item.label,
     }));

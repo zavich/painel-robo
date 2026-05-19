@@ -1,27 +1,36 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Check } from "lucide-react";
 
 interface InsightGenericProps {
-  data: any;
+  data: Record<string, unknown>;
   documentTitle?: string;
   processNumber?: string;
-  onSendToPipedrive?: (data: any) => Promise<void>;
+  onSendToPipedrive?: (data: Record<string, unknown>) => Promise<void>;
 }
 
 export default function InsightGeneric({ data, documentTitle, processNumber, onSendToPipedrive }: InsightGenericProps) {
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const sentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout ao desmontar (BUG-012)
+  useEffect(() => {
+    return () => {
+      if (sentTimeoutRef.current) clearTimeout(sentTimeoutRef.current);
+    };
+  }, []);
+
   if (!data) return null;
 
-  const formatCurrency = (value: any) => {
+  const formatCurrency = (value: unknown): React.ReactNode => {
     if (typeof value === 'number' && value > 0) {
       return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
     }
-    return value;
+    return String(value ?? '');
   };
 
-  const formatDate = (dateString: any) => {
+  const formatDate = (dateString: unknown): React.ReactNode => {
     if (typeof dateString === 'string' && dateString.includes('-')) {
       try {
         const date = new Date(dateString);
@@ -30,10 +39,10 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
         return dateString;
       }
     }
-    return dateString;
+    return String(dateString ?? '');
   };
 
-  const formatValue = (key: string, value: any): any => {
+  const formatValue = (key: string, value: unknown): React.ReactNode => {
     if (value === null || value === undefined) return "-";
     
     // Formatação específica baseada no nome da chave
@@ -49,10 +58,10 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
       return value.replace(/_/g, ' ');
     }
 
-    return value;
+    return String(value);
   };
 
-  const renderValue = (key: string, value: any, level: number = 0): React.ReactNode => {
+  const renderValue = (key: string, value: unknown, level: number = 0): React.ReactNode => {
     if (value === null || value === undefined) {
       return <span className="text-muted-foreground">-</span>;
     }
@@ -66,7 +75,7 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
         <ul className="list-disc ml-4 space-y-1">
           {value.map((item, idx) => (
             <li key={idx} className="text-sm break-words">
-              {typeof item === 'object' ? renderObject(item, level + 1) : formatValue(key, item)}
+              {typeof item === 'object' && item !== null ? renderObject(item as Record<string, unknown>, level + 1) : formatValue(key, item)}
             </li>
           ))}
         </ul>
@@ -74,13 +83,13 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
     }
 
     if (typeof value === 'object') {
-      return renderObject(value, level + 1);
+      return renderObject(value as Record<string, unknown>, level + 1);
     }
 
     return <span className="break-words inline-block max-w-full">{formatValue(key, value)}</span>;
   };
 
-  const renderObject = (obj: any, level: number = 0): React.ReactNode => {
+  const renderObject = (obj: Record<string, unknown>, level: number = 0): React.ReactNode => {
     if (!obj || typeof obj !== 'object') return null;
 
     const entries = Object.entries(obj).filter(([_, value]) => value !== null && value !== undefined);
@@ -129,7 +138,7 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
     try {
       await onSendToPipedrive(data);
       setSent(true);
-      setTimeout(() => setSent(false), 3000);
+      sentTimeoutRef.current = setTimeout(() => setSent(false), 3000);
     } catch (error) {
       console.error('Erro ao enviar para Pipedrive:', error);
     } finally {

@@ -1,37 +1,17 @@
 "use client";
 
+import DOMPurify from "isomorphic-dompurify";
 import { useState, useEffect, useRef } from "react";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import dynamic from "next/dynamic";
 import { marked } from "marked";
 import TurndownService from "turndown";
-
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 import {
   ClipboardList,
-  User,
   CheckCircle2,
   Check,
   XCircle,
   Plus,
   Edit2,
-  Calendar,
-  FileText,
   Bell,
   ArrowUp,
   Clock,
@@ -52,10 +32,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  useAssignableUsers,
-  AssignableUser,
-} from "@/app/api/hooks/users/useAssignableUsers";
+import { useAssignableUsers } from "@/app/api/hooks/users/useAssignableUsers";
 import { useReasonLoss } from "@/app/api/hooks/reason-loss/useReasonLoss";
 import { Process } from "@/app/interfaces/processes";
 import { getStageLabel } from "@/app/utils/processUtils";
@@ -64,6 +41,10 @@ import { useTheme } from "@/app/hooks/use-theme-client";
 import { toast } from "react-toastify";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { UserRolesEnum } from "@/app/interfaces/user";
+import { CreateActivityDialog } from "./activities/CreateActivityDialog";
+import { CompleteActivityDialog } from "./activities/CompleteActivityDialog";
+import { ChangeAssigneeDialog } from "./activities/ChangeAssigneeDialog";
+import { EditNotesDialog } from "./activities/EditNotesDialog";
 
 interface ActivitiesCardProps {
   process: Process | null;
@@ -120,8 +101,8 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
   const [editAssignee, setEditAssignee] = useState<string>("");
   const lastProcessedEditNotesRef = useRef<string | undefined>(undefined);
 
-  // Assumindo que as atividades vêm do processo (precisaremos adicionar isso na interface Process)
-  const activities: Activity[] = (process as any)?.activities || [];
+  // Atividades do processo (campo activities na interface Process)
+  const activities: Activity[] = process?.activities || [];
   const processDecisions = process?.processDecisions;
 
   const handleCreateActivity = async () => {
@@ -140,8 +121,9 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
       setSelectedType("");
       setSelectedAssignee("");
       onUpdate?.();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Erro ao criar atividade");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Erro ao criar atividade");
     }
   };
 
@@ -264,8 +246,9 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
       setEditAssignee("");
       lastProcessedEditNotesRef.current = undefined;
       onUpdate?.();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Erro ao atualizar nota");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Erro ao atualizar nota");
     }
   };
 
@@ -294,9 +277,10 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
       setCompleteStatus("");
       setCompleteLossReason("");
       onUpdate?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       toast.error(
-        error.response?.data?.message || "Erro ao concluir atividade",
+        err.response?.data?.message || "Erro ao concluir atividade",
       );
     }
   };
@@ -316,9 +300,10 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
       setShowChangeAssigneeDialog(null);
       setNewAssignee("");
       onUpdate?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
       toast.error(
-        error.response?.data?.message || "Erro ao alterar responsável",
+        err.response?.data?.message || "Erro ao alterar responsável",
       );
     }
   };
@@ -859,7 +844,7 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
                             {event.notes && (
                               <div
                                 dangerouslySetInnerHTML={{
-                                  __html: event.notes,
+                                  __html: DOMPurify.sanitize(event.notes),
                                 }}
                                 className={`text-sm ${
                                   theme === "dark"
@@ -965,100 +950,22 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
         </div>
       </div>
 
-      {/* Dialog para criar atividade */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent
-          className={
-            theme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white"
-          }
-        >
-          <DialogHeader>
-            <DialogTitle
-              className={theme === "dark" ? "text-gray-100" : "text-gray-900"}
-            >
-              Criar Nova Atividade
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label
-                className={theme === "dark" ? "text-gray-300" : "text-gray-700"}
-              >
-                Tipo de Atividade
-              </Label>
-              <Select
-                value={selectedType}
-                onValueChange={(value) =>
-                  setSelectedType(value as ActivityType)
-                }
-              >
-                <SelectTrigger
-                  className={
-                    theme === "dark" ? "bg-gray-700 border-gray-600" : ""
-                  }
-                >
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACTIVITY_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label
-                className={theme === "dark" ? "text-gray-300" : "text-gray-700"}
-              >
-                Responsável
-              </Label>
-              <Select
-                value={selectedAssignee}
-                onValueChange={setSelectedAssignee}
-              >
-                <SelectTrigger
-                  className={
-                    theme === "dark" ? "bg-gray-700 border-gray-600" : ""
-                  }
-                >
-                  <SelectValue placeholder="Selecione o responsável" />
-                </SelectTrigger>
-                <SelectContent>
-                  {usersData?.users?.map((user) => (
-                    <SelectItem key={user._id} value={user._id}>
-                      {user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateDialog(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCreateActivity}
-              disabled={
-                !selectedType ||
-                !selectedAssignee ||
-                createActivityMutation.isPending
-              }
-            >
-              {createActivityMutation.isPending ? "Criando..." : "Criar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateActivityDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        theme={theme}
+        selectedType={selectedType}
+        onSelectedTypeChange={setSelectedType}
+        selectedAssignee={selectedAssignee}
+        onSelectedAssigneeChange={setSelectedAssignee}
+        users={usersData?.users}
+        isPending={createActivityMutation.isPending}
+        onConfirm={handleCreateActivity}
+      />
 
-      {/* Dialog para concluir atividade */}
-      <Dialog
+      <CompleteActivityDialog
         open={!!showCompleteDialog}
+        showCompleteDialog={showCompleteDialog}
         onOpenChange={(open) => {
           if (!open) {
             setShowCompleteDialog(null);
@@ -1069,208 +976,40 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
             lastProcessedNotesRef.current = undefined;
           }
         }}
-      >
-        <DialogContent
-          className={
-            theme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white"
-          }
-        >
-          <DialogHeader>
-            <DialogTitle
-              className={theme === "dark" ? "text-gray-100" : "text-gray-900"}
-            >
-              Concluir Atividade
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p
-              className={`text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}
-            >
-              {showCompleteDialog &&
-                `Deseja concluir a atividade de ${ACTIVITY_TYPES.find((t) => t.value === showCompleteDialog)?.label}?`}
-            </p>
+        theme={theme}
+        completeStatus={completeStatus}
+        onCompleteStatusChange={setCompleteStatus}
+        completeLossReason={completeLossReason}
+        onCompleteLossReasonChange={setCompleteLossReason}
+        completeNotesMarkdown={completeNotesMarkdown}
+        onNotesChange={handleNotesChange}
+        reasonLoss={reasonLossData?.reasonLoss}
+        isPending={completeActivityMutation.isPending}
+        onConfirm={handleCompleteActivity}
+        onCancel={() => {
+          setShowCompleteDialog(null);
+          setCompleteNotes("");
+          setCompleteNotesMarkdown("");
+          setCompleteStatus("");
+          setCompleteLossReason("");
+        }}
+      />
 
-            <div>
-              <Label
-                className={theme === "dark" ? "text-gray-300" : "text-gray-700"}
-              >
-                Status *
-              </Label>
-              <Select
-                value={completeStatus}
-                onValueChange={(value) => {
-                  setCompleteStatus(value as "APPROVE" | "LOSS");
-                  if (value === "APPROVE") {
-                    setCompleteLossReason("");
-                  }
-                }}
-              >
-                <SelectTrigger
-                  className={
-                    theme === "dark" ? "bg-gray-700 border-gray-600" : ""
-                  }
-                >
-                  <SelectValue placeholder="Selecione o status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="APPROVE">Aprovar</SelectItem>
-                  <SelectItem value="LOSS">Recusar</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {completeStatus === "LOSS" && (
-              <div>
-                <Label
-                  className={
-                    theme === "dark" ? "text-gray-300" : "text-gray-700"
-                  }
-                >
-                  Motivo da Recusa *
-                </Label>
-                <Select
-                  value={completeLossReason}
-                  onValueChange={setCompleteLossReason}
-                >
-                  <SelectTrigger
-                    className={
-                      theme === "dark" ? "bg-gray-700 border-gray-600" : ""
-                    }
-                  >
-                    <SelectValue placeholder="Selecione o motivo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {reasonLossData?.reasonLoss?.map((reason) => (
-                      <SelectItem key={reason._id} value={reason.label}>
-                        {reason.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div>
-              <Label
-                className={theme === "dark" ? "text-gray-300" : "text-gray-700"}
-              >
-                Notas (opcional)
-              </Label>
-              <div className="mt-2" data-color-mode={theme}>
-                <MDEditor
-                  value={completeNotesMarkdown}
-                  onChange={handleNotesChange}
-                  preview="edit"
-                  height={300}
-                  visibleDragbar={false}
-                  data-color-mode={theme}
-                />
-              </div>
-              <p
-                className={`text-xs mt-2 ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}
-              >
-                Você pode usar formatação Markdown (negrito, itálico, listas,
-                etc.)
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCompleteDialog(null);
-                setCompleteNotes("");
-                setCompleteNotesMarkdown("");
-                setCompleteStatus("");
-                setCompleteLossReason("");
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCompleteActivity}
-              disabled={
-                completeActivityMutation.isPending ||
-                !completeStatus ||
-                (completeStatus === "LOSS" && !completeLossReason)
-              }
-            >
-              {completeActivityMutation.isPending
-                ? "Concluindo..."
-                : "Concluir"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog para alterar responsável */}
-      <Dialog
+      <ChangeAssigneeDialog
         open={!!showChangeAssigneeDialog}
+        showChangeAssigneeDialog={showChangeAssigneeDialog}
         onOpenChange={(open) => !open && setShowChangeAssigneeDialog(null)}
-      >
-        <DialogContent
-          className={
-            theme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white"
-          }
-        >
-          <DialogHeader>
-            <DialogTitle
-              className={theme === "dark" ? "text-gray-100" : "text-gray-900"}
-            >
-              Alterar Responsável
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p
-              className={`text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}
-            >
-              {showChangeAssigneeDialog &&
-                `Selecione o novo responsável para a atividade de ${ACTIVITY_TYPES.find((t) => t.value === showChangeAssigneeDialog)?.label}`}
-            </p>
-            <div>
-              <Label
-                className={theme === "dark" ? "text-gray-300" : "text-gray-700"}
-              >
-                Novo Responsável
-              </Label>
-              <Select value={newAssignee} onValueChange={setNewAssignee}>
-                <SelectTrigger
-                  className={
-                    theme === "dark" ? "bg-gray-700 border-gray-600" : ""
-                  }
-                >
-                  <SelectValue placeholder="Selecione o responsável" />
-                </SelectTrigger>
-                <SelectContent>
-                  {usersData?.users?.map((user) => (
-                    <SelectItem key={user._id} value={user._id}>
-                      {user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowChangeAssigneeDialog(null)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleChangeAssignee}
-              disabled={!newAssignee || changeAssigneeMutation.isPending}
-            >
-              {changeAssigneeMutation.isPending ? "Alterando..." : "Alterar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        theme={theme}
+        newAssignee={newAssignee}
+        onNewAssigneeChange={setNewAssignee}
+        users={usersData?.users}
+        isPending={changeAssigneeMutation.isPending}
+        onConfirm={handleChangeAssignee}
+      />
 
-      {/* Dialog para editar nota */}
-      <Dialog
+      <EditNotesDialog
         open={!!showEditNotesDialog}
+        showEditNotesDialog={showEditNotesDialog}
         onOpenChange={(open) => {
           if (!open) {
             setShowEditNotesDialog(null);
@@ -1280,101 +1019,23 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
             lastProcessedEditNotesRef.current = undefined;
           }
         }}
-      >
-        <DialogContent
-          className={
-            theme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white"
-          }
-        >
-          <DialogHeader>
-            <DialogTitle
-              className={theme === "dark" ? "text-gray-100" : "text-gray-900"}
-            >
-              Editar Nota
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p
-              className={`text-sm ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}
-            >
-              {showEditNotesDialog &&
-                `Edite a nota da atividade de ${ACTIVITY_TYPES.find((t) => t.value === showEditNotesDialog.activityType)?.label}`}
-            </p>
-
-            {isAdmin && (
-              <div>
-                <Label
-                  className={
-                    theme === "dark" ? "text-gray-300" : "text-gray-700"
-                  }
-                >
-                  Responsável
-                </Label>
-                <Select value={editAssignee} onValueChange={setEditAssignee}>
-                  <SelectTrigger
-                    className={
-                      theme === "dark" ? "bg-gray-700 border-gray-600" : ""
-                    }
-                  >
-                    <SelectValue placeholder="Selecione o responsável" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {usersData?.users?.map((user) => (
-                      <SelectItem key={user._id} value={user._id}>
-                        {user.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div>
-              <Label
-                className={theme === "dark" ? "text-gray-300" : "text-gray-700"}
-              >
-                Notas
-              </Label>
-              <div className="mt-2" data-color-mode={theme}>
-                <MDEditor
-                  value={editNotesMarkdown}
-                  onChange={handleEditNotesChange}
-                  preview="edit"
-                  height={300}
-                  visibleDragbar={false}
-                  data-color-mode={theme}
-                />
-              </div>
-              <p
-                className={`text-xs mt-2 ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}
-              >
-                Você pode usar formatação Markdown (negrito, itálico, listas,
-                etc.)
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowEditNotesDialog(null);
-                setEditNotes("");
-                setEditNotesMarkdown("");
-                setEditAssignee("");
-                lastProcessedEditNotesRef.current = undefined;
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleUpdateNotes}
-              disabled={updateNotesMutation.isPending}
-            >
-              {updateNotesMutation.isPending ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        theme={theme}
+        isAdmin={isAdmin}
+        editAssignee={editAssignee}
+        onEditAssigneeChange={setEditAssignee}
+        users={usersData?.users}
+        editNotesMarkdown={editNotesMarkdown}
+        onNotesChange={handleEditNotesChange}
+        isPending={updateNotesMutation.isPending}
+        onConfirm={handleUpdateNotes}
+        onCancel={() => {
+          setShowEditNotesDialog(null);
+          setEditNotes("");
+          setEditNotesMarkdown("");
+          setEditAssignee("");
+          lastProcessedEditNotesRef.current = undefined;
+        }}
+      />
     </>
   );
 }

@@ -491,7 +491,7 @@ export const ProcessDocumentModal = ({
               ) : getHasInsights() ? (
                 <div className="space-y-4">
                   <InsightGeneric
-                    data={document?.data}
+                    data={document?.data ?? {}}
                     documentTitle={document?.title}
                   />
                   <div className="pt-4 border-t border-border space-y-3">
@@ -987,28 +987,28 @@ export const ProcessDocumentModal = ({
           titleSuffix={document?.title}
           initialValues={{
             ownerType:
-              (document as any)?.data?.ownerType ||
-              (document as any)?.data?.owner ||
+              document?.data?.ownerType ||
+              document?.data?.owner ||
               "perito",
             margemPercentual:
-              (document as any)?.data?.margemPercentual ||
-              (document as any)?.data?.margem_percentual ||
-              "15%",
+              (document?.data?.margemPercentual ||
+              document?.data?.margem_percentual ||
+              "15%") as string | undefined,
             valorComMargem:
-              (document as any)?.data?.valorComMargem ||
-              (document as any)?.data?.valor_com_margem,
+              (document?.data?.valorComMargem ||
+              document?.data?.valor_com_margem) as string | undefined,
             valorPosFgts:
-              (document as any)?.data?.valorPosFgts ||
-              (document as any)?.data?.valor_pos_fgts,
+              (document?.data?.valorPosFgts ||
+              document?.data?.valor_pos_fgts) as string | undefined,
             valorPosHonorarios:
-              (document as any)?.data?.valorPosHonorarios ||
-              (document as any)?.data?.valor_pos_honorarios,
+              (document?.data?.valorPosHonorarios ||
+              document?.data?.valor_pos_honorarios) as string | undefined,
             desagio50:
-              (document as any)?.data?.desagio50 ||
-              (document as any)?.data?.desagio_50,
+              (document?.data?.desagio50 ||
+              document?.data?.desagio_50) as string | undefined,
             desagio30:
-              (document as any)?.data?.desagio30 ||
-              (document as any)?.data?.desagio_30,
+              (document?.data?.desagio30 ||
+              document?.data?.desagio_30) as string | undefined,
           }}
           onSubmit={(note) => {
             try {

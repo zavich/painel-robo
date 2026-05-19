@@ -39,7 +39,8 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
   );
   const [isDocumentReady, setIsDocumentReady] = useState(false);
   const isMountedRef = useRef(true);
-  const renderTasksRef = useRef<any[]>([]);
+  const renderTasksRef = useRef<{ cancel?: () => void }[]>([]);
+  const blobUrlRef = useRef<string | null>(null);
   const { theme } = useTheme();
   const pageWrappersRef = useRef<(HTMLDivElement | null)[]>([]);
   const [visiblePageState, setVisiblePageState] = useState(pageNumber || 1);
@@ -58,7 +59,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
     const originalWarn = console.warn;
     const originalError = console.error;
 
-    console.warn = (...args: any[]) => {
+    console.warn = (...args: Parameters<typeof console.warn>) => {
       const message = args[0]?.toString() || "";
       if (
         (message.includes("TextLayer") && message.includes("cancel")) ||
@@ -70,7 +71,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
       originalWarn.apply(console, args);
     };
 
-    console.error = (...args: any[]) => {
+    console.error = (...args: Parameters<typeof console.error>) => {
       const message = args[0]?.toString() || "";
       if (
         (message.includes("TextLayer") && message.includes("cancel")) ||
@@ -378,27 +379,35 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
   const { fetchPDF } = useFetchPDF();
 
   useEffect(() => {
-    let abortController = new AbortController();
+    let cancelled = false;
+
+    // Revogar blob anterior antes de criar novo
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
     setPdfBlobUrl(null);
     setIsDocumentReady(false);
 
     const fetchBlob = async () => {
       try {
         const blob = await fetchPDF(pdfUrl);
-        if (!blob) throw new Error("Erro ao buscar PDF");
+        if (!blob || cancelled) return;
 
         const url = URL.createObjectURL(blob);
-        console.log(`PDF blob fetched: ${blob.size} bytes, URL: ${url}`);
-
+        blobUrlRef.current = url;
         setPdfBlobUrl(url);
       } catch (e) {
-        setPdfBlobUrl(null);
+        if (!cancelled) setPdfBlobUrl(null);
       }
     };
     fetchBlob();
     return () => {
-      abortController.abort();
-      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      cancelled = true;
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
   }, [pdfUrl, retryKey]);
 

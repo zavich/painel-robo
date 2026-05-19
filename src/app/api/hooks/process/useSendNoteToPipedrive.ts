@@ -3,7 +3,7 @@ import api from "../..";
 
 interface SendNoteToPipedriveRequest {
   processId: string;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export const useSendNoteToPipedrive = () => {
@@ -14,9 +14,9 @@ export const useSendNoteToPipedrive = () => {
       const response = await api.post(`/process/${processId}/send-note-pipedrive`, data);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["process"] });
-      queryClient.invalidateQueries({ queryKey: ["processes"] });
+    onSuccess: (_, variables) => {
+      // BUG-013: escopo específico para evitar re-fetch de todos os processos
+      queryClient.invalidateQueries({ queryKey: ["process", variables.processId] });
     },
   });
 };

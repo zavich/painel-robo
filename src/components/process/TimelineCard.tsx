@@ -13,7 +13,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { NewMovement } from "@/app/api/hooks/process/useNewMovements";
 import { Badge } from "../ui/badge";
-import { StatusExtractionInsight } from "@/app/interfaces/processes";
+import { DocumentExtract, Movimentacoes, StatusExtractionInsight } from "@/app/interfaces/processes";
 
 // Helper para normalizar datas
 function normalizeDate(dateStr: string): string {
@@ -54,9 +54,9 @@ function DocumentItem({
   idx,
   onClick,
 }: {
-  doc: any;
+  doc: DocumentExtract;
   idx: number;
-  onClick?: (doc: any) => void;
+  onClick?: (doc: DocumentExtract) => void;
 }) {
   return (
     <div className="relative">
@@ -106,10 +106,10 @@ function MovementItem({
   isNew,
   onClick,
 }: {
-  mov: any;
+  mov: Movimentacoes;
   idx: number;
   isNew: boolean;
-  onClick?: (mov: any) => void;
+  onClick?: (mov: Movimentacoes) => void;
 }) {
   return (
     <div className="relative">
@@ -194,13 +194,13 @@ export enum InstanceEnum {
 
 interface TimelineCardProps {
   title: string;
-  moviments: any[];
+  moviments: Movimentacoes[];
   instancia?: InstanceEnum;
   newMovements?: NewMovement[];
   processNumber?: string;
-  onMovementClick?: (mov: any) => void;
-  documents?: any[];
-  onDocumentClick?: (doc: any) => void;
+  onMovementClick?: (mov: Movimentacoes) => void;
+  documents?: DocumentExtract[];
+  onDocumentClick?: (doc: DocumentExtract) => void;
   onMarkAsViewed?: () => void;
   isMarkingAsViewed?: boolean;
 }
@@ -327,10 +327,9 @@ export function TimelineCard({
       // Filtrar documentos por insights (com insights, sem insights, ou todos)
       .filter((doc) => {
         if (documentInsightsFilter === "all") return true;
-        const docData = doc.data as any;
         const hasInsights =
-          docData?.status === StatusExtractionInsight.COMPLETED &&
-          docData?.data;
+          doc.data?.status === StatusExtractionInsight.COMPLETED &&
+          doc.data?.data;
         if (documentInsightsFilter === "with") {
           return hasInsights;
         } else if (documentInsightsFilter === "without") {

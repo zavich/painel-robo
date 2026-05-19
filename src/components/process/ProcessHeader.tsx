@@ -142,7 +142,7 @@ export function ProcessHeader({
   const initialPetition = process?.documents?.find(
     (doc) => doc.title === "Petição Inicial",
   );
-  const initialPetitionData = initialPetition?.data as any;
+  const initialPetitionData = initialPetition?.data;
 
   const claimantName =
     initialPetitionData?.qualificacao_reclamante?.nome_completo ||
@@ -152,7 +152,7 @@ export function ProcessHeader({
 
   // Obter título do processo usando a mesma lógica do KanbanCard
   // Prioriza título editado, depois formPipedrive.title, depois gera automaticamente
-  const savedTitle = process?.title || (process as any)?.formPipedrive?.title;
+  const savedTitle = process?.title || process?.formPipedrive?.title;
   const displayTitle = getProcessTitle(
     process?.processParts || [],
     process?.number,

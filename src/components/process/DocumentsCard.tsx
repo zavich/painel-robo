@@ -337,7 +337,7 @@ export function DocumentsCard({
     }
   }
 
-  const handleSendCalculationToPipedrive = async (calculationData: any) => {
+  const handleSendCalculationToPipedrive = async (calculationData: Record<string, unknown>) => {
     if (!processNumber) {
       toast.error("Número do processo não encontrado");
       return;
@@ -350,7 +350,7 @@ export function DocumentsCard({
 
     try {
       // Verificar se valor é válido (não null, não undefined, não vazio)
-      const isValidValue = (value: any): boolean => {
+      const isValidValue = (value: unknown): boolean => {
         if (value === null || value === undefined) return false;
         if (typeof value === "string" && value.trim() === "") return false;
         if (typeof value === "number" && value === 0) return false;
@@ -358,7 +358,7 @@ export function DocumentsCard({
       };
 
       // Formatar valores monetários
-      const formatCurrency = (value: any): string | null => {
+      const formatCurrency = (value: unknown): string | null => {
         // Se já é string formatada (ex: "R$ 18.000,00"), retornar como está
         if (typeof value === "string" && value.includes("R$")) {
           return value;
@@ -371,12 +371,12 @@ export function DocumentsCard({
       };
 
       // Formatar datas
-      const formatDate = (dateStr: any): string | null => {
+      const formatDate = (dateStr: unknown): string | null => {
         if (!dateStr) return null;
         if (typeof dateStr === "string" && dateStr.includes("/"))
           return dateStr;
         try {
-          const date = new Date(dateStr);
+          const date = new Date(dateStr as string | number | Date);
           return date.toLocaleDateString("pt-BR");
         } catch {
           return null;
@@ -399,7 +399,7 @@ export function DocumentsCard({
         isValidValue(calculationData.owner_type || calculationData.ownerType)
       ) {
         const ownerType =
-          calculationData.owner_type || calculationData.ownerType;
+          (calculationData.owner_type || calculationData.ownerType) as string;
         responsavel.push(
           `   Tipo: ${ownerType.charAt(0).toUpperCase() + ownerType.slice(1)}`,
         );
@@ -906,7 +906,7 @@ export function DocumentsCard({
                   </div>
 
                   <InsightGeneric
-                    data={document.data}
+                    data={document.data ?? {}}
                     documentTitle={document.title}
                     processNumber={processNumber}
                     onSendToPipedrive={handleSendCalculationToPipedrive}

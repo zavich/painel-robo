@@ -89,10 +89,11 @@ const LoginForm = () => {
 
     try {
       await signIn(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
       setLoginError(
-        error?.response?.data?.message ||
-          error?.message ||
+        axiosError?.response?.data?.message ||
+          axiosError?.message ||
           "Erro ao fazer login.",
       );
     } finally {

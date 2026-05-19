@@ -127,7 +127,7 @@ export const KanbanCard = ({
   const processTitle = getProcessTitle(
     process?.processParts || [],
     process.number,
-    process?.title || (process as any)?.formPipedrive?.title,
+    process?.title || process?.formPipedrive?.title,
   );
 
   return (

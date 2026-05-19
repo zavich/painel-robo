@@ -14,13 +14,13 @@ interface MassEditPanelProps {
   users?: Array<{ _id?: string; id?: string; email: string }>;
   selectAllMode?: 'page' | 'all' | null;
   totalSelected?: number;
-  apiFilters?: any; // Filters to apply when selecting all from DB
+  apiFilters?: Record<string, unknown>; // Filters to apply when selecting all from DB
   isAdmin?: boolean; // Whether the current user is an admin
 }
 
 interface EditField {
   action: "keep" | "edit";
-  value: any;
+  value: string | null;
 }
 
 export function MassEditPanel({ 
@@ -53,10 +53,10 @@ export function MassEditPanel({
     { type: "", assignedTo: "" }
   ]);
 
-  const handleFieldChange = (fieldName: keyof typeof fields, action: "keep" | "edit", value?: any) => {
+  const handleFieldChange = (fieldName: keyof typeof fields, action: "keep" | "edit", value?: string) => {
     setFields(prev => ({
       ...prev,
-      [fieldName]: { action, value: action === "edit" ? value : null }
+      [fieldName]: { action, value: action === "edit" ? (value ?? null) : null }
     }));
   };
 
@@ -198,10 +198,11 @@ export function MassEditPanel({
             if (result.errors && result.errors.length > 0) {
               errors.push(...result.errors.map(e => e.error));
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error(`Error creating activity ${activity.type}:`, error);
             totalFailed += processIds.length;
-            errors.push(`Erro ao criar ${activity.type}: ${error?.response?.data?.message || error.message}`);
+            const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
+            errors.push(`Erro ao criar ${activity.type}: ${axiosErr?.response?.data?.message || axiosErr?.message || 'Erro desconhecido'}`);
           }
         }
 
@@ -215,11 +216,12 @@ export function MassEditPanel({
         await queryClient.invalidateQueries({ queryKey: ["processes"] });
 
         handleClose();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error creating mass activities:", error);
+        const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
         toast({
           title: "Erro ao criar atividades",
-          description: error?.response?.data?.message || "Ocorreu um erro ao criar as atividades em massa.",
+          description: axiosErr?.response?.data?.message || "Ocorreu um erro ao criar as atividades em massa.",
           variant: "destructive",
         });
         setIsSubmitting(false);

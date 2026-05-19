@@ -1,14 +1,15 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useProcess } from '@/app/api/hooks/process/useProcess';
 import { hasError } from '@/app/utils/processSyncStatus';
+import { Process, ProcessStatus } from '@/app/interfaces/processes';
 
 interface UseProcessAutoRefreshOptions {
   processId: string;
   enabled?: boolean;
   intervalMs?: number;
   errorIntervalMs?: number;
-  onDataUpdate?: (data: any) => void;
-  onStatusChange?: (oldStatus: any, newStatus: any) => void;
+  onDataUpdate?: (data: Process) => void;
+  onStatusChange?: (oldStatus: ProcessStatus, newStatus: ProcessStatus) => void;
 }
 
 export function useProcessAutoRefresh({
@@ -28,8 +29,9 @@ export function useProcessAutoRefresh({
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isRefetchingRef = useRef(false);
+  const isMountedRef = useRef(true);
   const [isRefetchingState, setIsRefetchingState] = useState(false);
-  const lastProcessStatusRef = useRef<any>(null);
+  const lastProcessStatusRef = useRef<ProcessStatus | null>(null);
   const currentIntervalRef = useRef<number>(intervalMs);
 
   const startPolling = useCallback(() => {
@@ -59,7 +61,7 @@ export function useProcessAutoRefresh({
                 }
               }
               
-              lastProcessStatusRef.current = currentStatus;
+              lastProcessStatusRef.current = currentStatus ?? null;
               
               const newInterval = hasError(currentStatus)
                 ? errorIntervalMs 
@@ -78,7 +80,7 @@ export function useProcessAutoRefresh({
             console.error('Erro ao atualizar dados do processo:', error);
           } finally {
             isRefetchingRef.current = false;
-            setIsRefetchingState(false);
+            if (isMountedRef.current) setIsRefetchingState(false);
           }
         }
       };
@@ -103,20 +105,20 @@ export function useProcessAutoRefresh({
         if (result.data) {
           const currentStatus = result.data.processStatus;
           const lastStatus = lastProcessStatusRef.current;
-          
+
           if (onStatusChange && lastStatus && currentStatus) {
-            const statusChanged = 
+            const statusChanged =
               lastStatus.name !== currentStatus.name ||
               lastStatus.log !== currentStatus.log ||
               lastStatus.errorReason !== currentStatus.errorReason;
-            
+
             if (statusChanged) {
               onStatusChange(lastStatus, currentStatus);
             }
           }
-          
-          lastProcessStatusRef.current = currentStatus;
-          
+
+          lastProcessStatusRef.current = currentStatus ?? null;
+
           if (onDataUpdate) {
             onDataUpdate(result.data);
           }
@@ -127,7 +129,7 @@ export function useProcessAutoRefresh({
         throw error;
       } finally {
         isRefetchingRef.current = false;
-        setIsRefetchingState(false);
+        if (isMountedRef.current) setIsRefetchingState(false);
       }
     }
   }, [refetch, onDataUpdate, onStatusChange]);
@@ -144,6 +146,7 @@ export function useProcessAutoRefresh({
   }, [process?.processStatus, intervalMs, errorIntervalMs]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     if (enabled && processId) {
       startPolling();
     } else {
@@ -151,15 +154,10 @@ export function useProcessAutoRefresh({
     }
 
     return () => {
+      isMountedRef.current = false;
       stopPolling();
     };
   }, [enabled, processId, startPolling, stopPolling]);
-
-  useEffect(() => {
-    return () => {
-      stopPolling();
-    };
-  }, [stopPolling]);
 
   return {
     process,

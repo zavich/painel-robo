@@ -34,9 +34,10 @@ async function removeProvisionalLawsuit(processId: string) {
       `/process/${processId}/remove-provisional-lawsuit-number`
     );
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const axiosError = error as { response?: { data?: { message?: string } } };
     throw new Error(
-      error?.response?.data?.message || 
+      axiosError?.response?.data?.message ||
       'Erro ao remover processo provisório'
     );
   }
