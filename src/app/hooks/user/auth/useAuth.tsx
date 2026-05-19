@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -91,6 +92,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
       router.replace("/login");
     }
   };
+  const hasPermission = useCallback(
+    (key: string) => user?.permissions?.includes(key) ?? false,
+    [user],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -99,6 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
         isAuthenticated,
         signIn,
         logout,
+        hasPermission,
       }}
     >
       {children}

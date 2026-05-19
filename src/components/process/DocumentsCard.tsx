@@ -58,7 +58,7 @@ export function DocumentsCard({
 }: DocumentsCardProps) {
   const [openCalcModal, setOpenCalcModal] = useState(false);
   const { fetchPDF } = useFetchPDF();
-  const [calcInitial] = useState<any>(null);
+  const [calcInitial] = useState<null>(null);
   const [calcDocTitle] = useState<string>("");
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);

@@ -14,6 +14,7 @@ import {
   DocumentExtract,
   Movimentacoes,
   PeticaoInicialData,
+  Process,
   ProcessStatus,
 } from "@/app/interfaces/processes";
 import { UserRolesEnum } from "@/app/interfaces/user";
@@ -158,16 +159,16 @@ export function useProcessPageState() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [showChangeStageDialog, setShowChangeStageDialog] = useState(false);
-  const [lastProcessData, setLastProcessData] = useState<any>(null);
+  const [lastProcessData, setLastProcessData] = useState<Process | null>(null);
   const [showUpdateConfirmation, setShowUpdateConfirmation] = useState(false);
-  const [pendingProcessData, setPendingProcessData] = useState<any>(null);
+  const [pendingProcessData, setPendingProcessData] = useState<Process | null>(null);
   const [currentStatusInfo, setCurrentStatusInfo] = useState<{
     name: string;
     log?: string;
     errorReason?: string;
     updatedAt: string;
   } | null>(null);
-  const [, setPreviousStatus] = useState<any>(null);
+  const [, setPreviousStatus] = useState<ProcessStatus | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const initialRightTab = useMemo<"documents" | "activities">(() => {
     const tab = searchParams.get("tab");

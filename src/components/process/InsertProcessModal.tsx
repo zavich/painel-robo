@@ -2,7 +2,6 @@
 
 import Papa from "papaparse";
 import React, { useState } from "react";
-import * as XLSX from "xlsx";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
@@ -85,6 +84,8 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
         const reader = new FileReader();
         reader.onload = async (e) => {
           try {
+            // PERF-007: lazy-load XLSX to avoid blocking the initial bundle
+            const XLSX = await import("xlsx");
             const arrayBuffer = e.target?.result as ArrayBuffer;
             const workbook = XLSX.read(arrayBuffer, { type: "array" });
             const firstSheetName = workbook.SheetNames[0];

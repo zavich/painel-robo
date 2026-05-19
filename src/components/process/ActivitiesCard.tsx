@@ -1,23 +1,10 @@
 "use client";
 
-import DOMPurify from "isomorphic-dompurify";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { marked } from "marked";
 import TurndownService from "turndown";
-import {
-  ClipboardList,
-  CheckCircle2,
-  Check,
-  XCircle,
-  Plus,
-  Edit2,
-  Bell,
-  ArrowUp,
-  Clock,
-  MoreVertical,
-  Building2,
-} from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 import {
   useCreateActivity,
   ActivityType,
@@ -26,12 +13,6 @@ import {
 import { useCompleteActivity } from "@/app/api/hooks/process/useCompleteActivity";
 import { useChangeActivityAssignee } from "@/app/api/hooks/process/useChangeActivityAssignee";
 import { useUpdateActivityNotes } from "@/app/api/hooks/process/useUpdateActivityNotes";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAssignableUsers } from "@/app/api/hooks/users/useAssignableUsers";
 import { useReasonLoss } from "@/app/api/hooks/reason-loss/useReasonLoss";
 import { Process } from "@/app/interfaces/processes";
@@ -45,6 +26,9 @@ import { CreateActivityDialog } from "./activities/CreateActivityDialog";
 import { CompleteActivityDialog } from "./activities/CompleteActivityDialog";
 import { ChangeAssigneeDialog } from "./activities/ChangeAssigneeDialog";
 import { EditNotesDialog } from "./activities/EditNotesDialog";
+import { ActivityTimelineItem } from "./activities/ActivityTimelineItem";
+import { DecisionTimelineItem } from "./activities/DecisionTimelineItem";
+import { TimelineEvent } from "./activities/timelineTypes";
 
 interface ActivitiesCardProps {
   process: Process | null;
@@ -369,25 +353,6 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
   };
 
   // Combinar atividades e decisões em uma timeline
-  interface TimelineEvent {
-    id: string;
-    type: "activity" | "decision" | "stage_change";
-    date: string;
-    title: string;
-    user?: string;
-    notes?: string;
-    isCompleted?: boolean;
-    activityType?: ActivityType;
-    activityId?: string; // ID da atividade para edição
-    assignedTo?: string; // ID do responsável pela atividade
-    activityStatus?: "APPROVE" | "LOSS"; // Status da atividade (APPROVE ou LOSS)
-    lossReason?: string; // Motivo da recusa da atividade
-    stage?: StageProcess;
-    status?: "APPROVED" | "REJECTED";
-    rejectionReason?: string;
-    rejectionDescription?: string;
-  }
-
   const buildTimeline = (): TimelineEvent[] => {
     const events: TimelineEvent[] = [];
 
@@ -488,6 +453,35 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
 
   const timelineEvents = buildTimeline();
 
+  const handleOpenCompleteDialog = (
+    activityType: ActivityType,
+    currentNotes: string,
+  ) => {
+    setShowCompleteDialog(activityType);
+    setCompleteNotes(currentNotes);
+    setCompleteNotesMarkdown("");
+    setCompleteStatus("");
+    setCompleteLossReason("");
+    lastProcessedNotesRef.current = undefined;
+  };
+
+  const handleOpenEditNotesDialog = (
+    activityType: ActivityType,
+    currentNotes: string,
+    assigneeId: string,
+  ) => {
+    setShowEditNotesDialog({
+      activityType,
+      currentNotes,
+    });
+    setEditNotes(currentNotes);
+    if (isAdmin) {
+      setEditAssignee(assigneeId);
+    } else {
+      setEditAssignee("");
+    }
+  };
+
   return (
     <>
       <div
@@ -540,95 +534,7 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
                   const isLastActivity =
                     index === timelineEvents.length - 1 &&
                     event.type === "activity";
-                  const getEventIcon = () => {
-                    if (event.type === "activity") {
-                      // Sempre usar ícone de check quando concluída, ou sino quando pendente
-                      if (event.isCompleted) {
-                        return <CheckCircle2 className="h-4 w-4" />;
-                      }
-                      return <Bell className="h-4 w-4" />;
-                    }
-                    if (event.type === "decision") {
-                      if (event.status === "APPROVED") {
-                        return <CheckCircle2 className="h-4 w-4" />;
-                      }
-                      if (event.status === "REJECTED") {
-                        return <XCircle className="h-4 w-4" />;
-                      }
-                      return <Clock className="h-4 w-4" />;
-                    }
-                    return <ArrowUp className="h-4 w-4" />;
-                  };
 
-                  const getEventIconColor = () => {
-                    if (event.type === "activity") {
-                      // Sempre verde quando concluída, cinza quando pendente
-                      if (event.isCompleted) {
-                        return theme === "dark"
-                          ? "text-green-400"
-                          : "text-green-600";
-                      }
-                      return theme === "dark"
-                        ? "text-gray-400"
-                        : "text-gray-500";
-                    }
-                    if (event.type === "decision") {
-                      if (event.status === "APPROVED") {
-                        return theme === "dark"
-                          ? "text-green-400"
-                          : "text-green-600";
-                      }
-                      if (event.status === "REJECTED") {
-                        return theme === "dark"
-                          ? "text-red-400"
-                          : "text-red-600";
-                      }
-                      return theme === "dark"
-                        ? "text-gray-400"
-                        : "text-gray-500";
-                    }
-                    return theme === "dark" ? "text-blue-400" : "text-blue-600";
-                  };
-
-                  const getEventIconBg = () => {
-                    if (event.type === "activity") {
-                      if (event.isCompleted) {
-                        // Se a atividade está concluída, verificar o status
-                        if (event.activityStatus === "LOSS") {
-                          return theme === "dark"
-                            ? "bg-red-900/30 border-red-700"
-                            : "bg-red-50 border-red-200";
-                        }
-                        // APPROVE ou sem status definido
-                        return theme === "dark"
-                          ? "bg-green-900/30 border-green-700"
-                          : "bg-green-50 border-green-200";
-                      }
-                      return theme === "dark"
-                        ? "bg-gray-700 border-gray-600"
-                        : "bg-white border-gray-200";
-                    }
-                    if (event.type === "decision") {
-                      if (event.status === "APPROVED") {
-                        return theme === "dark"
-                          ? "bg-green-900/30 border-green-700"
-                          : "bg-green-50 border-green-200";
-                      }
-                      if (event.status === "REJECTED") {
-                        return theme === "dark"
-                          ? "bg-red-900/30 border-red-700"
-                          : "bg-red-50 border-red-200";
-                      }
-                      return theme === "dark"
-                        ? "bg-gray-700 border-gray-600"
-                        : "bg-white border-gray-200";
-                    }
-                    return theme === "dark"
-                      ? "bg-blue-900/30 border-blue-700"
-                      : "bg-blue-50 border-blue-200";
-                  };
-
-                  // Renderizar cards de notas para atividades
                   if (event.type === "activity") {
                     const activity = getActivityByType(event.activityType!);
                     const assignedByUser =
@@ -637,311 +543,30 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
                         ? activity.assignedBy
                         : null;
 
-                    // Determinar cor da linha baseada no status
-                    const getLineColor = () => {
-                      if (!event.isCompleted)
-                        return theme === "dark" ? "#4b5563" : "#d1d5db";
-                      if (event.activityStatus === "LOSS") return "#dc2626"; // Vermelho para recusado
-                      if (event.activityStatus === "APPROVE") return "#16a34a"; // Verde para aprovado
-                      return theme === "dark" ? "#4b5563" : "#d1d5db";
-                    };
-
                     return (
-                      <div key={event.id} className="mb-4 relative pl-8">
-                        {/* Segmento de linha pontilhada para esta atividade - mostra o status (vermelho se recusado) */}
-                        {/* O segmento começa do topo (primeira atividade) ou do ponto, e vai até o próximo ponto ou final */}
-                        <div
-                          className="absolute left-0"
-                          style={{
-                            left: "18px",
-                            width: "1px",
-                            top: isFirstActivity ? "0px" : "16px", // Primeira começa do topo, outras do ponto
-                            bottom: isLastActivity ? "0px" : "-16px", // Vai até o próximo ponto
-                            borderLeft: `1px dashed ${getLineColor()}`,
-                            marginLeft: "-0.5px",
-                            zIndex: 1,
-                          }}
-                        />
-
-                        {/* Ponto na linha da timeline - verde quando aprovado, vermelho quando recusado, cinza quando pendente */}
-                        <div
-                          className={`absolute left-0 top-4 w-3 h-3 rounded-full border-2 z-10 ${
-                            event.isCompleted
-                              ? event.activityStatus === "LOSS"
-                                ? "bg-red-500 border-red-600"
-                                : "bg-green-500 border-green-600"
-                              : theme === "dark"
-                                ? "bg-gray-500 border-gray-500"
-                                : "bg-gray-400 border-gray-400"
-                          }`}
-                          style={{ left: "18px", marginLeft: "-6px" }}
-                        />
-
-                        {/* Card de nota */}
-                        <div
-                          className={`rounded-lg border overflow-hidden ${
-                            theme === "dark"
-                              ? "border-gray-700 bg-gray-800"
-                              : "border-gray-200 bg-white shadow-sm"
-                          }`}
-                        >
-                          {/* Header do card (fundo branco) */}
-                          <div
-                            className={`px-4 py-3 border-b ${
-                              theme === "dark"
-                                ? "bg-gray-800 border-gray-700"
-                                : "bg-white border-gray-200"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex items-start gap-3 flex-1 min-w-0">
-                                {/* Ícone - círculo verde com checkmark branco quando concluída */}
-                                {event.type === "activity" &&
-                                event.isCompleted ? (
-                                  <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                                    <Check
-                                      className="h-4 w-4 text-white"
-                                      strokeWidth={3}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div
-                                    className={`flex-shrink-0 mt-0.5 ${getEventIconColor()}`}
-                                  >
-                                    {getEventIcon()}
-                                  </div>
-                                )}
-
-                                {/* Título e informações */}
-                                <div className="flex-1 min-w-0">
-                                  <div
-                                    className={`font-semibold text-sm ${theme === "dark" ? "text-gray-100" : "text-gray-900"}`}
-                                  >
-                                    {event.title}
-                                  </div>
-                                  <div
-                                    className={`text-xs mt-1 flex items-center gap-2 flex-wrap ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}
-                                  >
-                                    <span>{formatDateShort(event.date)}</span>
-                                    {event.user && (
-                                      <>
-                                        <span>·</span>
-                                        <span>{event.user}</span>
-                                      </>
-                                    )}
-                                    {assignedByUser && (
-                                      <>
-                                        <span>·</span>
-                                        <div className="flex items-center gap-1">
-                                          <Building2 className="h-3 w-3" />
-                                          <span>
-                                            Oficial -{" "}
-                                            {assignedByUser.name ||
-                                              assignedByUser.email}
-                                          </span>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Menu de opções */}
-                              {event.activityType &&
-                                (isAdmin ||
-                                  (event.assignedTo &&
-                                    user?._id === event.assignedTo)) && (
-                                  <div className="flex-shrink-0">
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className={`h-7 w-7 p-0 ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
-                                        >
-                                          <MoreVertical
-                                            className={`h-4 w-4 ${theme === "dark" ? "text-gray-400" : "text-gray-500"}`}
-                                          />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent
-                                        align="end"
-                                        className={
-                                          theme === "dark"
-                                            ? "bg-gray-800 border-gray-700"
-                                            : ""
-                                        }
-                                      >
-                                        {!event.isCompleted && (
-                                          <DropdownMenuItem
-                                            onClick={() => {
-                                              setShowCompleteDialog(
-                                                event.activityType!,
-                                              );
-                                              setCompleteNotes(
-                                                event.notes || "",
-                                              );
-                                              setCompleteNotesMarkdown("");
-                                              setCompleteStatus("");
-                                              setCompleteLossReason("");
-                                              lastProcessedNotesRef.current =
-                                                undefined;
-                                            }}
-                                            className={
-                                              theme === "dark"
-                                                ? "text-gray-200 hover:bg-gray-700"
-                                                : ""
-                                            }
-                                          >
-                                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                                            Marcar como concluída
-                                          </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuItem
-                                          onClick={() => {
-                                            const activity = getActivityByType(
-                                              event.activityType!,
-                                            );
-                                            setShowEditNotesDialog({
-                                              activityType: event.activityType!,
-                                              currentNotes: event.notes || "",
-                                            });
-                                            setEditNotes(event.notes || "");
-                                            // Só setar o responsável se o usuário for admin
-                                            if (isAdmin) {
-                                              setEditAssignee(
-                                                getUserId(
-                                                  activity?.assignedTo,
-                                                ) || "",
-                                              );
-                                            } else {
-                                              setEditAssignee("");
-                                            }
-                                          }}
-                                          className={
-                                            theme === "dark"
-                                              ? "text-gray-200 hover:bg-gray-700"
-                                              : ""
-                                          }
-                                        >
-                                          <Edit2 className="h-4 w-4 mr-2" />
-                                          {event.notes
-                                            ? "Editar Nota"
-                                            : "Adicionar Nota"}
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </div>
-                                )}
-                            </div>
-                          </div>
-
-                          {/* Conteúdo do card (fundo amarelo claro) */}
-                          <div
-                            className={`px-4 py-3 ${theme === "dark" ? "bg-gray-800/50" : "bg-yellow-50"}`}
-                          >
-                            {/* Notas */}
-                            {event.notes && (
-                              <div
-                                dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(event.notes),
-                                }}
-                                className={`text-sm ${
-                                  theme === "dark"
-                                    ? "text-gray-300"
-                                    : "text-gray-900"
-                                }`}
-                                style={{
-                                  lineHeight: "1.6",
-                                  whiteSpace: "pre-wrap",
-                                }}
-                              />
-                            )}
-
-                            {/* Motivo de rejeição */}
-                            {event.activityStatus === "LOSS" &&
-                              event.lossReason && (
-                                <div
-                                  className={`mt-2 pt-2 border-t ${
-                                    theme === "dark"
-                                      ? "border-red-800"
-                                      : "border-red-200"
-                                  }`}
-                                >
-                                  <div
-                                    className={`font-semibold text-sm ${theme === "dark" ? "text-red-300" : "text-red-700"}`}
-                                  >
-                                    Motivo: {event.lossReason}
-                                  </div>
-                                </div>
-                              )}
-                          </div>
-                        </div>
-                      </div>
+                      <ActivityTimelineItem
+                        key={event.id}
+                        event={event}
+                        theme={theme}
+                        isFirstActivity={isFirstActivity}
+                        isLastActivity={isLastActivity}
+                        isAdmin={isAdmin}
+                        userId={user?._id}
+                        assignedByUser={assignedByUser}
+                        formatDateShort={formatDateShort}
+                        onOpenCompleteDialog={handleOpenCompleteDialog}
+                        onOpenEditNotesDialog={handleOpenEditNotesDialog}
+                      />
                     );
                   }
 
-                  // Para decisões, manter o formato de timeline
                   return (
-                    <div key={event.id} className="relative flex gap-4">
-                      {/* Ícone na timeline */}
-                      <div
-                        className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center ${getEventIconBg()} ${getEventIconColor()}`}
-                      >
-                        {getEventIcon()}
-                      </div>
-
-                      {/* Conteúdo do evento */}
-                      <div className="flex-1 min-w-0 pb-4">
-                        <div
-                          className={`flex items-start justify-between gap-2 mb-1`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div
-                              className={`font-semibold text-sm ${theme === "dark" ? "text-gray-100" : "text-gray-900"}`}
-                            >
-                              {event.title}
-                            </div>
-                            <div
-                              className={`text-xs mt-1 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}
-                            >
-                              {formatDateShort(event.date)}
-                              {event.user && ` · ${event.user}`}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Motivo de rejeição da decisão */}
-                        {event.type === "decision" &&
-                          event.status === "REJECTED" &&
-                          event.rejectionReason && (
-                            <div
-                              className={`mt-2 p-3 rounded text-xs ${
-                                theme === "dark"
-                                  ? "bg-red-900/20 border border-red-700"
-                                  : "bg-red-50 border border-red-200"
-                              }`}
-                            >
-                              <div
-                                className={`font-semibold mb-1 ${theme === "dark" ? "text-red-300" : "text-red-700"}`}
-                              >
-                                Motivo: {event.rejectionReason}
-                              </div>
-                              {event.rejectionDescription && (
-                                <div
-                                  className={
-                                    theme === "dark"
-                                      ? "text-red-200"
-                                      : "text-red-600"
-                                  }
-                                >
-                                  {event.rejectionDescription}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                      </div>
-                    </div>
+                    <DecisionTimelineItem
+                      key={event.id}
+                      event={event}
+                      theme={theme}
+                      formatDateShort={formatDateShort}
+                    />
                   );
                 })}
               </div>

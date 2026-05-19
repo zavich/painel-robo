@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Process } from "../interfaces/processes";
 import { getProcessTitle } from "./processPartsUtils";
@@ -10,6 +9,9 @@ export const exportToExcel = async (
   selectedColumns: string[] = [],
 ) => {
   try {
+    // PERF-007: lazy-load XLSX to avoid blocking the initial bundle
+    const XLSX = await import("xlsx");
+
     // Criar um novo workbook
     const workbook = XLSX.utils.book_new();
 
