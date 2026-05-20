@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { marked } from 'marked';
 import { useTheme } from "@/app/hooks/use-theme-client";
 import TurndownService from 'turndown';
+import { logger } from "@/app/lib/logger";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -74,7 +75,7 @@ export function PipedriveFormCard({
           setAnalysisMarkdown(markdown);
           lastProcessedAnalysisRef.current = form.analysis;
         } catch (error) {
-          console.error('Erro ao converter HTML para Markdown:', error);
+          logger.error('Erro ao converter HTML para Markdown:', error);
           // Se falhar, tentar extrair apenas o texto
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = form.analysis;

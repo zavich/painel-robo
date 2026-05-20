@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Check } from "lucide-react";
+import { logger } from "@/app/lib/logger";
 
 interface InsightGenericProps {
   data: Record<string, unknown>;
@@ -140,7 +141,7 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
       setSent(true);
       sentTimeoutRef.current = setTimeout(() => setSent(false), 3000);
     } catch (error) {
-      console.error('Erro ao enviar para Pipedrive:', error);
+      logger.error("Erro ao enviar para Pipedrive:", error);
     } finally {
       setIsSending(false);
     }

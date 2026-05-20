@@ -9,7 +9,6 @@ export function useDeletePrompt() {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
       },
     });
     if (!res.ok) throw new Error("Erro ao deletar prompt");

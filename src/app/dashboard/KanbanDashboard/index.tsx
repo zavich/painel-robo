@@ -8,6 +8,7 @@ import { useToast } from "@/app/hooks/use-toast";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { Process } from "@/app/interfaces/processes";
 import { UserRolesEnum } from "@/app/interfaces/user";
+import { logger } from "@/app/lib/logger";
 import { exportToExcel } from "@/app/utils/excelExport";
 import { ExportColumnsDialog } from "@/components/ExportColumnsDialog";
 import { FiltersBar } from "@/components/FiltersBar";
@@ -358,14 +359,14 @@ export default function KanbanDashboard() {
                 "Erro desconhecido";
               const statusCode = err?.response?.status || "desconhecido";
 
-              console.error(
+              logger.error(
                 `❌ Erro ${statusCode} na página ${page} (tentativa ${retries}/${MAX_RETRIES + 1}):`,
                 errorMessage,
               );
 
               // Se esgotou todas as tentativas, PARA COMPLETAMENTE
               if (retries > MAX_RETRIES) {
-                console.error(
+                logger.error(
                   `💥 PARANDO EXPORTAÇÃO - Todas as tentativas falharam na página ${page}`,
                 );
 
@@ -397,7 +398,7 @@ export default function KanbanDashboard() {
 
           // Se chegou aqui e não teve sucesso, algo deu muito errado
           if (!pageSuccess) {
-            console.error(
+            logger.error(
               `💥 ERRO CRÍTICO: Página ${page} não foi carregada após todas as tentativas`,
             );
             throw new Error(

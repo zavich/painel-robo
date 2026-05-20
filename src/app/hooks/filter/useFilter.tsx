@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { logger } from "@/app/lib/logger";
 
 type FilterState = {
   [key: string]: string | number | boolean | string[] | null | undefined;
@@ -150,7 +151,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
       window.history.replaceState(null, "", url);
     } catch (err) {
       // ignore
-      console.error("Erro ao sincronizar filtros para URL", err);
+      logger.error("Erro ao sincronizar filtros para URL", err);
     }
   };
 

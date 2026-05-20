@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { FileSearch, Save, X, DollarSign } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProcessAutoRefresh } from "@/app/hooks/useProcessAutoRefresh";
+import { logger } from "@/app/lib/logger";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useUpdateProcessForm } from "@/app/api/hooks/process/useUpdateProcessForm";
@@ -20,7 +21,7 @@ export default function PreAnalysisPage() {
 
   const { process, isLoading, refetch } = useProcessAutoRefresh({
     processId: id,
-    enabled: false,
+    enabled: true,
     intervalMs: 10000,
   });
 
@@ -99,7 +100,7 @@ export default function PreAnalysisPage() {
       toast.success("Pré-Análise salva com sucesso!");
     } catch (error) {
       toast.error("Erro ao salvar Pré-Análise");
-      console.error("Erro:", error);
+      logger.error("Erro ao salvar Pré-Análise:", error);
     }
   };
 
@@ -293,4 +294,3 @@ export default function PreAnalysisPage() {
     </div>
   );
 }
-

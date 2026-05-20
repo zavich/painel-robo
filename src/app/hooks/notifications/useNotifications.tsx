@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient, type QueryObserverResult } from 
 import api from "@/app/api";
 import { useAuth } from "../user/auth/useAuth";
 import { getNotificationsSocket, disconnectNotificationsSocket } from "@/lib/socket";
+import { logger } from "@/app/lib/logger";
 
 export type NotificationType = "ACTIVITY" | "SYSTEM";
 
@@ -100,7 +101,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       const message = (err instanceof Error ? err.message : null) || String(err || "erro socket notification");
       // Evita spam no console
       if (lastErrorMessageRef.current !== message) {
-        console.warn("Não foi possível conectar às notificações em tempo real.", message);
+        logger.warn("Não foi possível conectar às notificações em tempo real.", message);
         lastErrorMessageRef.current = message;
       }
     };
@@ -171,4 +172,3 @@ export function useNotifications() {
   }
   return ctx;
 }
-

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { useExtractInsights } from "@/app/api/hooks/process/useExtractInsights";
 import { usePrompts } from "@/app/api/hooks/process/usePrompts";
+import { logger } from "@/app/lib/logger";
 import { useRemoveInsights } from "@/app/api/hooks/process/useRemoveInsights";
 import { StatusExtractionInsight } from "@/app/interfaces/processes";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
@@ -689,7 +690,7 @@ export function DocumentsCard({
 
                       window.URL.revokeObjectURL(url);
                     } catch (err) {
-                      console.error(err);
+                      logger.error("Erro ao baixar documento:", err);
                     }
                   }}
                   className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useProcess } from '@/app/api/hooks/process/useProcess';
 import { hasError } from '@/app/utils/processSyncStatus';
 import { Process, ProcessStatus } from '@/app/interfaces/processes';
+import { logger } from '@/app/lib/logger';
 
 interface UseProcessAutoRefreshOptions {
   processId: string;
@@ -27,7 +28,7 @@ export function useProcessAutoRefresh({
     refetch,
   } = useProcess(processId);
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isRefetchingRef = useRef(false);
   const isMountedRef = useRef(true);
   const [isRefetchingState, setIsRefetchingState] = useState(false);
@@ -40,68 +41,77 @@ export function useProcessAutoRefresh({
   useEffect(() => { onDataUpdateRef.current = onDataUpdate; }, [onDataUpdate]);
   useEffect(() => { onStatusChangeRef.current = onStatusChange; }, [onStatusChange]);
 
-  const startPolling = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    if (enabled && processId) {
-      const poll = async () => {
-        if (!isRefetchingRef.current) {
-          isRefetchingRef.current = true;
-          setIsRefetchingState(true);
-          try {
-            const result = await refetch();
-            if (result.data) {
-              const currentStatus = result.data.processStatus;
-              const lastStatus = lastProcessStatusRef.current;
-
-              if (onStatusChangeRef.current && lastStatus && currentStatus) {
-                const statusChanged =
-                  lastStatus.name !== currentStatus.name ||
-                  lastStatus.log !== currentStatus.log ||
-                  lastStatus.errorReason !== currentStatus.errorReason;
-
-                if (statusChanged) {
-                  onStatusChangeRef.current(lastStatus, currentStatus);
-                }
-              }
-
-              lastProcessStatusRef.current = currentStatus ?? null;
-
-              const newInterval = hasError(currentStatus)
-                ? errorIntervalMs
-                : intervalMs;
-
-              if (newInterval !== currentIntervalRef.current) {
-                currentIntervalRef.current = newInterval;
-                startPolling();
-              }
-
-              if (onDataUpdateRef.current) {
-                onDataUpdateRef.current(result.data);
-              }
-            }
-          } catch (error) {
-            console.error('Erro ao atualizar dados do processo:', error);
-          } finally {
-            isRefetchingRef.current = false;
-            if (isMountedRef.current) setIsRefetchingState(false);
-          }
-        }
-      };
-
-      intervalRef.current = setInterval(poll, currentIntervalRef.current);
-    }
-  }, [enabled, processId, intervalMs, errorIntervalMs, refetch]);
-  // NOTE: onDataUpdate and onStatusChange are intentionally NOT in deps — accessed via refs
-
   const stopPolling = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
   }, []);
+
+  const startPolling = useCallback(() => {
+    stopPolling();
+
+    if (!(enabled && processId)) {
+      return;
+    }
+
+    const scheduleNextPoll = (delayMs: number) => {
+      if (!(enabled && processId)) {
+        return;
+      }
+
+      timeoutRef.current = setTimeout(async () => {
+        if (isRefetchingRef.current) {
+          scheduleNextPoll(currentIntervalRef.current);
+          return;
+        }
+
+        isRefetchingRef.current = true;
+        if (isMountedRef.current) {
+          setIsRefetchingState(true);
+        }
+
+        try {
+          const result = await refetch();
+          if (result.data) {
+            const currentStatus = result.data.processStatus;
+            const lastStatus = lastProcessStatusRef.current;
+
+            if (onStatusChangeRef.current && lastStatus && currentStatus) {
+              const statusChanged =
+                lastStatus.name !== currentStatus.name ||
+                lastStatus.log !== currentStatus.log ||
+                lastStatus.errorReason !== currentStatus.errorReason;
+
+              if (statusChanged) {
+                onStatusChangeRef.current(lastStatus, currentStatus);
+              }
+            }
+
+            lastProcessStatusRef.current = currentStatus ?? null;
+            currentIntervalRef.current = hasError(currentStatus)
+              ? errorIntervalMs
+              : intervalMs;
+
+            if (onDataUpdateRef.current) {
+              onDataUpdateRef.current(result.data);
+            }
+          }
+        } catch (error) {
+          logger.error('Erro ao atualizar dados do processo:', error);
+        } finally {
+          isRefetchingRef.current = false;
+          if (isMountedRef.current) {
+            setIsRefetchingState(false);
+          }
+          scheduleNextPoll(currentIntervalRef.current);
+        }
+      }, delayMs);
+    };
+
+    scheduleNextPoll(currentIntervalRef.current);
+  }, [enabled, processId, intervalMs, errorIntervalMs, refetch, stopPolling]);
+  // NOTE: onDataUpdate and onStatusChange are intentionally NOT in deps — accessed via refs
 
   const forceRefresh = useCallback(async () => {
     if (!isRefetchingRef.current) {
@@ -132,7 +142,7 @@ export function useProcessAutoRefresh({
         }
         return result.data;
       } catch (error) {
-        console.error('Erro ao forçar atualização do processo:', error);
+        logger.error('Erro ao forçar atualização do processo:', error);
         throw error;
       } finally {
         isRefetchingRef.current = false;
@@ -142,14 +152,10 @@ export function useProcessAutoRefresh({
   }, [refetch]);
 
   useEffect(() => {
-    if (process?.processStatus && !lastProcessStatusRef.current) {
-      lastProcessStatusRef.current = process.processStatus;
-
-      const initialInterval = hasError(process.processStatus)
-        ? errorIntervalMs
-        : intervalMs;
-      currentIntervalRef.current = initialInterval;
-    }
+    lastProcessStatusRef.current = process?.processStatus ?? null;
+    currentIntervalRef.current = hasError(process?.processStatus)
+      ? errorIntervalMs
+      : intervalMs;
   }, [process?.processStatus, intervalMs, errorIntervalMs]);
 
   useEffect(() => {

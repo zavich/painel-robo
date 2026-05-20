@@ -7,6 +7,7 @@ import { useToast } from "@/app/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateMassActivity } from "@/app/api/hooks/process/useCreateMassActivity";
 import { ActivityType } from "@/app/api/hooks/process/useCreateActivity";
+import { logger } from "@/app/lib/logger";
 
 interface MassEditPanelProps {
   selectedProcesses: Process[];
@@ -144,7 +145,7 @@ export function MassEditPanel({
                 await new Promise(resolve => setTimeout(resolve, 100));
               }
             } catch (pageError) {
-              console.error(`Error fetching page ${page}:`, pageError);
+              logger.error(`Error fetching page ${page}:`, pageError);
               hasMore = false;
             }
           }
@@ -199,7 +200,7 @@ export function MassEditPanel({
               errors.push(...result.errors.map(e => e.error));
             }
           } catch (error: unknown) {
-            console.error(`Error creating activity ${activity.type}:`, error);
+            logger.error(`Error creating activity ${activity.type}:`, error);
             totalFailed += processIds.length;
             const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
             errors.push(`Erro ao criar ${activity.type}: ${axiosErr?.response?.data?.message || axiosErr?.message || 'Erro desconhecido'}`);
@@ -212,12 +213,14 @@ export function MassEditPanel({
           variant: totalFailed > 0 ? "destructive" : "default",
         });
 
-        // Invalidate queries to refresh data
+        processIds.forEach((processId) => {
+          queryClient.invalidateQueries({ queryKey: ["process", processId] });
+        });
         await queryClient.invalidateQueries({ queryKey: ["processes"] });
 
         handleClose();
       } catch (error: unknown) {
-        console.error("Error creating mass activities:", error);
+        logger.error("Error creating mass activities:", error);
         const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
         toast({
           title: "Erro ao criar atividades",
@@ -446,4 +449,3 @@ export function MassEditPanel({
     </div>
   );
 }
-

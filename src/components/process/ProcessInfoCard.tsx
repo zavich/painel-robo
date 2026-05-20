@@ -32,6 +32,7 @@ import { formatCpf } from "@/app/utils/masks";
 import { useInsertExecution } from "@/app/api/hooks/processes/useInsertExecution";
 import { useRemoveProvisionalLawsuit } from "@/app/api/hooks/processes/useRemoveProvisionalLawsuit";
 import { toast } from "react-toastify";
+import { logger } from "@/app/lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -143,7 +144,7 @@ export function ProcessInfoCard({
     } catch (error: unknown) {
       const err = error as { message?: string };
       toast.error(err?.message || "Erro ao remover vínculo do processo provisório");
-      console.error("Erro ao remover processo provisório:", error);
+      logger.error("Erro ao remover processo provisório:", error);
     } finally {
       setIsRemoving(false);
     }

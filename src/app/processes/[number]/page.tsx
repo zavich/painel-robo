@@ -80,6 +80,7 @@ export default function ProcessDetailsEditPage() {
     removeProvisionalLawsuitMutation,
     markMovementsAsViewedMutation,
     isInsertExecutionLoading,
+    processReopenPending,
     handleMarkAsViewed,
     handleCompanyClick,
     handleDocumentClick,
@@ -181,13 +182,13 @@ export default function ProcessDetailsEditPage() {
         <ProcessHeader
           process={process as Process}
           onReopen={handleReopen}
-          isPending={false}
+          isPending={processReopenPending}
           isRefetching={isRefetching}
           isSyncing={isSyncing}
           onCompanyClick={handleCompanyClick}
-          // onViewPreAnalysis={() => {
-          //   window.open(`/processes/${process?.number}/pre-analysis`, '_blank');
-          // }}
+          onViewPreAnalysis={() => {
+            window.open(`/processes/${process?.number}/pre-analysis`, "_blank");
+          }}
           onViewAnalysis={() => {
             window.open(`/processes/${process?.number}/analysis`, "_blank");
           }}

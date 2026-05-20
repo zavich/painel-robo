@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    webpackBuildWorker: false,
+  },
+  turbopack: {
+    root: process.cwd(),
+  },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     // NEXT_API_KEY_MASTER removido do bundle client (SEG-003)
@@ -20,10 +26,14 @@ const nextConfig: NextConfig = {
       .filter(Boolean)
       .join(" ");
 
+    const isDev = process.env.NODE_ENV !== "production";
+    const scriptSrc = isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'";
+
     const csp = [
       "default-src 'self'",
-      // unsafe-inline required for Next.js RSC inline scripts; unsafe-eval for dev HMR
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",

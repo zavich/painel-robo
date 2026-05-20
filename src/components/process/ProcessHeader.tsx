@@ -36,6 +36,7 @@ import {
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/app/hooks/use-theme-client";
+import { logger } from "@/app/lib/logger";
 import { ProcessPartsModal } from "./ProcessPartsModal";
 import { ProcessStatusBadges } from "./ProcessStatusBadges";
 import { ProcessActionsDropdown } from "./ProcessActionsDropdown";
@@ -107,7 +108,7 @@ export function ProcessHeader({
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
-        console.error("Erro ao copiar:", err);
+        logger.error("Erro ao copiar número do processo:", err);
       }
     }
   };

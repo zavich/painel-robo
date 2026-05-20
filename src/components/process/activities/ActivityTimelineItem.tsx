@@ -1,3 +1,4 @@
+import { memo } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +35,7 @@ interface ActivityTimelineItemProps {
   ) => void;
 }
 
-export function ActivityTimelineItem({
+export const ActivityTimelineItem = memo(function ActivityTimelineItem({
   event,
   theme,
   isFirstActivity,
@@ -256,4 +257,4 @@ export function ActivityTimelineItem({
       </div>
     </div>
   );
-}
+});

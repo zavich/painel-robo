@@ -31,6 +31,7 @@ export interface BulkUpdateRequest {
 export interface BulkUpdateResponse {
   message: string;
   updatedCount: number;
+  processIds: string[];
 }
 
 export const bulkUpdateProcesses = (data: BulkUpdateRequest) =>
@@ -55,11 +56,12 @@ export function useBulkUpdateProcesses(
     unknown
   >({
     mutationFn: bulkUpdateProcesses,
-    onSuccess: () => {
-      // Invalidate and refetch processes data
+    onSuccess: (response) => {
+      response.processIds?.forEach((processId) => {
+        queryClient.invalidateQueries({ queryKey: ["process", processId] });
+      });
       queryClient.invalidateQueries({ queryKey: ["processes"] });
     },
     ...(config || {}),
   });
 }
-

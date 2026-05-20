@@ -38,6 +38,37 @@ import { InstanceEnum } from "@/components/process/TimelineCard";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { logger } from "@/app/lib/logger";
+
+function buildTrackedProcessSnapshot(process: Process | null | undefined) {
+  if (!process) {
+    return "";
+  }
+
+  return JSON.stringify({
+    number: process.number,
+    title: process.title,
+    synchronizedAt: process.synchronizedAt,
+    status: {
+      name: process.processStatus?.name,
+      log: process.processStatus?.log,
+      errorReason: process.processStatus?.errorReason,
+      updatedAt: process.processStatus?.updatedAt,
+    },
+    observation: process.observation?.description,
+    formPipedrive: process.formPipedrive
+      ? {
+          processNumber: process.formPipedrive.processNumber,
+          executionNumber: process.formPipedrive.executionNumber,
+          observacao: process.formPipedrive.observacao,
+          observacaoPreAnalise: process.formPipedrive.observacaoPreAnalise,
+          value: process.formPipedrive.value,
+        }
+      : null,
+    documentsCount: process.documents?.length ?? 0,
+    movimentsCount: process.moviments?.length ?? 0,
+  });
+}
 
 export function useProcessPageState() {
   const { user } = useAuth();
@@ -71,7 +102,7 @@ export function useProcessPageState() {
     isRefetching,
   } = useProcessAutoRefresh({
     processId: id,
-    enabled: false,
+    enabled: true,
     intervalMs: 10000,
     onStatusChange: handleStatusChange,
   });
@@ -201,6 +232,7 @@ export function useProcessPageState() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedClaimant, setEditedClaimant] = useState("");
   const [editedDefendant, setEditedDefendant] = useState("");
+  const ignoredUpdateSnapshotRef = useRef<string | null>(null);
   const claimantInputRef = useRef<HTMLInputElement>(null);
   const defendantInputRef = useRef<HTMLInputElement>(null);
 
@@ -368,7 +400,7 @@ export function useProcessPageState() {
       await refetchProcess();
     } catch (error) {
       toast.error("Erro ao remover vínculo com execução provisória");
-      console.error("Erro:", error);
+      logger.error("Erro ao remover vínculo com execução provisória:", error);
     }
   };
 
@@ -394,7 +426,7 @@ export function useProcessPageState() {
       await refetchProcess();
     } catch (error) {
       toast.error("Erro ao vincular execução provisória");
-      console.error("Erro:", error);
+      logger.error("Erro ao vincular execução provisória:", error);
     }
   };
 
@@ -543,7 +575,7 @@ export function useProcessPageState() {
       await refetchProcess();
     } catch (error) {
       toast.error("Erro ao atualizar título");
-      console.error("Erro:", error);
+      logger.error("Erro ao atualizar título:", error);
     }
   }, [
     process?.number,
@@ -578,6 +610,7 @@ export function useProcessPageState() {
 
       // O toast será exibido automaticamente pelo useEffect que monitora o status
     } catch (error) {
+      logger.error("Erro ao sincronizar processo:", error);
       toast.error("Erro ao sincronizar processo.");
     }
   };
@@ -585,9 +618,12 @@ export function useProcessPageState() {
   const handleAcceptUpdate = () => {
     if (pendingProcessData) {
       setLastProcessData(pendingProcessData);
+      setIsEditing(false);
       setHasUnsavedChanges(false);
+      setHasChanges(false);
       setShowUpdateConfirmation(false);
       setPendingProcessData(null);
+      ignoredUpdateSnapshotRef.current = null;
 
       toast.info("Dados atualizados com sucesso!", {
         position: "top-right",
@@ -597,6 +633,9 @@ export function useProcessPageState() {
   };
 
   const handleRejectUpdate = () => {
+    ignoredUpdateSnapshotRef.current = pendingProcessData
+      ? buildTrackedProcessSnapshot(pendingProcessData)
+      : null;
     setShowUpdateConfirmation(false);
     setPendingProcessData(null);
 
@@ -622,6 +661,32 @@ export function useProcessPageState() {
       setLastProcessData(process);
     }
   }, [process, lastProcessData]);
+
+  useEffect(() => {
+    if (!process || !lastProcessData) {
+      return;
+    }
+
+    const currentSnapshot = buildTrackedProcessSnapshot(process);
+    const lastSnapshot = buildTrackedProcessSnapshot(lastProcessData);
+
+    if (currentSnapshot === lastSnapshot) {
+      ignoredUpdateSnapshotRef.current = null;
+      return;
+    }
+
+    if (currentSnapshot === ignoredUpdateSnapshotRef.current) {
+      return;
+    }
+
+    if (isEditing || hasUnsavedChanges) {
+      setPendingProcessData(process);
+      setShowUpdateConfirmation(true);
+      return;
+    }
+
+    setLastProcessData(process);
+  }, [process, lastProcessData, isEditing, hasUnsavedChanges]);
 
   // Efeito para selecionar automaticamente a Petição Inicial quando o processo carregar
   useEffect(() => {
@@ -1033,6 +1098,7 @@ export function useProcessPageState() {
     removeProvisionalLawsuitMutation,
     markMovementsAsViewedMutation,
     isInsertExecutionLoading,
+    processReopenPending: processReopenMutation.isPending,
     // Handlers
     handleMarkAsViewed,
     handleCompanyClick,

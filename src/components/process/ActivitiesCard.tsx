@@ -22,6 +22,7 @@ import { useTheme } from "@/app/hooks/use-theme-client";
 import { toast } from "react-toastify";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { UserRolesEnum } from "@/app/interfaces/user";
+import { logger } from "@/app/lib/logger";
 import { CreateActivityDialog } from "./activities/CreateActivityDialog";
 import { CompleteActivityDialog } from "./activities/CompleteActivityDialog";
 import { ChangeAssigneeDialog } from "./activities/ChangeAssigneeDialog";
@@ -122,7 +123,7 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
           setCompleteNotesMarkdown(markdown);
           lastProcessedNotesRef.current = completeNotes;
         } catch (error) {
-          console.error("Erro ao converter HTML para Markdown:", error);
+          logger.error("Erro ao converter HTML para Markdown:", error);
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = completeNotes;
           const textContent = tempDiv.textContent || tempDiv.innerText || "";
@@ -153,7 +154,7 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
           setEditNotesMarkdown(markdown);
           lastProcessedEditNotesRef.current = editNotes;
         } catch (error) {
-          console.error("Erro ao converter HTML para Markdown:", error);
+          logger.error("Erro ao converter HTML para Markdown:", error);
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = editNotes;
           const textContent = tempDiv.textContent || tempDiv.innerText || "";

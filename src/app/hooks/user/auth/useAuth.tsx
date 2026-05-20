@@ -11,14 +11,35 @@ import React, {
 } from "react";
 import { toast } from "react-toastify";
 import { AuthContextType } from "./props";
-import { SigninRequestType, UserType } from "@/app/interfaces/user";
+import {
+  SigninRequestType,
+  UserRolesEnum,
+  UserType,
+} from "@/app/interfaces/user";
 import api from "@/app/api";
+import { logger } from "@/app/lib/logger";
 import Cookies from "js-cookie"; // Adicione esta importação
 
 export const AuthContext = createContext({} as AuthContextType);
 export interface AuthProviderProps {
   children: ReactNode; // Define children como um ReactNode
 }
+
+const rolePermissions: Record<UserRolesEnum, string[]> = {
+  [UserRolesEnum.ADMIN]: [
+    "change_stage",
+    "create_activity",
+    "user_management",
+    "mass_edit",
+    "process_insertion",
+    "view_all_processes",
+  ],
+  [UserRolesEnum.LAWYER]: [
+    "change_stage",
+    "create_activity",
+  ],
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
   const { children } = props;
   const [user, setUser] = useState<UserType>({} as UserType);
@@ -82,8 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     try {
       await api.post("/auth/logout");
     } catch (error) {
-      // Mesmo se o logout falhar no servidor, limpar o estado local
-      console.warn("Erro ao fazer logout no servidor:", error);
+      logger.warn("Erro ao fazer logout no servidor:", error);
     } finally {
       // Sempre limpar o estado local e redirecionar
       clearAuthCookies();
@@ -93,7 +113,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     }
   };
   const hasPermission = useCallback(
-    (key: string) => user?.permissions?.includes(key) ?? false,
+    (key: string) =>
+      user?.permissions?.includes(key) ??
+      rolePermissions[user?.role as UserRolesEnum]?.includes(key) ??
+      false,
     [user],
   );
 

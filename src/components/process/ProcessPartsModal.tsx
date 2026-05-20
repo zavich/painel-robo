@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { mascararCNPJ, formatCpf } from "@/app/utils/masks";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,7 +19,7 @@ interface ProcessPartsModalProps {
   onCompanyClick?: (company: Company) => void;
 }
 
-export function ProcessPartsModal({
+export const ProcessPartsModal = memo(function ProcessPartsModal({
   open,
   onOpenChange,
   activeParts,
@@ -176,4 +177,4 @@ export function ProcessPartsModal({
       </DialogContent>
     </Dialog>
   );
-}
+});

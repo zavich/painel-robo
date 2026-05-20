@@ -1,5 +1,6 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import api from "../..";
+import { logger } from '@/app/lib/logger';
 
 export interface AvailableStage {
   key: string;
@@ -28,7 +29,7 @@ export async function getAvailableStages() {
     // Garantir que sempre retorna um array
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('Erro ao buscar stages disponíveis:', error);
+    logger.error('Erro ao buscar stages disponíveis:', error);
     return [];
   }
 }

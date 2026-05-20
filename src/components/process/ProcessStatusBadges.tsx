@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -21,7 +22,7 @@ interface ProcessStatusBadgesProps {
   onLinkProvisionalExecution?: () => void;
 }
 
-export function ProcessStatusBadges({
+export const ProcessStatusBadges = memo(function ProcessStatusBadges({
   process,
   isRefetching,
   isSyncing,
@@ -315,4 +316,4 @@ export function ProcessStatusBadges({
       )}
     </>
   );
-}
+});

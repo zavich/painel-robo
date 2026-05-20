@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { logger } from "@/app/lib/logger";
 
 type FetchBy =
   | { type: "upload"; file: File }
@@ -44,7 +45,7 @@ export function useProcessFetch() {
         return { type: "upload", data };
       }
     } catch (error) {
-      console.error(error);
+      logger.error("Erro ao inserir processo:", error);
       return null;
     }
   }, []);

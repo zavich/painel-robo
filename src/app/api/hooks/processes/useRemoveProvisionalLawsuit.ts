@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from "../..";
+import { logger } from '@/app/lib/logger';
 
 export interface RemoveProvisionalLawsuitRequest {
   processId: string;
@@ -21,7 +22,7 @@ export const useRemoveProvisionalLawsuit = () => {
       });
     },
     onError: (error) => {
-      console.error('Erro ao remover processo provisório:', error);
+      logger.error('Erro ao remover processo provisório:', error);
     },
   });
 

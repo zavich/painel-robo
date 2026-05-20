@@ -11,7 +11,7 @@ const api = Axios.create({
 });
 ```
 
-**Inconsistencia**: hooks de mutacao de prompts e reason-loss usam `fetch()` nativo com header `x-api-key: NEXT_PUBLIC_API_KEY` ao inves do axios `api`. O endpoint `useInsertExecution` tem header `Authorization` hardcoded: `"zUqttTlQ4j0Ob0odbmDDQ96bjKgz6Z"`. O `useBulkUpdateProcesses` usa prefixo `/v1/` diferente dos demais.
+As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o painel depende do cookie JWT emitido pelo `robo-api`. O `useBulkUpdateProcesses` mantem prefixo `/v1/` por coerencia com a API versionada.
 
 ---
 
@@ -95,7 +95,7 @@ const api = Axios.create({
 
 ---
 
-## Admin (prompts, reason-loss) — usam fetch() com x-api-key
+## Admin (prompts, reason-loss) — autenticacao via cookie JWT
 
 | Hook | Metodo | Endpoint | Body |
 |------|--------|----------|------|

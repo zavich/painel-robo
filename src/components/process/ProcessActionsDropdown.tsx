@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,7 +30,7 @@ interface ProcessActionsDropdownProps {
   onSync?: () => void;
 }
 
-export function ProcessActionsDropdown({
+export const ProcessActionsDropdown = memo(function ProcessActionsDropdown({
   theme,
   isAdmin,
   open,
@@ -150,4 +151,4 @@ export function ProcessActionsDropdown({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});

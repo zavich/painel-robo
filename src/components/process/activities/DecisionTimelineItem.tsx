@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ArrowUp, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { TimelineEvent } from "./timelineTypes";
 
@@ -7,7 +8,7 @@ interface DecisionTimelineItemProps {
   formatDateShort: (dateString: string | null) => string;
 }
 
-export function DecisionTimelineItem({
+export const DecisionTimelineItem = memo(function DecisionTimelineItem({
   event,
   theme,
   formatDateShort,
@@ -114,4 +115,4 @@ export function DecisionTimelineItem({
       </div>
     </div>
   );
-}
+});

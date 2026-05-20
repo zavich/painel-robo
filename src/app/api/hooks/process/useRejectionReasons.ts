@@ -1,5 +1,6 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import api from "../..";
+import { logger } from '@/app/lib/logger';
 
 export interface RejectionReason {
   key: string;
@@ -32,7 +33,7 @@ export async function getRejectionReasons() {
       label: item.label,
     }));
   } catch (error) {
-    console.error('Erro ao buscar motivos de recusa:', error);
+    logger.error('Erro ao buscar motivos de recusa:', error);
     return [];
   }
 }
