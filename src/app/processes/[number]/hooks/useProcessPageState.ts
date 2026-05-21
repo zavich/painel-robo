@@ -17,7 +17,7 @@ import {
 import { UserRolesEnum } from "@/app/interfaces/user";
 import { logger } from "@/app/lib/logger";
 import { getClaimant } from "@/app/utils/processPartsUtils";
-import { InstanceEnum } from "@/components/process/TimelineCard";
+import { InstanceEnum } from "@/components/process/TimelineCard.types";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";

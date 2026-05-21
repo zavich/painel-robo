@@ -4,7 +4,8 @@ import { DocumentExtract, Movimentacoes, Process } from "@/app/interfaces/proces
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ProcessInstanceCard } from "@/components/process/ProcessInstanceCard";
-import { InstanceEnum, TimelineCard } from "@/components/process/TimelineCard";
+import { TimelineCard } from "@/components/process/TimelineCard";
+import { InstanceEnum } from "@/components/process/TimelineCard.types";
 import { Calendar, TrendingUp } from "lucide-react";
 
 type ProcessTimelineSectionProps = {

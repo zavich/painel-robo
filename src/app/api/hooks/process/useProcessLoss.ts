@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
 import api from "../..";
-import { PipedriveFormData } from '@/components/process/PipedriveFormCard';
+import type { PipedriveFormData } from '@/components/process/PipedriveForm.types';
 
 interface LossRequest {
   processId: string;

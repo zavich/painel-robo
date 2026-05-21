@@ -8,8 +8,8 @@ import { mascararCNPJ } from "@/app/utils/masks";
 import {
   getProcessTitle,
 } from "@/app/utils/processPartsUtils";
-import { PipedriveFormData } from "@/components/process/PipedriveFormCard";
-import { InstanceEnum } from "@/components/process/TimelineCard";
+import type { PipedriveFormData } from "@/components/process/PipedriveForm.types";
+import { InstanceEnum } from "@/components/process/TimelineCard.types";
 
 export const EMPTY_FORM_STATE: PipedriveFormData = {
   title: "",

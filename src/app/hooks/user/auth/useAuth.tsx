@@ -18,6 +18,7 @@ import {
 import api from "@/app/api";
 import { logger } from "@/app/lib/logger";
 import Cookies from "js-cookie";
+import { hasUserPermission } from "./permissions";
 
 export const AuthContext = createContext({} as AuthContextType);
 export interface AuthProviderProps {
@@ -102,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     }
   };
   const hasPermission = useCallback(
-    (key: string) => Boolean(user?.permissions?.includes(key)),
+    (key: string) => hasUserPermission(user, key),
     [user],
   );
 

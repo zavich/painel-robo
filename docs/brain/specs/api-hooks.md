@@ -13,6 +13,14 @@ const api = Axios.create({
 
 As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o painel depende do cookie JWT emitido pelo `robo-api`. O `useBulkUpdateProcesses` mantem prefixo `/v1/` por coerencia com a API versionada.
 
+## Testes
+
+- Harness ativo com Jest + ts-jest.
+- Script principal: `yarn test`.
+- Cobertura inicial:
+  - `src/app/processes/[number]/hooks/processPageState.utils.spec.ts`
+  - `src/app/hooks/user/auth/permissions.spec.ts`
+
 ---
 
 ## Auth

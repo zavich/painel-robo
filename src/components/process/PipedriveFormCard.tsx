@@ -7,40 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "../ui/button";
-import { StageProcess } from "@/app/interfaces/processes";
 import { getStageLabel } from "@/app/utils/processUtils";
 import dynamic from "next/dynamic";
 import { marked } from 'marked';
 import { useTheme } from "@/app/hooks/use-theme-client";
 import TurndownService from 'turndown';
 import { logger } from "@/app/lib/logger";
+import type { PipedriveFormData } from "./PipedriveForm.types";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
-
-export interface PipedriveFormData {
-  title: string;
-  processNumber: string;
-  stageLabel?: StageProcess;
-  executionNumber?: string;
-  duplicated: string;
-  dl: string;
-  firstDegree: string;
-  secondDefendantResponsibility: string;
-  defendants: string;
-  analysis: string;
-  calculoAutos: string;
-  calculoAutosValue: string;
-  calculoHomologado: string;
-  execucaoProvisoria: string;
-  prazo: string;
-  abatimento: string;
-  observacao: string;
-  observacaoPreAnalise: string;
-  sucumbencia: string;
-  freeJustice: string;
-  conclusion: string;
-  value?: string;
-}
 
 interface PipedriveFormCardProps {
   form: PipedriveFormData;

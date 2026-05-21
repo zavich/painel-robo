@@ -14,6 +14,7 @@ import { Button } from "../ui/button";
 import { NewMovement } from "@/app/api/hooks/process/useNewMovements";
 import { Badge } from "../ui/badge";
 import { DocumentExtract, Movimentacoes, StatusExtractionInsight } from "@/app/interfaces/processes";
+import { InstanceEnum } from "./TimelineCard.types";
 
 // Helper para normalizar datas
 function normalizeDate(dateStr: string): string {
@@ -185,11 +186,6 @@ function MovementItem({
       </div>
     </div>
   );
-}
-
-export enum InstanceEnum {
-  FIRST_INSTANCE = "PRIMEIRO_GRAU",
-  SECOND_INSTANCE = "SEGUNDO_GRAU",
 }
 
 interface TimelineCardProps {

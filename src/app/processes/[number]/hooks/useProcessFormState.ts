@@ -3,7 +3,7 @@
 import { useAddPipedriveNote } from "@/app/api/hooks/process/useAddPipedriveNote";
 import { Process } from "@/app/interfaces/processes";
 import { logger } from "@/app/lib/logger";
-import { PipedriveFormData } from "@/components/process/PipedriveFormCard";
+import type { PipedriveFormData } from "@/components/process/PipedriveForm.types";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
