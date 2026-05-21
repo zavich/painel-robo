@@ -16,7 +16,7 @@ interface PromptsParams {
   search?: string;
 }
 
-export const getPrompts = (params: PromptsParams) =>
+export const getPrompts = (params: PromptsParams = {}) =>
   api
     .get<GetPromptsResponseType>("/prompts", {
       params,
@@ -24,7 +24,7 @@ export const getPrompts = (params: PromptsParams) =>
     .then((res) => res.data);
 
 export function usePrompts(
-  params: PromptsParams,
+  params: PromptsParams = {},
   config?: UseQueryOptions<
     GetPromptsResponseType,
     Error,
@@ -32,7 +32,7 @@ export function usePrompts(
     unknown[]
   >
 ) {
-  return useQuery<
+  const query = useQuery<
     GetPromptsResponseType,
     Error,
     GetPromptsResponseType,
@@ -50,4 +50,11 @@ export function usePrompts(
       totalPages: 1,
     },
   });
+
+  return {
+    ...query,
+    prompts: query.data,
+    loading: query.isLoading || query.isFetching,
+    error: query.error?.message ?? null,
+  };
 }

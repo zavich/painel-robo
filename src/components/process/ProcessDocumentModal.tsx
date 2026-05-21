@@ -17,7 +17,7 @@ const PDFViewer = dynamic(() => import("../shared/PDFViewer"), { ssr: false });
 import InsightGeneric from "@/components/insights/InsightGeneric";
 import CalcNoteModal, { buildCalcNoteMarkdown } from "./CalcNoteModal";
 import { useExtractInsights } from "@/app/api/hooks/process/useExtractInsights";
-import { usePrompts } from "@/app/api/hooks/process/usePrompts";
+import { usePrompts } from "@/app/api/hooks/prompts/usePrompts";
 import { useRemoveInsights } from "@/app/api/hooks/process/useRemoveInsights";
 import { useDocumentDetails } from "@/app/api/hooks/process/useDocumentDetails";
 import { StatusExtractionInsight } from "@/app/interfaces/processes";

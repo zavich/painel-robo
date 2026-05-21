@@ -152,7 +152,14 @@ export function useProcessAutoRefresh({
   }, [refetch]);
 
   useEffect(() => {
-    lastProcessStatusRef.current = process?.processStatus ?? null;
+    lastProcessStatusRef.current = null;
+    currentIntervalRef.current = intervalMs;
+  }, [processId, intervalMs]);
+
+  useEffect(() => {
+    if (!lastProcessStatusRef.current && process?.processStatus) {
+      lastProcessStatusRef.current = process.processStatus;
+    }
     currentIntervalRef.current = hasError(process?.processStatus)
       ? errorIntervalMs
       : intervalMs;

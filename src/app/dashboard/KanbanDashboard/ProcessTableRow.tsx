@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   Activity,
   ActivityType,
@@ -23,19 +24,17 @@ export interface ProcessTableRowProps {
   process: Process;
   isSelected: boolean;
   selectAllMode: "page" | "all" | null;
-  filteredProcesses: Process[];
-  selectedProcessIds: Set<string>;
+  visibleProcessIds: string[];
   getFilteredActivities: (process: Process) => Activity[];
-  setSelectedProcessIds: (ids: Set<string>) => void;
+  setSelectedProcessIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   setSelectAllMode: (mode: "page" | "all" | null) => void;
 }
 
-export function ProcessTableRow({
+export const ProcessTableRow = memo(function ProcessTableRow({
   process,
   isSelected,
   selectAllMode,
-  filteredProcesses,
-  selectedProcessIds,
+  visibleProcessIds,
   getFilteredActivities,
   setSelectedProcessIds,
   setSelectAllMode,
@@ -60,20 +59,22 @@ export function ProcessTableRow({
       <TableCell
         onClick={(e) => {
           e.stopPropagation();
-          // Toggle selection on cell click
           if (selectAllMode === "all") {
-            // When unchecking from "all" mode, populate with all visible except this one
-            const newSet = new Set(filteredProcesses.map((p) => p._id));
-            newSet.delete(process._id);
-            setSelectedProcessIds(newSet);
-          } else {
-            const newSet = new Set(selectedProcessIds);
-            if (isSelected) {
+            setSelectedProcessIds(() => {
+              const newSet = new Set(visibleProcessIds);
               newSet.delete(process._id);
-            } else {
-              newSet.add(process._id);
-            }
-            setSelectedProcessIds(newSet);
+              return newSet;
+            });
+          } else {
+            setSelectedProcessIds((previousIds) => {
+              const newSet = new Set(previousIds);
+              if (isSelected) {
+                newSet.delete(process._id);
+              } else {
+                newSet.add(process._id);
+              }
+              return newSet;
+            });
           }
         }}
         className="cursor-pointer text-center align-middle group"
@@ -83,19 +84,22 @@ export function ProcessTableRow({
             checked={selectAllMode === "all" || isSelected}
             onCheckedChange={(checked) => {
               if (selectAllMode === "all") {
-                // When unchecking from "all" mode, populate with all visible except this one
-                const newSet = new Set(filteredProcesses.map((p) => p._id));
-                newSet.delete(process._id);
-                setSelectedProcessIds(newSet);
+                setSelectedProcessIds(() => {
+                  const newSet = new Set(visibleProcessIds);
+                  newSet.delete(process._id);
+                  return newSet;
+                });
                 setSelectAllMode(null);
               } else {
-                const newSet = new Set(selectedProcessIds);
-                if (checked) {
-                  newSet.add(process._id);
-                } else {
-                  newSet.delete(process._id);
-                }
-                setSelectedProcessIds(newSet);
+                setSelectedProcessIds((previousIds) => {
+                  const newSet = new Set(previousIds);
+                  if (checked) {
+                    newSet.add(process._id);
+                  } else {
+                    newSet.delete(process._id);
+                  }
+                  return newSet;
+                });
               }
             }}
           />
@@ -265,4 +269,4 @@ export function ProcessTableRow({
       </TableCell>
     </TableRow>
   );
-}
+});

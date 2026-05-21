@@ -213,8 +213,9 @@ export function MassEditPanel({
           variant: totalFailed > 0 ? "destructive" : "default",
         });
 
-        processIds.forEach((processId) => {
-          queryClient.invalidateQueries({ queryKey: ["process", processId] });
+        await queryClient.invalidateQueries({
+          queryKey: ["process"],
+          refetchType: "none",
         });
         await queryClient.invalidateQueries({ queryKey: ["processes"] });
 

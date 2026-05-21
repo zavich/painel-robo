@@ -33,7 +33,7 @@ As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o
 | `useProcess` | GET | `/process/:numero` | - | `Process` completo |
 | `useInsertProcess` (fetch) | POST | `/process` | `{ processes: string[] }` | - |
 | `useInsertProcess` (xml) | POST | `/process/upload-xml` | FormData com `file` | - |
-| `useInsertExecution` | POST | `/process/:id/insert-execution` | `{ lawsuitExecution, pipedriveFieldValue? }` | - |
+| `useInsertExecution` | POST | `/process/:id/insert-execution` | `{ lawsuitExecution, pipedriveFieldValue? }` | invalida `["process"]` e `["processes"]` via React Query |
 | `useRemoveProvisionalLawsuit` | DELETE | `/process/:id/remove-provisional-lawsuit-number` | - | - |
 | `useChangeStage` | POST | `/process/change-stage` | `{ processId, newStageId: number, reason }` | - |
 | `useBulkUpdateProcesses` | POST | `/v1/process/bulk-update` | `{ filters, updates }` | **nota: prefixo /v1/** |
@@ -142,3 +142,9 @@ As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o
 | `["prompts", params]` | `usePrompts` | default |
 | `["reason-loss", params]` | `useReasonLoss` | default |
 | `["steps", params]` | `useSteps` | default |
+
+## Observacoes de implementacao
+
+- O hook legacy `src/app/api/hooks/process/usePrompts.ts` foi removido. O source of truth agora e apenas `src/app/api/hooks/prompts/usePrompts.ts`.
+- `usePrompts` retorna compatibilidade com consumidores antigos (`prompts`, `loading`, `error`) e o resultado completo do React Query.
+- `useAddPrompt`, `useEditPrompt` e `useDeletePrompt` ainda usam `fetch()` raw com `credentials: "include"`. Isso e intencional por ora e difere do axios `api`.

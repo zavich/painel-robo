@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { isWithinInterval, parseISO } from "date-fns";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProcessTableHeader } from "./ProcessTableHeader";
 import { ProcessTableRow } from "./ProcessTableRow";
 import { ProcessTableToolbar } from "./ProcessTableToolbar";
@@ -452,7 +452,7 @@ export default function KanbanDashboard() {
   }, [paginationInfo]);
 
   // Helper function to filter activities based on user role
-  const getFilteredActivities = (process: Process): Activity[] => {
+  const getFilteredActivities = useCallback((process: Process): Activity[] => {
     const activities: Activity[] = process?.activities || [];
 
     if (user?.role === UserRolesEnum.ADMIN) {
@@ -489,7 +489,7 @@ export default function KanbanDashboard() {
         );
       });
     }
-  };
+  }, [user?._id, user?.role]);
 
   // Get selected count based on mode
   const selectedCount = useMemo(() => {
@@ -543,6 +543,11 @@ export default function KanbanDashboard() {
       return true;
     });
   }, [allProcesses, filters]);
+
+  const visibleProcessIds = useMemo(
+    () => filteredProcesses.map((process) => process._id),
+    [filteredProcesses],
+  );
 
   // Check if all visible processes are selected
   const allVisibleSelected = useMemo(() => {
@@ -884,8 +889,7 @@ export default function KanbanDashboard() {
                             process={process}
                             isSelected={selectedProcessIds.has(process._id)}
                             selectAllMode={selectAllMode}
-                            filteredProcesses={filteredProcesses}
-                            selectedProcessIds={selectedProcessIds}
+                            visibleProcessIds={visibleProcessIds}
                             getFilteredActivities={getFilteredActivities}
                             setSelectedProcessIds={setSelectedProcessIds}
                             setSelectAllMode={setSelectAllMode}

@@ -32,7 +32,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useExtractInsights } from "@/app/api/hooks/process/useExtractInsights";
-import { usePrompts } from "@/app/api/hooks/process/usePrompts";
+import { usePrompts } from "@/app/api/hooks/prompts/usePrompts";
 import { logger } from "@/app/lib/logger";
 import { useRemoveInsights } from "@/app/api/hooks/process/useRemoveInsights";
 import { StatusExtractionInsight } from "@/app/interfaces/processes";

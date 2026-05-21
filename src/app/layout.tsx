@@ -3,6 +3,7 @@ import "./globals.css";
 import Providers from "./providers";
 import { themeScript } from "./hooks/use-theme-script";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Analises Juri Capital",
@@ -11,15 +12,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="antialiased" suppressHydrationWarning>
         <MaintenanceBanner />

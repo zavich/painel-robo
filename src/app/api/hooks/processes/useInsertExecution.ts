@@ -1,38 +1,62 @@
-import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../..";
 
 export function useInsertExecution() {
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState(false);
+  const queryClient = useQueryClient();
 
-	async function insertExecution(processId: string, lawsuitExecution: string, pipedriveFieldValue?: string) {
-		setIsLoading(true);
-		setError(null);
-		setSuccess(false);
-		try {
-			const payload: { lawsuitExecution: string; pipedriveFieldValue?: string } = { lawsuitExecution };
-			if (pipedriveFieldValue) {
-				payload.pipedriveFieldValue = pipedriveFieldValue;
-			}
+  const mutation = useMutation<
+    void,
+    Error,
+    {
+      processId: string;
+      lawsuitExecution: string;
+      pipedriveFieldValue?: string;
+    }
+  >({
+    mutationFn: async ({
+      processId,
+      lawsuitExecution,
+      pipedriveFieldValue,
+    }) => {
+      const payload: {
+        lawsuitExecution: string;
+        pipedriveFieldValue?: string;
+      } = { lawsuitExecution };
+      if (pipedriveFieldValue) {
+        payload.pipedriveFieldValue = pipedriveFieldValue;
+      }
 
-			await api.post(
-				`/process/${processId}/insert-execution`,
-				payload,
-				{
-					headers: {
-						"Content-Type": "application/json",
-					},
-				}
-			);
-			setSuccess(true);
-		} catch (err: unknown) {
-			const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
-			setError(axiosError?.response?.data?.message || axiosError?.message || "Erro desconhecido");
-		} finally {
-			setIsLoading(false);
-		}
-	}
+      await api.post(`/process/${processId}/insert-execution`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["process"],
+        refetchType: "none",
+      });
+      await queryClient.invalidateQueries({ queryKey: ["processes"] });
+    },
+  });
 
-	return { insertExecution, isLoading, error, success };
+  async function insertExecution(
+    processId: string,
+    lawsuitExecution: string,
+    pipedriveFieldValue?: string,
+  ) {
+    return mutation.mutateAsync({
+      processId,
+      lawsuitExecution,
+      pipedriveFieldValue,
+    });
+  }
+
+  return {
+    insertExecution,
+    isLoading: mutation.isPending,
+    error: mutation.error?.message ?? null,
+    success: mutation.isSuccess,
+  };
 }

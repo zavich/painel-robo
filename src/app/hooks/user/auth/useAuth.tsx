@@ -13,32 +13,16 @@ import { toast } from "react-toastify";
 import { AuthContextType } from "./props";
 import {
   SigninRequestType,
-  UserRolesEnum,
   UserType,
 } from "@/app/interfaces/user";
 import api from "@/app/api";
 import { logger } from "@/app/lib/logger";
-import Cookies from "js-cookie"; // Adicione esta importação
+import Cookies from "js-cookie";
 
 export const AuthContext = createContext({} as AuthContextType);
 export interface AuthProviderProps {
   children: ReactNode; // Define children como um ReactNode
 }
-
-const rolePermissions: Record<UserRolesEnum, string[]> = {
-  [UserRolesEnum.ADMIN]: [
-    "change_stage",
-    "create_activity",
-    "user_management",
-    "mass_edit",
-    "process_insertion",
-    "view_all_processes",
-  ],
-  [UserRolesEnum.LAWYER]: [
-    "change_stage",
-    "create_activity",
-  ],
-};
 
 export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
   const { children } = props;
@@ -61,6 +45,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
       setUser(userData);
       router.replace("/");
     } catch (error: unknown) {
+      await api.post("/auth/logout").catch(() => undefined);
+      clearAuthCookies();
+      setUser({} as UserType);
+      setIsAuthenticated(false);
+
       const axiosError = error as AxiosError;
 
       if (axiosError.response) {
@@ -113,10 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     }
   };
   const hasPermission = useCallback(
-    (key: string) =>
-      user?.permissions?.includes(key) ??
-      rolePermissions[user?.role as UserRolesEnum]?.includes(key) ??
-      false,
+    (key: string) => Boolean(user?.permissions?.includes(key)),
     [user],
   );
 
