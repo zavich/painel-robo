@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 function isMaintenanceModeEnabled() {
   return (
     process.env.MAINTENANCE_MODE === "true" ||
