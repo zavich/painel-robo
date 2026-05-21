@@ -17,6 +17,7 @@ As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o
 
 - Harness ativo com Jest + ts-jest.
 - Script principal: `yarn test`.
+- `jest.config.js` aceita `*.spec.ts` e `*.spec.tsx`.
 - Cobertura inicial:
   - `src/app/processes/[number]/hooks/processPageState.utils.spec.ts`
   - `src/app/hooks/user/auth/permissions.spec.ts`

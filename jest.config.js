@@ -2,7 +2,7 @@ module.exports = {
   rootDir: ".",
   roots: ["<rootDir>/src"],
   testEnvironment: "node",
-  testRegex: ".*\\.spec\\.ts$",
+  testRegex: ".*\\.spec\\.tsx?$",
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
