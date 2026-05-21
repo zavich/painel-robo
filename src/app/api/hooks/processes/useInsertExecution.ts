@@ -32,12 +32,13 @@ export function useInsertExecution() {
         },
       });
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["process"],
-        refetchType: "none",
-      });
-      await queryClient.invalidateQueries({ queryKey: ["processes"] });
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["process", variables.processId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["processes"] }),
+      ]);
     },
   });
 

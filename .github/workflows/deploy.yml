@@ -18,21 +18,21 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: sa-east-1
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & Push image
         env:
-          REGISTRY: 339340413604.dkr.ecr.sa-east-1.amazonaws.com
-          REPOSITORY: painel-robo
+          REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           IMAGE=$REGISTRY/$REPOSITORY:$IMAGE_TAG
 
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL=https://robo-api.juri.capital/v1 \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }} \
             --build-arg NEXT_PUBLIC_MAINTENANCE_MODE=false \
             -t $IMAGE .
 
@@ -50,6 +50,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: task-def-updated.json
-          service: painel-robo-service
-          cluster: robo-cluster
+          service: ${{ secrets.ECS_SERVICE }}
+          cluster: ${{ secrets.ECS_CLUSTER }}
           wait-for-service-stability: true

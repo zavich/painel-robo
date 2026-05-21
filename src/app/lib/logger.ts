@@ -1,7 +1,7 @@
 const isProduction = process.env.NODE_ENV === "production";
 
 function write(
-  method: "error" | "warn" | "log",
+  method: "error" | "warn" | "log" | "debug",
   message: string,
   ...args: unknown[]
 ) {
@@ -21,5 +21,8 @@ export const logger = {
   },
   log(message: string, ...args: unknown[]) {
     write("log", message, ...args);
+  },
+  debug(message: string, ...args: unknown[]) {
+    write("debug", message, ...args);
   },
 };

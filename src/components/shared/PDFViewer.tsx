@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useTheme } from "@/app/hooks/use-theme-client";
 import { useFetchPDF } from "@/app/api/hooks/process/useFetchPDF";
+import { logger } from "@/app/lib/logger";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -445,7 +446,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
           }
         }}
         onLoadError={(error) => {
-          console.debug("PDF load error:", error);
+          logger.debug("PDF load error:", error);
           setIsDocumentReady(false);
         }}
         loading={
@@ -496,7 +497,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
                       !errorMsg.includes("cancel") &&
                       !errorMsg.includes("AbortException")
                     ) {
-                      console.debug(`Page ${idx + 1} render error:`, errorMsg);
+                      logger.debug(`Page ${idx + 1} render error:`, errorMsg);
                     }
                   }}
                 />
@@ -528,7 +529,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
                 !errorMsg.includes("cancel") &&
                 !errorMsg.includes("AbortException")
               ) {
-                console.debug(`Page ${pageNumber} render error:`, errorMsg);
+                logger.debug(`Page ${pageNumber} render error:`, errorMsg);
               }
             }}
           />

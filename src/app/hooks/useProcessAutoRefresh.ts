@@ -151,19 +151,18 @@ export function useProcessAutoRefresh({
     }
   }, [refetch]);
 
+  const previousProcessIdRef = useRef<string | null>(null);
   useEffect(() => {
-    lastProcessStatusRef.current = null;
-    currentIntervalRef.current = intervalMs;
-  }, [processId, intervalMs]);
-
-  useEffect(() => {
-    if (!lastProcessStatusRef.current && process?.processStatus) {
+    if (previousProcessIdRef.current !== processId) {
+      previousProcessIdRef.current = processId;
+      lastProcessStatusRef.current = process?.processStatus ?? null;
+    } else if (!lastProcessStatusRef.current && process?.processStatus) {
       lastProcessStatusRef.current = process.processStatus;
     }
     currentIntervalRef.current = hasError(process?.processStatus)
       ? errorIntervalMs
       : intervalMs;
-  }, [process?.processStatus, intervalMs, errorIntervalMs]);
+  }, [processId, process?.processStatus, intervalMs, errorIntervalMs]);
 
   useEffect(() => {
     isMountedRef.current = true;

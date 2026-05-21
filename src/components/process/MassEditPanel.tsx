@@ -213,11 +213,14 @@ export function MassEditPanel({
           variant: totalFailed > 0 ? "destructive" : "default",
         });
 
-        await queryClient.invalidateQueries({
-          queryKey: ["process"],
-          refetchType: "none",
-        });
-        await queryClient.invalidateQueries({ queryKey: ["processes"] });
+        await Promise.all([
+          ...processIds.map((processId) =>
+            queryClient.invalidateQueries({
+              queryKey: ["process", processId],
+            }),
+          ),
+          queryClient.invalidateQueries({ queryKey: ["processes"] }),
+        ]);
 
         handleClose();
       } catch (error: unknown) {
