@@ -12,6 +12,7 @@ const api = Axios.create({
 ```
 
 As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o painel depende do cookie JWT emitido pelo `robo-api`. O `useBulkUpdateProcesses` mantem prefixo `/v1/` por coerencia com a API versionada.
+Os fluxos que invalidam processo individual (`useInsertExecution`, mass edit e correlatos) usam invalidacao especifica com `refetchType: "none"` para marcar stale sem disparar refetch imediato em cascata.
 
 ## Testes
 
@@ -28,7 +29,7 @@ As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o
 
 | Hook | Metodo | Endpoint | Body/Params | Response |
 |------|--------|----------|-------------|----------|
-| `useAuth.signIn` | POST | `/auth/login` | `{ email, password }` | sets cookies |
+| `useAuth.signIn` | POST | `/auth/login` | `{ email }` | sets cookies |
 | `useAuth.getMe` | GET | `/auth/me` | - | `UserType` |
 | `useAuth.logout` | POST | `/auth/logout` | - | clears cookies |
 
@@ -42,7 +43,7 @@ As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o
 | `useProcess` | GET | `/process/:numero` | - | `Process` completo |
 | `useInsertProcess` (fetch) | POST | `/process` | `{ processes: string[] }` | - |
 | `useInsertProcess` (xml) | POST | `/process/upload-xml` | FormData com `file` | - |
-| `useInsertExecution` | POST | `/process/:id/insert-execution` | `{ lawsuitExecution, pipedriveFieldValue? }` | invalida `["process"]` e `["processes"]` via React Query |
+| `useInsertExecution` | POST | `/process/:id/insert-execution` | `{ lawsuitExecution, pipedriveFieldValue? }` | invalida `["process", processId]` com `refetchType: "none"` e `["processes"]` |
 | `useRemoveProvisionalLawsuit` | DELETE | `/process/:id/remove-provisional-lawsuit-number` | - | - |
 | `useChangeStage` | POST | `/process/change-stage` | `{ processId, newStageId: number, reason }` | - |
 | `useBulkUpdateProcesses` | POST | `/v1/process/bulk-update` | `{ filters, updates }` | **nota: prefixo /v1/** |

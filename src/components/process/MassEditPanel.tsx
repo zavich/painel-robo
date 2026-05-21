@@ -217,6 +217,7 @@ export function MassEditPanel({
           ...processIds.map((processId) =>
             queryClient.invalidateQueries({
               queryKey: ["process", processId],
+              refetchType: "none",
             }),
           ),
           queryClient.invalidateQueries({ queryKey: ["processes"] }),

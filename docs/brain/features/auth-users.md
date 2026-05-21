@@ -24,20 +24,19 @@ Use este mapa quando a task envolver login, autenticacao, sessao, roles ou gesta
 
 ## Fluxo resumido
 
-1. Usuario acessa `/login` e preenche email/senha.
-2. Formulario com opcao "Lembrar de mim".
-3. Chamada POST para `/v1/auth/login` no backend.
-4. Token retornado e salvo em cookie via js-cookie.
-5. AuthProvider valida sessao ao carregar a app.
-6. Middleware verifica paths e redireciona se nao autenticado.
-7. Logout limpa cookies e redireciona para `/login`.
+1. Usuario acessa `/login` e preenche apenas email.
+2. Chamada POST para `/v1/auth/login` no backend.
+3. O backend responde setando o cookie httpOnly `prosolutti_accessToken`.
+4. AuthProvider valida sessao ao carregar a app via `/auth/me`.
+5. Middleware verifica o JWT server-side e redireciona se nao autenticado.
+6. Logout limpa cookies no backend e redireciona para `/login`.
 
 ## Conceitos
 
 - UserRolesEnum: admin, advogado.
 - Admin: acesso a prompts, motivos de perda e gestao completa.
 - Advogado: acesso ao Kanban, processos e empresas.
-- Cookie de autenticacao: persistido via js-cookie.
+- Cookie de autenticacao: httpOnly, emitido e limpo pelo `robo-api`.
 - Middleware: valida paths contra traversal e caracteres maliciosos.
 
 ## Riscos e cuidados
@@ -49,4 +48,3 @@ Use este mapa quando a task envolver login, autenticacao, sessao, roles ou gesta
 ## Pendencias de mapeamento
 
 - Detalhar guards e verificacao de role em componentes.
-- Mapear fluxo de "Lembrar de mim" e persistencia de sessao.

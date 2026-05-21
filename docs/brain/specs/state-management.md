@@ -29,13 +29,13 @@ isAuthenticated: boolean
 
 ### Acoes
 
-- `signIn(data)`: `POST /auth/login` → `GET /auth/me`. Limpa cookies primeiro. Redireciona para `/`.
-- `logout()`: `POST /auth/logout`, limpa cookies, redireciona para `/login`.
-- On mount: `GET /auth/me` → se falha, limpa cookies e redireciona para `/login`.
+- `signIn(data)`: `POST /auth/login` → `GET /auth/me`. Limpa estado local primeiro. Redireciona para `/`.
+- `logout()`: `POST /auth/logout`, limpa estado local, redireciona para `/login`.
+- On mount: `GET /auth/me` → se falha, limpa estado local e redireciona para `/login`.
 
 ### Cookie management
 
-Usa `js-cookie` para `remove("token")` e `remove("refreshToken")` em signIn e logout. Sem logica de refresh no frontend — inteiramente cookie-session.
+Nao ha gestao de cookie via `js-cookie`. O cookie httpOnly `prosolutti_accessToken` e emitido e limpo pelo `robo-api`; o frontend apenas reage ao estado retornado por `/auth/me` e aos redirects do middleware.
 
 ---
 

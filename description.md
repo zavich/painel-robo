@@ -31,7 +31,7 @@ Do total de 58 achados, **14 sao responsabilidade do `painel-robo`** — concent
 | ID | Descricao | Arquivos |
 |----|-----------|----------|
 | BUG-011 | Race condition no `useProcessAutoRefresh` — effect sobrescrevia `lastProcessStatusRef` toda vez que `process.processStatus` mudava, fazendo o polling ler o snapshot ja atualizado e nunca detectar mudancas | `app/hooks/useProcessAutoRefresh.ts` (effect consolidado, ref so reseta em troca de `processId`/`intervalMs`, valor inicial vem do `process.processStatus` no primeiro render) |
-| BUG-013 | TanStack Query: `forEach` disparava N invalidacoes paralelas em mass edit (potencial DDoS no proprio backend) | `components/process/MassEditPanel.tsx`, `api/hooks/processes/useInsertExecution.ts` (invalidacao especifica por `processId`) |
+| BUG-013 | TanStack Query: `forEach` disparava N invalidacoes paralelas em mass edit (potencial DDoS no proprio backend) | `components/process/MassEditPanel.tsx`, `api/hooks/processes/useInsertExecution.ts` (invalidacao especifica por `processId`, preservando `refetchType: 'none'`) |
 
 ### Seguranca
 
@@ -40,10 +40,10 @@ Do total de 58 achados, **14 sao responsabilidade do `painel-robo`** — concent
 | SEG-003 | `NEXT_PUBLIC_API_KEY` no client bundle | `next.config.ts` (removido), hooks reescritos para usar JWT cookie |
 | SEG-011 | Middleware JWT verify (server-side) | `middleware.ts` (`jose.jwtVerify` com `JWT_SECRET_KEY`, redirect para `/login` em falha, limpa cookie em token expirado) |
 | SEG-012 | CSP com `'unsafe-inline'` em script-src em producao | `middleware.ts:27-65` (nonce gerado per-request com `crypto.getRandomValues`, `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`; `layout.tsx` async lendo `headers().get('x-nonce')` e injetando no `themeScript`) |
-| Maintenance | Modo manutencao via env var | `middleware.ts` (verifica `MAINTENANCE_MODE`/`NEXT_PUBLIC_MAINTENANCE_MODE`, redireciona para `/maintenance` exceto rotas publicas/estaticas) |
+| Maintenance | Modo manutencao via env var | `middleware.ts` (verifica `MAINTENANCE_MODE`/`NEXT_PUBLIC_MAINTENANCE_MODE`, redireciona para `/maintenance` exceto rotas publicas/estaticas) + `src/app/api/maintenance-status/route.ts` / `MaintenanceBanner.tsx` como source of truth runtime no client |
 | Path sanitization | Path malicioso via URL | `middleware.ts:87-97` (rejeita `..`, `//`, `<>"'%;()&+` com 400) |
 | RBAC | `rolePermissions` hardcoded no client | `hooks/user/auth/useAuth.tsx` (so le `user.permissions` populado pelo backend; `permissions.ts` helper extraido) |
-| Login passwordless | Decisao do produto: autenticar so por email | `app/login/Form/index.tsx` (removido input de senha, Zod schema sem `password`, `signIn({email})`), `app/interfaces/user.ts` (`SigninRequestType` sem `password`) |
+| Login email-only | Decisao do produto: autenticar so por email | `app/login/Form/index.tsx` (removido input de senha, Zod schema sem `password`, `signIn({email})`), `app/interfaces/user.ts` (`SigninRequestType` sem `password`) |
 
 ### Performance
 
@@ -51,7 +51,7 @@ Do total de 58 achados, **14 sao responsabilidade do `painel-robo`** — concent
 |----|-----------|----------|
 | PERF-006 | Componentes 1300-1900 linhas | `ProcessHeader` 1216→675, `ActivitiesCard` 1041→666 |
 | PERF-011 | Sem `React.memo` em componentes hot | `memo()` em `ActivityTimelineItem`, `DecisionTimelineItem`, `ProcessActionsDropdown`, `ProcessPartsModal`, `ProcessStatusBadges`, `ProcessTableRow` (renderizado 25x por pagina), etc.; callbacks estabilizados via `setSelectedProcessIds` dispatcher pattern |
-| BUG-013 | Invalidacao broad demais | `useInsertExecution`/`MassEditPanel` invalidam `['process', processId]` especifico |
+| BUG-013 | Invalidacao broad demais | `useInsertExecution`/`MassEditPanel` invalidam `['process', processId]` especifico com `refetchType: 'none'` |
 | Polling | `useProcessAutoRefresh` com `enabled: false` (PNL-4) | Reativado com error backoff (`errorIntervalMs`), cleanup de timeout, isMountedRef, callbacks via ref para evitar stale closure |
 
 ### Arquitetura
@@ -69,6 +69,8 @@ Do total de 58 achados, **14 sao responsabilidade do `painel-robo`** — concent
 ### Infra e deploy
 
 - `.github/workflows/deploy.yml` agora le account ID, regiao, ECR repo, cluster, service, e API URL publica todos de `secrets.*`
+- O deploy nao fixa mais `NEXT_PUBLIC_MAINTENANCE_MODE` no build arg; o runtime consulta `/api/maintenance-status`
+- O workflow publica `${GITHUB_SHA}` e `latest` de forma atomica com `docker push --all-tags`
 - Brain docs (`docs/brain/specs/api-hooks.md`) documenta:
   - Hooks que usam `fetch()` raw em vez de axios `api` (legacy debt reconhecido — `useAddPrompt`, `useEditPrompt`, `useDeletePrompt`, `useFetchPDF`, `useInsertProcess`)
   - Cache keys do React Query
@@ -106,9 +108,9 @@ Por causa do tamanho, sugiro revisao por dominio:
 
 ## O que NAO esta neste PR (escopo deferido conscientemente)
 
-- **ARQ-003** Cobertura de testes — jest harness foi adicionado e depois revertido; cobertura ficou em `tsc --noEmit` + `yarn build`. Crescer organicamente.
+- **ARQ-003** Cobertura de testes — harness de Jest + ts-jest agora esta ativo. Ja ha testes unitarios para os helpers extraidos da pagina de processo e para o helper de permissoes do auth client; a base atual cobre logica pura e pode crescer para testes de componente (`.spec.tsx`) organicamente.
 - **Migracao dos hooks que usam `fetch()` raw** para o axios `api` — documentado como divida tecnica.
-- **SSO com painel principal** — investigacao mostrou JWTs incompativeis entre `juri-api` e `robo-api`; auth do painel-robo continua independente, mas agora simplificada (passwordless).
+- **SSO com painel principal** — investigacao mostrou JWTs incompativeis entre `juri-api` e `robo-api`; auth do painel-robo continua independente, mas agora simplificada para email-only.
 
 ---
 

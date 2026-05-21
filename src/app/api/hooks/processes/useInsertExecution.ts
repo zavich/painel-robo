@@ -36,6 +36,7 @@ export function useInsertExecution() {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["process", variables.processId],
+          refetchType: "none",
         }),
         queryClient.invalidateQueries({ queryKey: ["processes"] }),
       ]);
