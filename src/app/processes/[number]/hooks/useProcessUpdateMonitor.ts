@@ -2,10 +2,8 @@
 
 import { Process } from "@/app/interfaces/processes";
 import {
-  getSyncType,
   getSyncStatusDescription,
   hasError,
-  isIntermediateStatus,
   isSyncCompleted,
   shouldContinueMonitoring,
 } from "@/app/utils/processSyncStatus";
@@ -25,7 +23,6 @@ type UseProcessUpdateMonitorParams = {
   hasUnsavedChanges: boolean;
   isEditing: boolean;
   process: Process | null | undefined;
-  refetchProcess: () => Promise<unknown>;
   setCurrentStatusInfo: React.Dispatch<
     React.SetStateAction<{
       errorReason?: string;
@@ -43,7 +40,6 @@ export function useProcessUpdateMonitor({
   hasUnsavedChanges,
   isEditing,
   process,
-  refetchProcess,
   setCurrentStatusInfo,
 }: UseProcessUpdateMonitorParams) {
   const [isSyncing, setIsSyncing] = useState(false);
@@ -135,12 +131,11 @@ export function useProcessUpdateMonitor({
       return;
     }
 
-    const syncType = getSyncType(process.processStatus);
-    const isIntermediate = isIntermediateStatus(process.processStatus);
+    const isActivelySyncing = shouldContinueMonitoring(process.processStatus);
     const isFinalSyncCompleted = isSyncCompleted(process.processStatus);
     const hasErrorStatus = hasError(process.processStatus);
 
-    if (isSyncing && syncType === "NOT_SYNCING") {
+    if (isSyncing && !isActivelySyncing) {
       if (hasErrorStatus) {
         toast.error("Erro na sincronização do processo!", {
           position: "top-right",
@@ -149,12 +144,6 @@ export function useProcessUpdateMonitor({
         });
         setShowSyncCompleteDialog(true);
         setIsSyncing(false);
-      } else if (isIntermediate) {
-        toast.info(getSyncStatusDescription(process.processStatus), {
-          position: "top-right",
-          autoClose: 4000,
-          toastId: "sync-movements-done",
-        });
       } else if (isFinalSyncCompleted) {
         toast.success(
           `${getSyncStatusDescription(process.processStatus)} com sucesso!`,
@@ -169,7 +158,7 @@ export function useProcessUpdateMonitor({
       }
     }
 
-    if (!isSyncing && syncType !== "NOT_SYNCING") {
+    if (!isSyncing && isActivelySyncing) {
       toast.dismiss("sync-started");
       toast.info("Sincronização iniciada! Aguarde a conclusão...", {
         position: "top-right",
@@ -187,19 +176,8 @@ export function useProcessUpdateMonitor({
 
     if (!shouldContinueMonitoring(process?.processStatus)) {
       setIsSyncing(false);
-      return;
     }
-
-    const interval = setInterval(async () => {
-      try {
-        await refetchProcess();
-      } catch {}
-    }, 5000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [isSyncing, process?.processStatus, refetchProcess]);
+  }, [isSyncing, process?.processStatus]);
 
   return {
     currentStatusInfo,

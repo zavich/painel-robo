@@ -1,5 +1,7 @@
+"use client";
+
 import { memo } from "react";
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

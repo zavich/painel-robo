@@ -100,6 +100,8 @@ export function ProcessHeader({
 }: ProcessHeaderProps) {
   const [showPartsModal, setShowPartsModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { theme } = useTheme();
+  const [processMenuOpen, setProcessMenuOpen] = useState(false);
 
   const handleCopyProcessNumber = async () => {
     if (process?.number) {
@@ -592,9 +594,6 @@ export function ProcessHeader({
       )}
     </>
   );
-
-  const { theme } = useTheme();
-  const [processMenuOpen, setProcessMenuOpen] = useState(false);
 
   return (
     <>

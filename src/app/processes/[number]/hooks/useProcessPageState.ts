@@ -94,7 +94,6 @@ export function useProcessPageState() {
   } = useProcessAutoRefresh({
     processId: id,
     enabled: true,
-    intervalMs: 10000,
     onStatusChange: handleStatusChange,
   });
 
@@ -109,6 +108,8 @@ export function useProcessPageState() {
     isEditing,
   });
 
+  const clearEditingState = useCallback(() => setIsEditing(false), []);
+
   const {
     currentStatusInfo: monitoredStatusInfo,
     handleAcceptUpdate,
@@ -119,13 +120,12 @@ export function useProcessPageState() {
     showSyncCompleteDialog,
     showUpdateConfirmation,
   } = useProcessUpdateMonitor({
-    clearEditingState: () => setIsEditing(false),
+    clearEditingState,
     clearFormChanges: resetChangeFlags,
     currentStatusInfo,
     hasUnsavedChanges,
     isEditing,
     process,
-    refetchProcess,
     setCurrentStatusInfo,
   });
 

@@ -48,3 +48,7 @@ export function disconnectNotificationsSocket() {
   }
 }
 
+export function getExistingSocket(): Socket | null {
+  return socketInstance;
+}
+

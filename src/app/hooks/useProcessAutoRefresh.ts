@@ -3,6 +3,7 @@ import { useProcess } from '@/app/api/hooks/process/useProcess';
 import { hasError } from '@/app/utils/processSyncStatus';
 import { Process, ProcessStatus } from '@/app/interfaces/processes';
 import { logger } from '@/app/lib/logger';
+import { getExistingSocket } from '@/lib/socket';
 
 interface UseProcessAutoRefreshOptions {
   processId: string;
@@ -16,8 +17,8 @@ interface UseProcessAutoRefreshOptions {
 export function useProcessAutoRefresh({
   processId,
   enabled = true,
-  intervalMs = 10000,
-  errorIntervalMs = 2000,
+  intervalMs = 60000,
+  errorIntervalMs = 15000,
   onDataUpdate,
   onStatusChange,
 }: UseProcessAutoRefreshOptions) {
@@ -71,9 +72,15 @@ export function useProcessAutoRefresh({
           setIsRefetchingState(true);
         }
 
+        let nextInterval = currentIntervalRef.current;
         try {
           const result = await refetch();
-          if (result.data) {
+          if (result.error) {
+            const status = (result.error as { response?: { status?: number } })?.response?.status;
+            if (status === 429 || (status && status >= 500)) {
+              nextInterval = 30000;
+            }
+          } else if (result.data) {
             const currentStatus = result.data.processStatus;
             const lastStatus = lastProcessStatusRef.current;
 
@@ -92,6 +99,7 @@ export function useProcessAutoRefresh({
             currentIntervalRef.current = hasError(currentStatus)
               ? errorIntervalMs
               : intervalMs;
+            nextInterval = currentIntervalRef.current;
 
             if (onDataUpdateRef.current) {
               onDataUpdateRef.current(result.data);
@@ -104,7 +112,7 @@ export function useProcessAutoRefresh({
           if (isMountedRef.current) {
             setIsRefetchingState(false);
           }
-          scheduleNextPoll(currentIntervalRef.current);
+          scheduleNextPoll(nextInterval);
         }
       }, delayMs);
     };
@@ -177,6 +185,27 @@ export function useProcessAutoRefresh({
       stopPolling();
     };
   }, [enabled, processId, startPolling, stopPolling]);
+
+  // Socket push: refetch imediato quando o backend emite process:updated
+  const forceRefreshRef = useRef(forceRefresh);
+  useEffect(() => { forceRefreshRef.current = forceRefresh; }, [forceRefresh]);
+
+  useEffect(() => {
+    if (!enabled || !processId) return;
+
+    const socket = getExistingSocket();
+    if (!socket) return;
+
+    const handleProcessUpdated = (data: { number: string }) => {
+      if (data.number !== processId) return;
+      void forceRefreshRef.current();
+    };
+
+    socket.on('process:updated', handleProcessUpdated);
+    return () => {
+      socket.off('process:updated', handleProcessUpdated);
+    };
+  }, [enabled, processId]);
 
   return {
     process,
