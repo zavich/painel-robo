@@ -1,7 +1,9 @@
 "use client";
 
 import { Gavel, Scale, Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import LoginForm from "./Form";
 
 function Feature({ icon: Icon, title, description }: any) {
@@ -21,6 +23,16 @@ function Feature({ icon: Icon, title, description }: any) {
 
 export default function LoginPage() {
   const [isLoaded, setIsLoaded] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  // SSO: se o cookie auth_token (compartilhado em .juri.local) já autenticou
+  // o usuário via /auth/me, encaminha para a app em vez de mostrar o login.
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/");
+    }
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 100);
