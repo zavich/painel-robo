@@ -79,7 +79,10 @@ export const ProcessTableRow = memo(function ProcessTableRow({
         }}
         className="cursor-pointer text-center align-middle group"
       >
-        <div className="flex items-center justify-center p-1 rounded-md transition-colors group-hover:bg-blue-50 dark:group-hover:bg-transparent">
+        <div
+          className="flex items-center justify-center p-1 rounded-md transition-colors group-hover:bg-blue-50 dark:group-hover:bg-transparent"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Checkbox
             checked={selectAllMode === "all" || isSelected}
             onCheckedChange={(checked) => {

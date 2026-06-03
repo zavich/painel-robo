@@ -45,9 +45,9 @@ export const ProcessPartsModal = memo(function ProcessPartsModal({
                 Polo Ativo ({activeParts.length})
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {activeParts.map((part, idx) => (
+                {activeParts.map((part) => (
                   <div
-                    key={idx}
+                    key={part.id}
                     className="bg-card dark:bg-card border border-border dark:border-border rounded-lg p-3 text-sm"
                   >
                     <Badge variant="outline" className="mb-2 text-xs">
@@ -77,9 +77,9 @@ export const ProcessPartsModal = memo(function ProcessPartsModal({
                 Polo Passivo ({passiveParts.length})
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {passiveParts.map((part, idx) => (
+                {passiveParts.map((part) => (
                   <div
-                    key={idx}
+                    key={part.id}
                     className="bg-card dark:bg-card border border-border dark:border-border rounded-lg p-3 text-sm"
                   >
                     <Badge variant="outline" className="mb-2 text-xs">
@@ -109,9 +109,9 @@ export const ProcessPartsModal = memo(function ProcessPartsModal({
                 Empresas Envolvidas ({companies.length})
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {companies.map((company, idx) => (
+                {companies.map((company) => (
                   <div
-                    key={idx}
+                    key={company._id}
                     onClick={() => {
                       onCompanyClick?.(company);
                       onOpenChange(false);

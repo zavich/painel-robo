@@ -1,5 +1,3 @@
-"use client";
-
 import { PeticaoInicialData, Process } from "@/app/interfaces/processes";
 
 export interface ProcessActionDialogsProps {

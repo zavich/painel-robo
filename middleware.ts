@@ -44,7 +44,7 @@ function buildSecurityHeaders(request: NextRequest, nonce: string) {
     }
   } catch {}
 
-  const connectSrc = ["'self'", apiOrigin, wsOrigin || "ws: wss:"]
+  const connectSrc = ["'self'", apiOrigin, wsOrigin]
     .filter(Boolean)
     .join(" ");
   const isDev = process.env.NODE_ENV !== "production";
@@ -173,7 +173,11 @@ export async function middleware(request: NextRequest) {
     // Má configuração de deploy — retorna 500 para não deletar cookies válidos
     // nem prender o usuário em loop de redirecionamento
     console.error("[middleware] CRITICAL: JWT_SECRET_KEY não configurada");
-    return new NextResponse("Erro de configuração do servidor", { status: 500 });
+    return applySecurityHeaders(
+      new NextResponse("Erro de configuração do servidor", { status: 500 }),
+      request,
+      nonce,
+    );
   }
 
   try {
