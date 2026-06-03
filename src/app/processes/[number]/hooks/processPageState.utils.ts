@@ -276,8 +276,8 @@ export function getNewMovements(process: Process | null | undefined) {
       : 0;
 
   return {
-    PRIMEIRO_GRAU: firstDegreeMovs.slice(0, countNewFirst),
-    SEGUNDO_GRAU: secondDegreeMovs.slice(0, countNewSecond),
-    TST: tstMovs.slice(0, countNewTst),
+    PRIMEIRO_GRAU: countNewFirst > 0 ? firstDegreeMovs.slice(-countNewFirst) : [],
+    SEGUNDO_GRAU: countNewSecond > 0 ? secondDegreeMovs.slice(-countNewSecond) : [],
+    TST: countNewTst > 0 ? tstMovs.slice(-countNewTst) : [],
   };
 }

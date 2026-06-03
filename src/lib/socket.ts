@@ -71,10 +71,22 @@ export function getExistingSocket(): Socket | null {
  * desmonte antes da conexão ser estabelecida.
  */
 export function whenSocketReady(cb: SocketReadyCallback): () => void {
+  // Caso 1: socket já conectado — chamar imediatamente
   if (socketInstance?.connected) {
     cb(socketInstance);
     return () => {};
   }
+
+  // Caso 2: socket criado mas ainda conectando — ouvir connect diretamente
+  if (socketInstance) {
+    const onConnect = () => cb(socketInstance!);
+    socketInstance.once("connect", onConnect);
+    return () => {
+      socketInstance?.off("connect", onConnect);
+    };
+  }
+
+  // Caso 3: socket ainda não criado — enfileirar para quando getNotificationsSocket inicializar
   socketReadyCallbacks.add(cb);
   return () => {
     socketReadyCallbacks.delete(cb);

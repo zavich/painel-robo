@@ -7,7 +7,7 @@ function write(
   message: string,
   ...args: LogArg[]
 ) {
-  if (isProduction) {
+  if (isProduction && method !== "error" && method !== "warn") {
     return;
   }
 

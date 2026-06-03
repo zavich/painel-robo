@@ -59,7 +59,7 @@ export function getClaimantAttorney(processParts: ProcessPart[]): ProcessPart | 
   
   const claimant = processParts.find(
     (part) =>
-      reuKeywords.includes(part?.tipo?.toLowerCase()) && part.polo === "ATIVO"
+      authorKeywords.includes(part?.tipo?.toLowerCase()) && part.polo === "ATIVO"
   );
   
   if (!claimant) return null;

@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
   const clearAuthCookies = () => {
     Cookies.remove("token");
     Cookies.remove("refreshToken");
+    Cookies.remove("prosolutti_accessToken");
   };
 
   const signIn = async (data: SigninRequestType) => {
@@ -87,7 +88,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     };
 
     checkAuth();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const logout = async () => {
     try {

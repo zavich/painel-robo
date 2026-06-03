@@ -4,7 +4,7 @@ import { useAddPipedriveNote } from "@/app/api/hooks/process/useAddPipedriveNote
 import { Process } from "@/app/interfaces/processes";
 import { logger } from "@/app/lib/logger";
 import type { PipedriveFormData } from "@/components/process/PipedriveForm.types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
   EMPTY_FORM_STATE,
@@ -22,6 +22,8 @@ export function useProcessFormState({
   process,
 }: UseProcessFormStateParams) {
   const addNoteMutation = useAddPipedriveNote();
+  const addNoteMutateRef = useRef(addNoteMutation.mutate);
+  addNoteMutateRef.current = addNoteMutation.mutate;
   const [formState, setFormState] = useState<PipedriveFormData>(EMPTY_FORM_STATE);
   const [hasChanges, setHasChanges] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -80,7 +82,7 @@ export function useProcessFormState({
         return;
       }
 
-      addNoteMutation.mutate(
+      addNoteMutateRef.current(
         { content: data.note, dealId: process.dealId },
         {
           onSuccess: () => {
@@ -114,7 +116,7 @@ export function useProcessFormState({
       );
       window.removeEventListener("message", handleMessage);
     };
-  }, [addNoteMutation, process?.dealId]);
+  }, [process?.dealId]);
 
   return {
     formState,
