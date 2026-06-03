@@ -90,8 +90,13 @@ export default function PreAnalysisPage() {
         }
       }
       
+      if (!process?.number) {
+        toast.error("Processo não carregado.");
+        return;
+      }
+
       await updateFormMutation.mutateAsync({
-        processNumber: process!.number,
+        processNumber: process.number,
         formData: dataToSend,
       });
 
@@ -100,7 +105,7 @@ export default function PreAnalysisPage() {
       toast.success("Pré-Análise salva com sucesso!");
     } catch (error) {
       toast.error("Erro ao salvar Pré-Análise");
-      logger.error("Erro ao salvar Pré-Análise:", error);
+      logger.error("Erro ao salvar Pré-Análise:", error as object);
     }
   };
 

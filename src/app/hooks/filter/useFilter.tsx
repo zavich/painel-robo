@@ -49,7 +49,7 @@ function serializeFiltersToSearchParams(filters: FilterState) {
   Object.entries(filters).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
     // don't persist defaults to keep URL clean
-    const defaultValue = (DEFAULT_FILTERS as any)[key];
+    const defaultValue = DEFAULT_FILTERS[key];
     if (defaultValue !== undefined && value === defaultValue) return;
 
     if (typeof value === "boolean") {
@@ -151,7 +151,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
       window.history.replaceState(null, "", url);
     } catch (err) {
       // ignore
-      logger.error("Erro ao sincronizar filtros para URL", err);
+      logger.error("Erro ao sincronizar filtros para URL", err as object);
     }
   };
 

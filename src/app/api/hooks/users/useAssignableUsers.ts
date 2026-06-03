@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import api from "@/app/api";
 
 export interface AssignableUser {
@@ -31,14 +31,14 @@ export function useAssignableUsers(
     AssignableUsersResponse,
     Error,
     AssignableUsersResponse,
-    unknown[]
+    QueryKey
   >
 ) {
   return useQuery<
     AssignableUsersResponse,
     Error,
     AssignableUsersResponse,
-    unknown[]
+    QueryKey
   >({
     queryKey: ["assignable-users"],
     queryFn: () => getAssignableUsers(),

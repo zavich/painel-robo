@@ -50,7 +50,7 @@ export function PipedriveFormCard({
           setAnalysisMarkdown(markdown);
           lastProcessedAnalysisRef.current = form.analysis;
         } catch (error) {
-          logger.error('Erro ao converter HTML para Markdown:', error);
+          logger.error('Erro ao converter HTML para Markdown:', error as object);
           // Se falhar, tentar extrair apenas o texto
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = form.analysis;

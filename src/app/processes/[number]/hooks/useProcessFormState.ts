@@ -87,7 +87,7 @@ export function useProcessFormState({
             toast.success("Nota enviada ao Pipedrive.");
           },
           onError: (error) => {
-            logger.error("Falha ao enviar nota ao Pipedrive:", error);
+            logger.error("Falha ao enviar nota ao Pipedrive:", error as object);
             toast.error("Falha ao enviar nota ao Pipedrive.");
           },
         },

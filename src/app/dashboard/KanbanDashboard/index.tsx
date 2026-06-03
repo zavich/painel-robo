@@ -317,7 +317,7 @@ export default function KanbanDashboard() {
 
           let retries = 0;
           let pageSuccess = false;
-          let lastError: unknown = null;
+          let lastError: object | null = null;
 
           // Tenta a página atual até MAX_RETRIES vezes
           while (retries <= MAX_RETRIES && !pageSuccess) {
@@ -350,7 +350,7 @@ export default function KanbanDashboard() {
               }
             } catch (pageError: unknown) {
               retries++;
-              lastError = pageError;
+              lastError = pageError as object;
 
               const err = pageError as { response?: { data?: { message?: string }; status?: number | string }; message?: string };
               const errorMessage =

@@ -149,7 +149,7 @@ export const FiltersBar = memo(function FiltersBar({
     }
   }, [filters.search, onApplyFilters]);
 
-  const updateFilter = (key: keyof FilterValues, value: unknown) => {
+  const updateFilter = (key: keyof FilterValues, value: FilterValues[keyof FilterValues]) => {
     const newFilters = { ...filters, [key]: value };
     onFiltersChange(newFilters);
     // Auto-apply filters for status, type, lossReason, contentFilter changes and date changes (immediate)

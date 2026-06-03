@@ -306,7 +306,7 @@ export interface Process {
   processMain?: Process;
   simpleCalcProposals: SimpleCalcProposal;
   observation: Observation;
-  insights: Record<string, unknown>[];
+  insights: Record<string, string | number | boolean | object | null | undefined>[];
   stage?: StageProcess;
   stageId: number;
   formPipedrive?: FormPipedrive;
@@ -372,7 +372,7 @@ export interface InsightData {
     rg?: string;
     pis_pasep?: string;
   };
-  [key: string]: unknown;
+  [key: string]: string | number | boolean | object | null | undefined;
 }
 
 export interface DocumentExtract {

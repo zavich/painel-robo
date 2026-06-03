@@ -4,13 +4,13 @@ import { FormPipedrive } from '@/app/interfaces/processes';
 
 interface UpdateFormRequest {
   processNumber: string; // Número do processo, não o _id
-  formData: FormPipedrive & Record<string, unknown>;
+  formData: FormPipedrive & Record<string, string | number | boolean | object | null | undefined>;
 }
 
 interface UpdateFormResponse {
   success: boolean;
   message?: string;
-  data?: Record<string, unknown>;
+  data?: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export const useUpdateProcessForm = (

@@ -10,7 +10,7 @@ interface ChangeStageRequest {
 interface ChangeStageResponse {
   success: boolean;
   message?: string;
-  data?: Record<string, unknown>;
+  data?: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export const useChangeStage = (

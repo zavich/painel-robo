@@ -22,7 +22,7 @@ export const useRemoveProvisionalLawsuit = () => {
       });
     },
     onError: (error) => {
-      logger.error('Erro ao remover processo provisório:', error);
+      logger.error('Erro ao remover processo provisório:', error as object);
     },
   });
 

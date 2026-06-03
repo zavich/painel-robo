@@ -3,7 +3,7 @@ import api from "../..";
 
 interface SendNoteToPipedriveRequest {
   processId: string;
-  data: Record<string, unknown>;
+  data: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export const useSendNoteToPipedrive = () => {

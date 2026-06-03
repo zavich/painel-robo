@@ -20,7 +20,7 @@ import PDFViewerHeader from "@/components/shared/PdfViewerHeader";
 const PDFViewer = dynamic(() => import("@/components/shared/PDFViewer"), {
   ssr: false,
 });
-import InsightGeneric from "@/components/insights/InsightGeneric";
+import InsightGeneric, { type JsonObject } from "@/components/insights/InsightGeneric";
 import { useDocumentDetails } from "@/app/api/hooks/process/useDocumentDetails";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
@@ -338,7 +338,7 @@ export function DocumentsCard({
     }
   }
 
-  const handleSendCalculationToPipedrive = async (calculationData: Record<string, unknown>) => {
+  const handleSendCalculationToPipedrive = async (calculationData: JsonObject) => {
     if (!processNumber) {
       toast.error("Número do processo não encontrado");
       return;
@@ -351,7 +351,7 @@ export function DocumentsCard({
 
     try {
       // Verificar se valor é válido (não null, não undefined, não vazio)
-      const isValidValue = (value: unknown): boolean => {
+      const isValidValue = (value: string | number | boolean | object | null | undefined): boolean => {
         if (value === null || value === undefined) return false;
         if (typeof value === "string" && value.trim() === "") return false;
         if (typeof value === "number" && value === 0) return false;
@@ -359,7 +359,7 @@ export function DocumentsCard({
       };
 
       // Formatar valores monetários
-      const formatCurrency = (value: unknown): string | null => {
+      const formatCurrency = (value: string | number | boolean | object | null | undefined): string | null => {
         // Se já é string formatada (ex: "R$ 18.000,00"), retornar como está
         if (typeof value === "string" && value.includes("R$")) {
           return value;
@@ -372,7 +372,7 @@ export function DocumentsCard({
       };
 
       // Formatar datas
-      const formatDate = (dateStr: unknown): string | null => {
+      const formatDate = (dateStr: string | number | boolean | object | null | undefined): string | null => {
         if (!dateStr) return null;
         if (typeof dateStr === "string" && dateStr.includes("/"))
           return dateStr;
@@ -690,7 +690,7 @@ export function DocumentsCard({
 
                       window.URL.revokeObjectURL(url);
                     } catch (err) {
-                      logger.error("Erro ao baixar documento:", err);
+                      logger.error("Erro ao baixar documento:", err as object);
                     }
                   }}
                   className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"

@@ -123,7 +123,7 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
           setCompleteNotesMarkdown(markdown);
           lastProcessedNotesRef.current = completeNotes;
         } catch (error) {
-          logger.error("Erro ao converter HTML para Markdown:", error);
+          logger.error("Erro ao converter HTML para Markdown:", error as object);
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = completeNotes;
           const textContent = tempDiv.textContent || tempDiv.innerText || "";
@@ -154,7 +154,7 @@ export function ActivitiesCard({ process, onUpdate }: ActivitiesCardProps) {
           setEditNotesMarkdown(markdown);
           lastProcessedEditNotesRef.current = editNotes;
         } catch (error) {
-          logger.error("Erro ao converter HTML para Markdown:", error);
+          logger.error("Erro ao converter HTML para Markdown:", error as object);
           const tempDiv = document.createElement("div");
           tempDiv.innerHTML = editNotes;
           const textContent = tempDiv.textContent || tempDiv.innerText || "";

@@ -45,7 +45,7 @@ export function useProcessFetch() {
         return { type: "upload", data };
       }
     } catch (error) {
-      logger.error("Erro ao inserir processo:", error);
+      logger.error("Erro ao inserir processo:", error as object);
       return null;
     }
   }, []);

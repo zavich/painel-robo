@@ -110,7 +110,7 @@ export function ProcessHeader({
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
-        logger.error("Erro ao copiar número do processo:", err);
+        logger.error("Erro ao copiar número do processo:", err as object);
       }
     }
   };

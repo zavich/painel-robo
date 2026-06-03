@@ -15,7 +15,7 @@ interface MassEditPanelProps {
   users?: Array<{ _id?: string; id?: string; email: string }>;
   selectAllMode?: 'page' | 'all' | null;
   totalSelected?: number;
-  apiFilters?: Record<string, unknown>; // Filters to apply when selecting all from DB
+  apiFilters?: Record<string, string | number | boolean | object | null | undefined>; // Filters to apply when selecting all from DB
   isAdmin?: boolean; // Whether the current user is an admin
 }
 
@@ -145,7 +145,7 @@ export function MassEditPanel({
                 await new Promise(resolve => setTimeout(resolve, 100));
               }
             } catch (pageError) {
-              logger.error(`Error fetching page ${page}:`, pageError);
+              logger.error(`Error fetching page ${page}:`, pageError as object);
               hasMore = false;
             }
           }
@@ -200,7 +200,7 @@ export function MassEditPanel({
               errors.push(...result.errors.map(e => e.error));
             }
           } catch (error: unknown) {
-            logger.error(`Error creating activity ${activity.type}:`, error);
+            logger.error(`Error creating activity ${activity.type}:`, error as object);
             totalFailed += processIds.length;
             const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
             errors.push(`Erro ao criar ${activity.type}: ${axiosErr?.response?.data?.message || axiosErr?.message || 'Erro desconhecido'}`);
@@ -225,7 +225,7 @@ export function MassEditPanel({
 
         handleClose();
       } catch (error: unknown) {
-        logger.error("Error creating mass activities:", error);
+        logger.error("Error creating mass activities:", error as object);
         const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
         toast({
           title: "Erro ao criar atividades",

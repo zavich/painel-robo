@@ -16,7 +16,7 @@ interface LossRequest {
 interface LossResponse {
   success: boolean;
   message?: string;
-  data?: Record<string, unknown>;
+  data?: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export const useProcessLoss = (

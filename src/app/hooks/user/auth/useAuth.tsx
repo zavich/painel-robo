@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     try {
       await api.post("/auth/logout");
     } catch (error) {
-      logger.warn("Erro ao fazer logout no servidor:", error);
+      logger.warn("Erro ao fazer logout no servidor:", error as object);
     } finally {
       // Sempre limpar o estado local e redirecionar
       clearAuthCookies();

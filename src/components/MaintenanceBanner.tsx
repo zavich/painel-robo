@@ -37,7 +37,7 @@ export function MaintenanceBanner() {
           router.push("/login");
         }
       } catch (error) {
-        logger.warn("Falha ao sincronizar maintenance mode:", error);
+        logger.warn("Falha ao sincronizar maintenance mode:", error as object);
       }
     };
 

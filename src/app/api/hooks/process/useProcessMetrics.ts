@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import api from "../..";
 
 export interface ProcessMetricsByActivityType {
@@ -28,14 +28,14 @@ export function useProcessMetrics(
     ProcessMetricsResponse,
     Error,
     ProcessMetricsResponse,
-    unknown[]
+    QueryKey
   >
 ) {
   return useQuery<
     ProcessMetricsResponse,
     Error,
     ProcessMetricsResponse,
-    unknown[]
+    QueryKey
   >({
     queryKey: ["process-metrics"],
     queryFn: () => getProcessMetrics(),

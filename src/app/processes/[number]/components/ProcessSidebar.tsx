@@ -9,7 +9,7 @@ type ProcessSidebarProps = {
   linkedDocuments: DocumentExtract[];
   onManagePrompts: () => void;
   process: Process | null | undefined;
-  refetchProcess: () => Promise<unknown>;
+  refetchProcess: () => Promise<Process | undefined>;
   selectedDocumentId: string | null;
   setActiveRightTab: (tab: "documents" | "activities") => void;
 };

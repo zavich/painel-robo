@@ -44,7 +44,7 @@ export function useBulkUpdateProcesses(
     BulkUpdateResponse,
     Error,
     BulkUpdateRequest,
-    unknown
+    void
   >
 ) {
   const queryClient = useQueryClient();
@@ -53,7 +53,7 @@ export function useBulkUpdateProcesses(
     BulkUpdateResponse,
     Error,
     BulkUpdateRequest,
-    unknown
+    void
   >({
     mutationFn: bulkUpdateProcesses,
     onSuccess: (response) => {

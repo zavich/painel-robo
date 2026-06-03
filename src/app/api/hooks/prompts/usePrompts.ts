@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import { Prompt } from "@/app/interfaces/processes";
 import api from "../..";
 
@@ -29,14 +29,14 @@ export function usePrompts(
     GetPromptsResponseType,
     Error,
     GetPromptsResponseType,
-    unknown[]
+    QueryKey
   >
 ) {
   const query = useQuery<
     GetPromptsResponseType,
     Error,
     GetPromptsResponseType,
-    unknown[]
+    QueryKey
   >({
     queryKey: ["prompts", params],
     queryFn: () => getPrompts(params),

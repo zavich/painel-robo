@@ -97,8 +97,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     const handleConnect = () => setIsConnected(true);
     const handleDisconnect = () => setIsConnected(false);
-    const handleError = (err: unknown) => {
-      const message = (err instanceof Error ? err.message : null) || String(err || "erro socket notification");
+    const handleError = (err: Error) => {
+      const message = err.message || String(err || "erro socket notification");
       // Evita spam no console
       if (lastErrorMessageRef.current !== message) {
         logger.warn("Não foi possível conectar às notificações em tempo real.", message);

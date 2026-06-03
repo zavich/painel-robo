@@ -1,12 +1,12 @@
 import { Process } from "@/app/interfaces/processes";
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import api from "../..";
 
 export const useProcess = (
   numero: string,
-  config?: UseQueryOptions<Process, Error, Process, unknown[]>
+  config?: UseQueryOptions<Process, Error, Process, QueryKey>
 ) => {
-  const queryResponse = useQuery<Process, Error, Process, unknown[]>({
+  const queryResponse = useQuery<Process, Error, Process, QueryKey>({
     queryKey: ["process", numero],
     queryFn: () => getFindProcess(numero),
     enabled: Boolean(numero),

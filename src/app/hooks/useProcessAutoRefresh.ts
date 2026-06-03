@@ -111,7 +111,7 @@ export function useProcessAutoRefresh({
             }
           }
         } catch (error) {
-          logger.error('Erro ao atualizar dados do processo:', error);
+          logger.error('Erro ao atualizar dados do processo:', error as object);
         } finally {
           isRefetchingRef.current = false;
           if (isMountedRef.current) {
@@ -157,7 +157,7 @@ export function useProcessAutoRefresh({
         }
         return result.data;
       } catch (error) {
-        logger.error('Erro ao forçar atualização do processo:', error);
+        logger.error('Erro ao forçar atualização do processo:', error as object);
         throw error;
       } finally {
         isRefetchingRef.current = false;

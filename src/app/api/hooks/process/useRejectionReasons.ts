@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, UseQueryOptions, QueryKey } from '@tanstack/react-query';
 import api from "../..";
 import { logger } from '@/app/lib/logger';
 
@@ -8,9 +8,9 @@ export interface RejectionReason {
 }
 
 export const useRejectionReasons = (
-  config?: UseQueryOptions<RejectionReason[], Error, RejectionReason[], unknown[]>
+  config?: UseQueryOptions<RejectionReason[], Error, RejectionReason[], QueryKey>
 ) => {
-  const queryResponse = useQuery<RejectionReason[], Error, RejectionReason[], unknown[]>({
+  const queryResponse = useQuery<RejectionReason[], Error, RejectionReason[], QueryKey>({
     queryKey: ["rejection-reasons"],
     queryFn: () => getRejectionReasons(),
     staleTime: 1000 * 60 * 10, // 10 minutes
@@ -33,7 +33,7 @@ export async function getRejectionReasons() {
       label: item.label,
     }));
   } catch (error) {
-    logger.error('Erro ao buscar motivos de recusa:', error);
+    logger.error('Erro ao buscar motivos de recusa:', error as object);
     return [];
   }
 }

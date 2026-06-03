@@ -15,6 +15,7 @@ import dynamic from "next/dynamic";
 import PDFViewerHeader from "@/components/shared/PdfViewerHeader";
 const PDFViewer = dynamic(() => import("../shared/PDFViewer"), { ssr: false });
 import InsightGeneric from "@/components/insights/InsightGeneric";
+import type { JsonObject } from "@/components/insights/InsightGeneric";
 import CalcNoteModal, { buildCalcNoteMarkdown } from "./CalcNoteModal";
 import { useExtractInsights } from "@/app/api/hooks/process/useExtractInsights";
 import { usePrompts } from "@/app/api/hooks/prompts/usePrompts";

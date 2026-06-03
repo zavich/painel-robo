@@ -162,7 +162,7 @@ export function useProcessPageState() {
         await refetchProcess();
       } catch (error) {
         toast.error("Erro ao atualizar título");
-        logger.error("Erro ao atualizar título:", error);
+        logger.error("Erro ao atualizar título:", error as object);
         throw error;
       }
     },
@@ -354,7 +354,7 @@ export function useProcessPageState() {
       await refetchProcess();
     } catch (error) {
       toast.error("Erro ao remover vínculo com execução provisória");
-      logger.error("Erro ao remover vínculo com execução provisória:", error);
+      logger.error("Erro ao remover vínculo com execução provisória:", error as object);
     }
   };
 
@@ -380,7 +380,7 @@ export function useProcessPageState() {
       await refetchProcess();
     } catch (error) {
       toast.error("Erro ao vincular execução provisória");
-      logger.error("Erro ao vincular execução provisória:", error);
+      logger.error("Erro ao vincular execução provisória:", error as object);
     }
   };
 
@@ -405,7 +405,7 @@ export function useProcessPageState() {
       setSelectedDocumentId(null);
       await refetchProcess();
     } catch (error) {
-      logger.error("Erro ao sincronizar processo:", error);
+      logger.error("Erro ao sincronizar processo:", error as object);
       toast.error("Erro ao sincronizar processo.");
     }
   };

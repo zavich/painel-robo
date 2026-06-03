@@ -4,7 +4,7 @@ import api from "../..";
 interface ReopenResponse {
   success: boolean;
   message?: string;
-  data?: Record<string, unknown>;
+  data?: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export function useProcessReopen(

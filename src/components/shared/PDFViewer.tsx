@@ -446,7 +446,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
           }
         }}
         onLoadError={(error) => {
-          logger.debug("PDF load error:", error);
+          logger.debug("PDF load error:", error as object);
           setIsDocumentReady(false);
         }}
         loading={
