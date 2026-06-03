@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { logger } from "@/app/lib/logger";
 
 export function MaintenanceBanner() {
   const router = useRouter();
   const pathname = usePathname();
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const isMaintenancePage = pathname === "/maintenance";
 
   useEffect(() => {
@@ -28,8 +27,6 @@ export function MaintenanceBanner() {
         if (!isMounted) {
           return;
         }
-
-        setIsMaintenanceMode(data.maintenanceMode);
 
         if (data.maintenanceMode && !isMaintenancePage) {
           router.push("/maintenance");

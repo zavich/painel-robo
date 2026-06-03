@@ -6,7 +6,7 @@ import { useTheme } from "@/app/hooks/use-theme-client";
 import { useFetchPDF } from "@/app/api/hooks/process/useFetchPDF";
 import { logger } from "@/app/lib/logger";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
 
 interface PDFViewerProps {
   pdfUrl: string; // Ignorado, agora usamos a rota
@@ -210,9 +210,9 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
 
   // Memoizar options para evitar reloads desnecessários - usar ref para garantir mesma referência
   const documentOptionsRef = useRef({
-    cMapUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+    cMapUrl: `/cmaps/`,
     cMapPacked: true,
-    standardFontDataUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+    standardFontDataUrl: `/standard_fonts/`,
   });
   const documentOptions = documentOptionsRef.current;
 

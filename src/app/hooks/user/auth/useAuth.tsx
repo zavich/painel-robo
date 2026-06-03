@@ -94,6 +94,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
       await api.post("/auth/logout");
     } catch (error) {
       logger.warn("Erro ao fazer logout no servidor:", error as object);
+      toast.warn(
+        "Logout parcial: a sessão no servidor pode não ter sido encerrada. Feche o navegador para garantir.",
+      );
     } finally {
       // Sempre limpar o estado local e redirecionar
       clearAuthCookies();

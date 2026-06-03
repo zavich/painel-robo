@@ -65,6 +65,7 @@ export const ProcessTableRow = memo(function ProcessTableRow({
               newSet.delete(process._id);
               return newSet;
             });
+            setSelectAllMode(null);
           } else {
             setSelectedProcessIds((previousIds) => {
               const newSet = new Set(previousIds);

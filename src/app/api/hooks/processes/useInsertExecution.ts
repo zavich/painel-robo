@@ -47,12 +47,16 @@ export function useInsertExecution() {
     processId: string,
     lawsuitExecution: string,
     pipedriveFieldValue?: string,
-  ) {
-    return mutation.mutateAsync({
-      processId,
-      lawsuitExecution,
-      pipedriveFieldValue,
-    });
+  ): Promise<void> {
+    try {
+      await mutation.mutateAsync({
+        processId,
+        lawsuitExecution,
+        pipedriveFieldValue,
+      });
+    } catch {
+      // error already tracked via mutation.error
+    }
   }
 
   return {
