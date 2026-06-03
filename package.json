@@ -9,7 +9,7 @@
     "lint": "next lint",
     "test": "jest --runInBand",
     "render:task-definition": "node ./scripts/render-task-definition.mjs",
-    "copy-pdf-assets": "cp -r node_modules/pdfjs-dist/cmaps public/cmaps && cp -r node_modules/pdfjs-dist/standard_fonts public/standard_fonts",
+    "copy-pdf-assets": "mkdir -p public && cp -r node_modules/pdfjs-dist/cmaps public/cmaps && cp -r node_modules/pdfjs-dist/standard_fonts public/standard_fonts",
     "postinstall": "npm run copy-pdf-assets",
     "prebuild": "npm run copy-pdf-assets"
   },

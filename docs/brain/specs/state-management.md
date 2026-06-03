@@ -35,7 +35,7 @@ isAuthenticated: boolean
 
 ### Cookie management
 
-Nao ha gestao de cookie via `js-cookie`. O cookie httpOnly `prosolutti_accessToken` e emitido e limpo pelo `robo-api`; o frontend apenas reage ao estado retornado por `/auth/me` e aos redirects do middleware.
+O cookie httpOnly `prosolutti_accessToken` e emitido e limpo pelo `robo-api`. `useAuth` usa `js-cookie` apenas para remover os cookies acessiveis ao JS (`token`, `refreshToken`, `prosolutti_accessToken`) via `clearAuthCookies()` no signIn/logout. O cookie httpOnly so e removido efetivamente quando o servidor responde ao `POST /auth/logout`; em falha, um toast avisa o usuario.
 
 ---
 

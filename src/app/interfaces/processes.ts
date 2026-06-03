@@ -232,7 +232,7 @@ export interface FormPipedrive {
   alvara?: string;
   cessaoCredito?: string;
   minValueEstimate?: string;
-  value?: string;
+  value?: string | number;
 }
 
 interface ProcessOwner {
