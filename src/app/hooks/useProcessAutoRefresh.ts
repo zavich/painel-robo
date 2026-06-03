@@ -3,7 +3,7 @@ import { useProcess } from '@/app/api/hooks/process/useProcess';
 import { hasError } from '@/app/utils/processSyncStatus';
 import { Process, ProcessStatus } from '@/app/interfaces/processes';
 import { logger } from '@/app/lib/logger';
-import { getExistingSocket } from '@/lib/socket';
+import { getExistingSocket, whenSocketReady } from '@/lib/socket';
 
 interface UseProcessAutoRefreshOptions {
   processId: string;
@@ -193,17 +193,34 @@ export function useProcessAutoRefresh({
   useEffect(() => {
     if (!enabled || !processId) return;
 
-    const socket = getExistingSocket();
-    if (!socket) return;
+    // subscribedSocket rastreia em qual socket o listener foi registrado,
+    // para que o cleanup possa removê-lo corretamente mesmo quando o socket
+    // só ficou disponível depois do mount (navegação direta / auth ainda carregando).
+    let subscribedSocket: ReturnType<typeof getExistingSocket> = null;
 
     const handleProcessUpdated = (data: { number: string }) => {
       if (data.number !== processId) return;
       void forceRefreshRef.current();
     };
 
-    socket.on('process:updated', handleProcessUpdated);
+    const subscribe = (s: NonNullable<ReturnType<typeof getExistingSocket>>) => {
+      subscribedSocket = s;
+      s.on('process:updated', handleProcessUpdated);
+    };
+
+    const existingSocket = getExistingSocket();
+    if (existingSocket) {
+      subscribe(existingSocket);
+      return () => {
+        subscribedSocket?.off('process:updated', handleProcessUpdated);
+      };
+    }
+
+    // Socket ainda não criado (auth em andamento) — aguarda conexão
+    const unregister = whenSocketReady(subscribe);
     return () => {
-      socket.off('process:updated', handleProcessUpdated);
+      unregister(); // cancela callback pendente se componente desmontar antes
+      subscribedSocket?.off('process:updated', handleProcessUpdated);
     };
   }, [enabled, processId]);
 

@@ -2,6 +2,9 @@
 
 import { io, Socket } from "socket.io-client";
 
+type SocketReadyCallback = (socket: Socket) => void;
+const socketReadyCallbacks = new Set<SocketReadyCallback>();
+
 let socketInstance: Socket | null = null;
 
 function resolveSocketUrl() {
@@ -30,6 +33,15 @@ export function getNotificationsSocket(userId?: string) {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
+
+    // Dispara callbacks pendentes de whenSocketReady() ao conectar
+    socketInstance.on("connect", () => {
+      if (socketReadyCallbacks.size > 0) {
+        const cbs = [...socketReadyCallbacks];
+        socketReadyCallbacks.clear();
+        cbs.forEach((cb) => cb(socketInstance!));
+      }
+    });
   } else {
     // Update auth data if user changes
     socketInstance.auth = { userId };
@@ -50,5 +62,22 @@ export function disconnectNotificationsSocket() {
 
 export function getExistingSocket(): Socket | null {
   return socketInstance;
+}
+
+/**
+ * Registra um callback a ser chamado assim que o socket estiver conectado.
+ * Se já estiver conectado, chama imediatamente.
+ * Retorna uma função de cleanup que cancela o registro caso o componente
+ * desmonte antes da conexão ser estabelecida.
+ */
+export function whenSocketReady(cb: SocketReadyCallback): () => void {
+  if (socketInstance?.connected) {
+    cb(socketInstance);
+    return () => {};
+  }
+  socketReadyCallbacks.add(cb);
+  return () => {
+    socketReadyCallbacks.delete(cb);
+  };
 }
 

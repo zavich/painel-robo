@@ -156,8 +156,16 @@ export async function middleware(request: NextRequest) {
     );
   }
 
+  const jwtSecret = process.env.JWT_SECRET_KEY;
+  if (!jwtSecret) {
+    // Má configuração de deploy — retorna 500 para não deletar cookies válidos
+    // nem prender o usuário em loop de redirecionamento
+    console.error("[middleware] CRITICAL: JWT_SECRET_KEY não configurada");
+    return new NextResponse("Erro de configuração do servidor", { status: 500 });
+  }
+
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET_KEY);
+    const secret = new TextEncoder().encode(jwtSecret);
     await jwtVerify(token, secret);
     return applySecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),
