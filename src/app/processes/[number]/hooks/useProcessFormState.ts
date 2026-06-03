@@ -99,6 +99,8 @@ export function useProcessFormState({
     }
 
     function handleMessage(event: MessageEvent) {
+      // Aceitar apenas mensagens da mesma origem para prevenir abuso via postMessage cross-origin
+      if (event.origin !== window.location.origin) return;
       handleCalcNote(event.data);
     }
 

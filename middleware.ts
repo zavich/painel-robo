@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 const AUTH_COOKIE = "prosolutti_accessToken";
 
-const PUBLIC_PATHS = ["/login", "/maintenance", "/api/auth"];
+const PUBLIC_PATHS = ["/login", "/maintenance", "/api/auth", "/health"];
 
 const getMaintenanceMode = () => {
   return (
@@ -34,7 +34,17 @@ function buildSecurityHeaders(request: NextRequest, nonce: string) {
     }
   } catch {}
 
-  const connectSrc = ["'self'", apiOrigin, "ws:", "wss:"]
+  // Derivar a origem WebSocket a partir da URL da API (ws: genérico é muito permissivo)
+  let wsOrigin = "";
+  try {
+    if (apiOrigin) {
+      wsOrigin = apiOrigin.replace(/^https?:\/\//, (m) =>
+        m === "https://" ? "wss://" : "ws://",
+      );
+    }
+  } catch {}
+
+  const connectSrc = ["'self'", apiOrigin, wsOrigin || "ws: wss:"]
     .filter(Boolean)
     .join(" ");
   const isDev = process.env.NODE_ENV !== "production";
@@ -47,6 +57,8 @@ function buildSecurityHeaders(request: NextRequest, nonce: string) {
     "img-src 'self' data: blob:",
     "font-src 'self'",
     `connect-src ${connectSrc}`,
+    // worker-src necessário para PDF.js (react-pdf) que carrega um worker JS
+    "worker-src 'self' blob:",
     "frame-src 'none'",
     "object-src 'none'",
     "base-uri 'self'",

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { type Dispatch, memo, type SetStateAction } from "react";
 import {
   Activity,
   ActivityType,
@@ -26,7 +26,7 @@ export interface ProcessTableRowProps {
   selectAllMode: "page" | "all" | null;
   visibleProcessIds: string[];
   getFilteredActivities: (process: Process) => Activity[];
-  setSelectedProcessIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  setSelectedProcessIds: Dispatch<SetStateAction<Set<string>>>;
   setSelectAllMode: (mode: "page" | "all" | null) => void;
 }
 

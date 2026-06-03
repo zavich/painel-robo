@@ -7,7 +7,7 @@ import {
   isSyncCompleted,
   shouldContinueMonitoring,
 } from "@/app/utils/processSyncStatus";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { buildTrackedProcessSnapshot } from "./processPageState.utils";
 
@@ -23,8 +23,8 @@ type UseProcessUpdateMonitorParams = {
   hasUnsavedChanges: boolean;
   isEditing: boolean;
   process: Process | null | undefined;
-  setCurrentStatusInfo: React.Dispatch<
-    React.SetStateAction<{
+  setCurrentStatusInfo: Dispatch<
+    SetStateAction<{
       errorReason?: string;
       log?: string;
       name: string;

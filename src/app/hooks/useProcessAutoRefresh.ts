@@ -32,6 +32,7 @@ export function useProcessAutoRefresh({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isRefetchingRef = useRef(false);
   const isMountedRef = useRef(true);
+  const pollingStoppedRef = useRef(false);
   const [isRefetchingState, setIsRefetchingState] = useState(false);
   const lastProcessStatusRef = useRef<ProcessStatus | null>(null);
   const currentIntervalRef = useRef<number>(intervalMs);
@@ -43,6 +44,7 @@ export function useProcessAutoRefresh({
   useEffect(() => { onStatusChangeRef.current = onStatusChange; }, [onStatusChange]);
 
   const stopPolling = useCallback(() => {
+    pollingStoppedRef.current = true;
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -50,18 +52,21 @@ export function useProcessAutoRefresh({
   }, []);
 
   const startPolling = useCallback(() => {
+    pollingStoppedRef.current = false;
     stopPolling();
+    pollingStoppedRef.current = false;
 
     if (!(enabled && processId)) {
       return;
     }
 
     const scheduleNextPoll = (delayMs: number) => {
-      if (!(enabled && processId)) {
+      if (!(enabled && processId) || pollingStoppedRef.current) {
         return;
       }
 
       timeoutRef.current = setTimeout(async () => {
+        if (pollingStoppedRef.current) return;
         if (isRefetchingRef.current) {
           scheduleNextPoll(currentIntervalRef.current);
           return;
@@ -112,7 +117,9 @@ export function useProcessAutoRefresh({
           if (isMountedRef.current) {
             setIsRefetchingState(false);
           }
-          scheduleNextPoll(nextInterval);
+          if (!pollingStoppedRef.current) {
+            scheduleNextPoll(nextInterval);
+          }
         }
       }, delayMs);
     };
