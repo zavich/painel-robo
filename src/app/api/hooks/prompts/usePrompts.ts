@@ -38,7 +38,7 @@ export function usePrompts(
     GetPromptsResponseType,
     QueryKey
   >({
-    queryKey: ["prompts", params],
+    queryKey: ["prompts", JSON.stringify(params)],
     queryFn: () => getPrompts(params),
     refetchOnWindowFocus: false,
     ...(config || {}),
