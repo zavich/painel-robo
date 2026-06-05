@@ -34,10 +34,14 @@ function buildSecurityHeaders(request: NextRequest, nonce: string) {
     }
   } catch {}
 
-  // Derivar a origem WebSocket a partir da URL da API (ws: genérico é muito permissivo)
+  // Derivar a origem WebSocket: usa NEXT_PUBLIC_API_WS se definido (socket.ts),
+  // caso contrário deriva da URL da API como fallback.
   let wsOrigin = "";
+  const apiWsUrl = process.env.NEXT_PUBLIC_API_WS ?? "";
   try {
-    if (apiOrigin) {
+    if (apiWsUrl) {
+      wsOrigin = new URL(apiWsUrl).origin;
+    } else if (apiOrigin) {
       wsOrigin = apiOrigin.replace(/^https?:\/\//, (m) =>
         m === "https://" ? "wss://" : "ws://",
       );
