@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import api from "../..";
 
 export function useInsertExecution() {
@@ -60,10 +61,20 @@ export function useInsertExecution() {
     }
   }
 
+  const errorMessage = (() => {
+    const err = mutation.error;
+    if (!err) return null;
+    if (axios.isAxiosError(err)) {
+      const msg = err.response?.data?.message;
+      if (msg) return typeof msg === "string" ? msg : JSON.stringify(msg);
+    }
+    return err.message;
+  })();
+
   return {
     insertExecution,
     isLoading: mutation.isPending,
-    error: mutation.error?.message ?? null,
+    error: errorMessage,
     success: mutation.isSuccess,
   };
 }

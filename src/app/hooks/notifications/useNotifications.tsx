@@ -95,7 +95,10 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    const handleConnect = () => setIsConnected(true);
+    const handleConnect = () => {
+      lastErrorMessageRef.current = null;
+      setIsConnected(true);
+    };
     const handleDisconnect = () => setIsConnected(false);
     const handleError = (err: Error) => {
       const message = err.message || String(err || "erro socket notification");
@@ -107,10 +110,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     };
 
     socket.on("notification", handleNotification);
-    socket.on("connect", () => {
-      lastErrorMessageRef.current = null;
-      handleConnect();
-    });
+    socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleError);
 
