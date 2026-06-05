@@ -1,6 +1,29 @@
-import type { Activity } from "@/app/api/hooks/process/useCreateActivity";
+export type ActivityType = "PRE_ANALISE" | "ANALISE" | "CALCULO";
 
-export type { Activity };
+export interface ActivityUser {
+  _id: string;
+  email: string;
+  name?: string;
+  role?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Activity {
+  _id?: string;
+  type: ActivityType;
+  assignedTo: string | ActivityUser;
+  assignedBy?: string | ActivityUser;
+  isCompleted: boolean;
+  completedAt: string | null;
+  completedBy: string | null | ActivityUser;
+  notes: string | null;
+  status?: "APPROVE" | "LOSS";
+  lossReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface ProcessStep {
   _id: string;

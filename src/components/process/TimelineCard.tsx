@@ -324,8 +324,8 @@ export function TimelineCard({
       .filter((doc) => {
         if (documentInsightsFilter === "all") return true;
         const hasInsights =
-          doc.data?.status === StatusExtractionInsight.COMPLETED &&
-          doc.data?.data;
+          doc.data.status === StatusExtractionInsight.COMPLETED &&
+          doc.data.data != null;
         if (documentInsightsFilter === "with") {
           return hasInsights;
         } else if (documentInsightsFilter === "without") {
