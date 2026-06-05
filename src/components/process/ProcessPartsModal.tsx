@@ -112,9 +112,18 @@ export const ProcessPartsModal = memo(function ProcessPartsModal({
                 {companies.map((company) => (
                   <div
                     key={company._id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       onCompanyClick?.(company);
                       onOpenChange(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onCompanyClick?.(company);
+                        onOpenChange(false);
+                      }
                     }}
                     className="bg-primary/10 dark:bg-primary-foreground/10 border border-primary dark:border-primary-foreground rounded-lg p-3 text-sm cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors"
                   >

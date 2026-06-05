@@ -56,10 +56,9 @@ function buildSecurityHeaders(request: NextRequest, nonce: string) {
     "default-src 'self'",
     isDev
       ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-      // 'unsafe-inline' é ignorado por browsers com strict-dynamic (CSP3);
-      // serve de fallback para browsers CSP2 que não suportam strict-dynamic.
-      // 'self' removido pois é ignorado quando strict-dynamic está presente.
-      : `script-src 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'`,
+      // Sem strict-dynamic: 'self' permite scripts do Next.js sem nonce.
+      // 'unsafe-inline' ignorado em browsers com suporte a nonce (CSP3).
+      : `script-src 'nonce-${nonce}' 'self' 'unsafe-inline'`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
