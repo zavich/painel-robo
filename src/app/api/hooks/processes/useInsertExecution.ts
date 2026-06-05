@@ -54,8 +54,9 @@ export function useInsertExecution() {
         lawsuitExecution,
         pipedriveFieldValue,
       });
-    } catch {
-      // error already tracked via mutation.error
+    } catch (e) {
+      // error tracked via mutation.error; re-throw so callers can detect failure
+      throw e;
     }
   }
 
