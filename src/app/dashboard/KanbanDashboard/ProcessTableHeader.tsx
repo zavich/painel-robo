@@ -1,10 +1,6 @@
 import { Process } from "@/app/interfaces/processes";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
@@ -77,7 +73,6 @@ export function ProcessTableHeader({
         <TableHead>Data</TableHead>
         <TableHead className="text-center">Instâncias</TableHead>
         <TableHead className="text-center">Documentos</TableHead>
-        <TableHead className="text-center">Atividades</TableHead>
       </TableRow>
     </TableHeader>
   );

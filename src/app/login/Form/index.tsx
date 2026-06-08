@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Gavel, Mail, Scale, Shield } from "lucide-react";
+import { AlertCircle, Gavel, Lock, Mail, Scale, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -16,6 +16,7 @@ const loginSchema = z.object({
     .min(1, "E-mail é obrigatório")
     .email("E-mail inválido")
     .max(255, "E-mail muito longo"),
+  password: z.string().min(1, "Senha é obrigatória"),
   rememberMe: z.boolean().optional(),
 });
 
@@ -38,6 +39,7 @@ const LoginForm = () => {
     mode: "onChange",
     defaultValues: {
       email: "",
+      password: "",
       rememberMe: false,
     },
   });
@@ -71,7 +73,7 @@ const LoginForm = () => {
     clearErrors();
 
     try {
-      await signIn({ email: data.email });
+      await signIn({ email: data.email, password: data.password });
     } catch (error: unknown) {
       const axiosErr = error as {
         response?: { data?: { message?: string } };
@@ -127,6 +129,31 @@ const LoginForm = () => {
 
           {errors.email && (
             <p className="text-xs text-destructive">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-sm text-foreground">Senha</Label>
+
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+
+            <Input
+              {...register("password")}
+              type="password"
+              placeholder="Sua senha"
+              autoComplete="current-password"
+              className={cn(
+                "pl-10 h-11 bg-white/70 border border-white/30 text-gray-900 placeholder:text-gray-500 focus-visible:ring-2 focus-visible:ring-secondary/60",
+                errors.password && "border-destructive",
+              )}
+            />
+          </div>
+
+          {errors.password && (
+            <p className="text-xs text-destructive">
+              {errors.password.message}
+            </p>
           )}
         </div>
 

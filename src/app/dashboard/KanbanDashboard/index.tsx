@@ -352,7 +352,13 @@ export default function KanbanDashboard() {
               retries++;
               lastError = pageError as object;
 
-              const err = pageError as { response?: { data?: { message?: string }; status?: number | string }; message?: string };
+              const err = pageError as {
+                response?: {
+                  data?: { message?: string };
+                  status?: number | string;
+                };
+                message?: string;
+              };
               const errorMessage =
                 err?.response?.data?.message ||
                 err?.message ||
@@ -452,44 +458,47 @@ export default function KanbanDashboard() {
   }, [paginationInfo]);
 
   // Helper function to filter activities based on user role
-  const getFilteredActivities = useCallback((process: Process): Activity[] => {
-    const activities: Activity[] = process?.activities || [];
+  const getFilteredActivities = useCallback(
+    (process: Process): Activity[] => {
+      const activities: Activity[] = process?.activities || [];
 
-    if (user?.role === UserRolesEnum.ADMIN) {
-      // Admin vê todas as atividades
-      return activities;
-    } else {
-      // Outros usuários veem apenas atividades em que estão envolvidos
-      const userId = user?._id;
-      if (!userId) return [];
+      if (user?.role === UserRolesEnum.ADMIN) {
+        // Admin vê todas as atividades
+        return activities;
+      } else {
+        // Outros usuários veem apenas atividades em que estão envolvidos
+        const userId = user?._id;
+        if (!userId) return [];
 
-      return activities.filter((activity) => {
-        // Verificar se o usuário está atribuído à atividade
-        const assignedToId =
-          typeof activity.assignedTo === "string"
-            ? activity.assignedTo
-            : activity.assignedTo?._id;
+        return activities.filter((activity) => {
+          // Verificar se o usuário está atribuído à atividade
+          const assignedToId =
+            typeof activity.assignedTo === "string"
+              ? activity.assignedTo
+              : activity.assignedTo?._id;
 
-        // Verificar se o usuário completou a atividade
-        const completedById =
-          typeof activity.completedBy === "string"
-            ? activity.completedBy
-            : activity.completedBy?._id;
+          // Verificar se o usuário completou a atividade
+          const completedById =
+            typeof activity.completedBy === "string"
+              ? activity.completedBy
+              : activity.completedBy?._id;
 
-        // Verificar se o usuário atribuiu a atividade
-        const assignedById =
-          typeof activity.assignedBy === "string"
-            ? activity.assignedBy
-            : activity.assignedBy?._id;
+          // Verificar se o usuário atribuiu a atividade
+          const assignedById =
+            typeof activity.assignedBy === "string"
+              ? activity.assignedBy
+              : activity.assignedBy?._id;
 
-        return (
-          assignedToId === userId ||
-          completedById === userId ||
-          assignedById === userId
-        );
-      });
-    }
-  }, [user?._id, user?.role]);
+          return (
+            assignedToId === userId ||
+            completedById === userId ||
+            assignedById === userId
+          );
+        });
+      }
+    },
+    [user?._id, user?.role],
+  );
 
   // Get selected count based on mode
   const selectedCount = useMemo(() => {
@@ -810,7 +819,6 @@ export default function KanbanDashboard() {
                       <TableHead>Data</TableHead>
                       <TableHead className="text-center">Instâncias</TableHead>
                       <TableHead className="text-center">Documentos</TableHead>
-                      <TableHead className="text-center">Atividades</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -833,9 +841,6 @@ export default function KanbanDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse mx-auto"></div>
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse mx-auto"></div>
@@ -890,7 +895,6 @@ export default function KanbanDashboard() {
                             isSelected={selectedProcessIds.has(process._id)}
                             selectAllMode={selectAllMode}
                             visibleProcessIds={visibleProcessIds}
-                            getFilteredActivities={getFilteredActivities}
                             setSelectedProcessIds={setSelectedProcessIds}
                             setSelectAllMode={setSelectAllMode}
                           />

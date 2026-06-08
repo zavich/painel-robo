@@ -6,10 +6,7 @@ import {
 import { Process } from "@/app/interfaces/processes";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
@@ -25,7 +22,6 @@ export interface ProcessTableRowProps {
   isSelected: boolean;
   selectAllMode: "page" | "all" | null;
   visibleProcessIds: string[];
-  getFilteredActivities: (process: Process) => Activity[];
   setSelectedProcessIds: Dispatch<SetStateAction<Set<string>>>;
   setSelectAllMode: (mode: "page" | "all" | null) => void;
 }
@@ -35,7 +31,6 @@ export const ProcessTableRow = memo(function ProcessTableRow({
   isSelected,
   selectAllMode,
   visibleProcessIds,
-  getFilteredActivities,
   setSelectedProcessIds,
   setSelectAllMode,
 }: ProcessTableRowProps) {
@@ -44,8 +39,6 @@ export const ProcessTableRow = memo(function ProcessTableRow({
     ANALISE: "Análise",
     CALCULO: "Cálculo",
   };
-
-  const filteredActivities = getFilteredActivities(process);
 
   return (
     <TableRow
@@ -111,9 +104,7 @@ export const ProcessTableRow = memo(function ProcessTableRow({
       </TableCell>
       <TableCell
         className="font-medium"
-        onClick={() =>
-          (window.location.href = `/processes/${process.number}`)
-        }
+        onClick={() => (window.location.href = `/processes/${process.number}`)}
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col gap-1 min-w-0">
@@ -122,8 +113,7 @@ export const ProcessTableRow = memo(function ProcessTableRow({
                 getProcessTitle(
                   process.processParts || [],
                   process.number,
-                  process.title ||
-                    process.formPipedrive?.title,
+                  process.title || process.formPipedrive?.title,
                 ),
               )}
             </span>
@@ -161,18 +151,14 @@ export const ProcessTableRow = memo(function ProcessTableRow({
         </div>
       </TableCell>
       <TableCell
-        onClick={() =>
-          (window.location.href = `/processes/${process.number}`)
-        }
+        onClick={() => (window.location.href = `/processes/${process.number}`)}
       >
         <span className="text-xs font-mono text-muted-foreground">
           {process.number}
         </span>
       </TableCell>
       <TableCell
-        onClick={() =>
-          (window.location.href = `/processes/${process.number}`)
-        }
+        onClick={() => (window.location.href = `/processes/${process.number}`)}
       >
         {process.valueCase ? (
           <span className="text-sm font-medium text-green-600 dark:text-green-400">
@@ -182,15 +168,11 @@ export const ProcessTableRow = memo(function ProcessTableRow({
             }).format(process.valueCase)}
           </span>
         ) : (
-          <span className="text-xs text-gray-400 dark:text-gray-600">
-            -
-          </span>
+          <span className="text-xs text-gray-400 dark:text-gray-600">-</span>
         )}
       </TableCell>
       <TableCell
-        onClick={() =>
-          (window.location.href = `/processes/${process.number}`)
-        }
+        onClick={() => (window.location.href = `/processes/${process.number}`)}
       >
         <span className="text-xs text-muted-foreground">
           {process.createdAt
@@ -200,9 +182,7 @@ export const ProcessTableRow = memo(function ProcessTableRow({
       </TableCell>
       <TableCell
         className="text-center"
-        onClick={() =>
-          (window.location.href = `/processes/${process.number}`)
-        }
+        onClick={() => (window.location.href = `/processes/${process.number}`)}
       >
         {process.hasInstancias ? (
           <Badge
@@ -212,16 +192,12 @@ export const ProcessTableRow = memo(function ProcessTableRow({
             ✓
           </Badge>
         ) : (
-          <span className="text-xs text-gray-400 dark:text-gray-600">
-            -
-          </span>
+          <span className="text-xs text-gray-400 dark:text-gray-600">-</span>
         )}
       </TableCell>
       <TableCell
         className="text-center"
-        onClick={() =>
-          (window.location.href = `/processes/${process.number}`)
-        }
+        onClick={() => (window.location.href = `/processes/${process.number}`)}
       >
         {process.hasDocuments ? (
           <Badge
@@ -231,44 +207,7 @@ export const ProcessTableRow = memo(function ProcessTableRow({
             ✓
           </Badge>
         ) : (
-          <span className="text-xs text-gray-400 dark:text-gray-600">
-            -
-          </span>
-        )}
-      </TableCell>
-      <TableCell
-        className="text-center"
-        onClick={() =>
-          (window.location.href = `/processes/${process.number}`)
-        }
-      >
-        {filteredActivities.length === 0 ? (
-          <span className="text-xs text-gray-400 dark:text-gray-600">
-            -
-          </span>
-        ) : (
-          <div className="flex flex-col gap-1 items-center">
-            {filteredActivities.map((activity, index) => {
-              const label =
-                activityLabels[activity.type] || activity.type;
-              const isCompleted = activity.isCompleted;
-
-              return (
-                <Badge
-                  key={activity._id || index}
-                  variant="outline"
-                  className={`text-xs ${
-                    isCompleted
-                      ? "border-emerald-500 text-emerald-600 bg-emerald-500/10 dark:border-green-500 dark:text-green-400 dark:bg-green-950/30"
-                      : "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-950/30"
-                  }`}
-                  title={`${label}${isCompleted ? " - Concluída" : " - Pendente"}`}
-                >
-                  {label}
-                </Badge>
-              );
-            })}
-          </div>
+          <span className="text-xs text-gray-400 dark:text-gray-600">-</span>
         )}
       </TableCell>
     </TableRow>

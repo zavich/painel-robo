@@ -13,4 +13,5 @@ export interface UserType {
 }
 export interface SigninRequestType {
   email: string;
+  password: string;
 }
