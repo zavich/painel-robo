@@ -29,7 +29,7 @@ Os fluxos que invalidam processo individual (`useInsertExecution`, mass edit e c
 
 | Hook | Metodo | Endpoint | Body/Params | Response |
 |------|--------|----------|-------------|----------|
-| `useAuth.signIn` | POST | `/auth/login` | `{ email }` | sets cookies |
+| `useAuth.signIn` | POST | `/auth/login` | `{ email, password }` | sets cookies |
 | `useAuth.getMe` | GET | `/auth/me` | - | `UserType` |
 | `useAuth.logout` | POST | `/auth/logout` | - | clears cookies |
 

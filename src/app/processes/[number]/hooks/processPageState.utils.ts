@@ -190,7 +190,11 @@ export function buildProcessFormState(process: Process): PipedriveFormData {
       sucumbencia: process.formPipedrive.sucumbencia || "",
       freeJustice: process.formPipedrive.freeJustice || "",
       conclusion: process.formPipedrive.conclusion || "",
-      value: process.formPipedrive.value || "",
+      value:
+        process.formPipedrive.value !== undefined &&
+        process.formPipedrive.value !== null
+          ? String(process.formPipedrive.value)
+          : "",
       stageLabel: process.stage,
     };
   }

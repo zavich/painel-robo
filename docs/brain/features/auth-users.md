@@ -24,8 +24,8 @@ Use este mapa quando a task envolver login, autenticacao, sessao, roles ou gesta
 
 ## Fluxo resumido
 
-1. Usuario acessa `/login` e preenche apenas email.
-2. Chamada POST para `/v1/auth/login` no backend.
+1. Usuario acessa `/login` e preenche email + senha.
+2. Chamada POST para `/v1/auth/login` no backend (body `{ email, password }`).
 3. O backend responde setando o cookie httpOnly `prosolutti_accessToken`.
 4. AuthProvider valida sessao ao carregar a app via `/auth/me`.
 5. Middleware verifica o JWT server-side e redireciona se nao autenticado.

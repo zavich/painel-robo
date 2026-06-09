@@ -38,7 +38,11 @@ export default function PreAnalysisPage() {
   useEffect(() => {
     if (process?.formPipedrive) {
       const initialObservacao = process.formPipedrive.observacaoPreAnalise || "";
-      const initialValue = process.formPipedrive.value || "";
+      const initialValue =
+        process.formPipedrive.value !== undefined &&
+        process.formPipedrive.value !== null
+          ? String(process.formPipedrive.value)
+          : "";
       const initialCalculoAutos = process.formPipedrive.calculoAutos || "";
       const initialCalculoAutosValue = process.formPipedrive.calculoAutosValue || "";
       setObservacaoPreAnalise(initialObservacao);
@@ -51,7 +55,11 @@ export default function PreAnalysisPage() {
   // Detectar mudanças
   useEffect(() => {
     const originalObservacao = process?.formPipedrive?.observacaoPreAnalise || "";
-    const originalValue = process?.formPipedrive?.value || "";
+    const rawOriginalValue = process?.formPipedrive?.value;
+    const originalValue =
+      rawOriginalValue !== undefined && rawOriginalValue !== null
+        ? String(rawOriginalValue)
+        : "";
     const originalCalculoAutos = process?.formPipedrive?.calculoAutos || "";
     const originalCalculoAutosValue = process?.formPipedrive?.calculoAutosValue || "";
     setHasChanges(
