@@ -26,8 +26,9 @@ export default function LoginPage() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  // SSO: se o cookie auth_token (compartilhado em .juri.local) já autenticou
-  // o usuário via /auth/me, encaminha para a app em vez de mostrar o login.
+  // SSO: se já houver uma sessão de autenticação válida (cookie compartilhado
+  // no domínio .juri.local), o /auth/me autentica o usuário e o encaminhamos
+  // para a app em vez de mostrar o login.
   useEffect(() => {
     if (isAuthenticated) {
       router.replace("/");
