@@ -1,8 +1,4 @@
 import { type Dispatch, memo, type SetStateAction } from "react";
-import {
-  Activity,
-  ActivityType,
-} from "@/app/api/hooks/process/useCreateActivity";
 import { Process } from "@/app/interfaces/processes";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,12 +30,6 @@ export const ProcessTableRow = memo(function ProcessTableRow({
   setSelectedProcessIds,
   setSelectAllMode,
 }: ProcessTableRowProps) {
-  const activityLabels: Record<ActivityType, string> = {
-    PRE_ANALISE: "Pré-Análise",
-    ANALISE: "Análise",
-    CALCULO: "Cálculo",
-  };
-
   return (
     <TableRow
       key={process._id}
