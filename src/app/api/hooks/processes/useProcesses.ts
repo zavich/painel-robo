@@ -26,7 +26,7 @@ export interface GetProcessesResponseType {
   totalPages: number;
 }
 
-interface ProcessesParams {
+export interface ProcessesParams {
   page?: number;
   limit?: number;
   step?: string;

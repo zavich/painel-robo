@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCreateMassActivity } from "@/app/api/hooks/process/useCreateMassActivity";
 import { ActivityType } from "@/app/api/hooks/process/useCreateActivity";
 import { logger } from "@/app/lib/logger";
+import type { ProcessesParams } from "@/app/api/hooks/processes/useProcesses";
 
 interface MassEditPanelProps {
   selectedProcesses: Process[];
@@ -15,7 +16,7 @@ interface MassEditPanelProps {
   users?: Array<{ _id?: string; id?: string; email: string }>;
   selectAllMode?: 'page' | 'all' | null;
   totalSelected?: number;
-  apiFilters?: Record<string, string | number | boolean | object | null | undefined>; // Filters to apply when selecting all from DB
+  apiFilters?: ProcessesParams; // Filters to apply when selecting all from DB
   isAdmin?: boolean; // Whether the current user is an admin
 }
 
