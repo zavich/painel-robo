@@ -31,10 +31,26 @@
         }
       ],
       "secrets": [
-        { "name": "JWT_SECRET_KEY",               "valueFrom": "<SECRET_ARN_PREFIX>:JWT_SECRET_KEY::" },
-        { "name": "NEXT_API_KEY_MASTER",          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_API_KEY_MASTER::" },
-        { "name": "NEXT_PUBLIC_API_URL",          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_PUBLIC_API_URL::" },
-        { "name": "NEXT_PUBLIC_MAINTENANCE_MODE", "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_PUBLIC_MAINTENANCE_MODE::" }
+        {
+          "name": "JWT_SECRET_KEY",
+          "valueFrom": "<SECRET_ARN_PREFIX>:JWT_SECRET_KEY::"
+        },
+        {
+          "name": "NEXT_API_KEY_MASTER",
+          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_API_KEY_MASTER::"
+        },
+        {
+          "name": "NEXT_PUBLIC_API_URL",
+          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_PUBLIC_API_URL::"
+        },
+        {
+          "name": "NEXT_PUBLIC_MAINTENANCE_MODE",
+          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_PUBLIC_MAINTENANCE_MODE::"
+        },
+        {
+          "name": "NEXT_PUBLIC_API_WS",
+          "valueFrom": "arn:aws:ssm:<AWS_REGION>:<AWS_ACCOUNT_ID>:parameter/NEXT_PUBLIC_API_WS"
+        }
       ],
 
       "logConfiguration": {
