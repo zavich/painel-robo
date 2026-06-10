@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
   const { children } = props;
   const [user, setUser] = useState<UserType>({} as UserType);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
 
@@ -71,6 +72,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
         setUser({} as UserType);
         setIsAuthenticated(false);
         router.replace("/login");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -97,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
         user,
         setUser,
         isAuthenticated,
+        isLoading,
         signIn,
         logout,
       }}

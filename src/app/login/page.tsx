@@ -23,7 +23,7 @@ function Feature({ icon: Icon, title, description }: any) {
 
 export default function LoginPage() {
   const [isLoaded, setIsLoaded] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   // SSO: se já houver uma sessão de autenticação válida (cookie compartilhado
@@ -39,6 +39,13 @@ export default function LoginPage() {
     const timer = setTimeout(() => setIsLoaded(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Enquanto a checagem inicial (/auth/me) não terminar — ou se o usuário já
+  // estiver autenticado e prestes a ser redirecionado — não renderiza o login,
+  // evitando o flicker da tela para quem entra via SSO.
+  if (isLoading || isAuthenticated) {
+    return null;
+  }
   const sidebarBg =
     "bg-gradient-to-b from-primary via-primary to-primary-light dark:from-sidebar-background dark:via-sidebar-background dark:to-sidebar-background border-border";
   return (
