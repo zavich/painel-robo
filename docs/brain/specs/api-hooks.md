@@ -11,7 +11,17 @@ const api = Axios.create({
 });
 ```
 
-**Inconsistencia**: hooks de mutacao de prompts e reason-loss usam `fetch()` nativo com header `x-api-key: NEXT_PUBLIC_API_KEY` ao inves do axios `api`. O endpoint `useInsertExecution` tem header `Authorization` hardcoded: `"zUqttTlQ4j0Ob0odbmDDQ96bjKgz6Z"`. O `useBulkUpdateProcesses` usa prefixo `/v1/` diferente dos demais.
+As mutacoes autenticadas usam o axios `api` com `withCredentials: true`, entao o painel depende do cookie JWT emitido pelo `robo-api`. O `useBulkUpdateProcesses` mantem prefixo `/v1/` por coerencia com a API versionada.
+Os fluxos que invalidam processo individual (`useInsertExecution`, mass edit e correlatos) usam invalidacao especifica com `refetchType: "none"` para marcar stale sem disparar refetch imediato em cascata.
+
+## Testes
+
+- Harness ativo com Jest + ts-jest.
+- Script principal: `yarn test`.
+- `jest.config.js` aceita `*.spec.ts` e `*.spec.tsx`.
+- Cobertura inicial:
+  - `src/app/processes/[number]/hooks/processPageState.utils.spec.ts`
+  - `src/app/hooks/user/auth/permissions.spec.ts`
 
 ---
 
@@ -33,7 +43,7 @@ const api = Axios.create({
 | `useProcess` | GET | `/process/:numero` | - | `Process` completo |
 | `useInsertProcess` (fetch) | POST | `/process` | `{ processes: string[] }` | - |
 | `useInsertProcess` (xml) | POST | `/process/upload-xml` | FormData com `file` | - |
-| `useInsertExecution` | POST | `/process/:id/insert-execution` | `{ lawsuitExecution, pipedriveFieldValue? }` | - |
+| `useInsertExecution` | POST | `/process/:id/insert-execution` | `{ lawsuitExecution, pipedriveFieldValue? }` | invalida `["process", processId]` com `refetchType: "none"` e `["processes"]` |
 | `useRemoveProvisionalLawsuit` | DELETE | `/process/:id/remove-provisional-lawsuit-number` | - | - |
 | `useChangeStage` | POST | `/process/change-stage` | `{ processId, newStageId: number, reason }` | - |
 | `useBulkUpdateProcesses` | POST | `/v1/process/bulk-update` | `{ filters, updates }` | **nota: prefixo /v1/** |
@@ -95,7 +105,7 @@ const api = Axios.create({
 
 ---
 
-## Admin (prompts, reason-loss) — usam fetch() com x-api-key
+## Admin (prompts, reason-loss) — autenticacao via cookie JWT
 
 | Hook | Metodo | Endpoint | Body |
 |------|--------|----------|------|
@@ -142,3 +152,27 @@ const api = Axios.create({
 | `["prompts", params]` | `usePrompts` | default |
 | `["reason-loss", params]` | `useReasonLoss` | default |
 | `["steps", params]` | `useSteps` | default |
+
+## Observacoes de implementacao
+
+- O hook legacy `src/app/api/hooks/process/usePrompts.ts` foi removido. O source of truth agora e apenas `src/app/api/hooks/prompts/usePrompts.ts`.
+- `usePrompts` retorna compatibilidade com consumidores antigos (`prompts`, `loading`, `error`) e o resultado completo do React Query.
+
+### Hooks que usam `fetch()` raw em vez do axios `api`
+
+Os hooks abaixo utilizam `fetch()` diretamente com `credentials: "include"`, em vez do client axios `api`. Isso significa que **nao passam pelos interceptors comuns** (auth refresh, error handling centralizado, baseURL automatico). E uma divida tecnica reconhecida — quando tiver oportunidade, migrar para o axios `api`.
+
+| Hook | Endpoint | Motivo da implementacao raw |
+|------|----------|----------------------------|
+| `useAddPrompt` | POST `/prompts` | Legado pre-axios |
+| `useEditPrompt` | PUT `/prompts/:id` | Legado pre-axios |
+| `useDeletePrompt` | DELETE `/prompts/:id` | Legado pre-axios |
+| `useFetchPDF` | GET `/process/documents/*` | Retorna Blob; le cookie manualmente |
+| `useInsertProcess` | POST `/process`, POST `/process/upload-xml` | Aceita FormData e JSON na mesma interface |
+
+Implicacoes:
+- Nao seguem o auth-refresh flow do axios interceptor — em caso de 401 nao redirecionam para login.
+- `baseURL` lido manualmente via `process.env.NEXT_PUBLIC_API_URL`.
+- Tratamento de erro inline em vez de centralizado.
+
+Cache key `["prompts", params]` em `usePrompts` so cobre o GET. Mutacoes (`useAddPrompt`/`useEditPrompt`/`useDeletePrompt`) nao invalidam o cache automaticamente — caller precisa invalidar manualmente via `queryClient.invalidateQueries(["prompts"])`.

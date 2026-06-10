@@ -1,12 +1,12 @@
 import { Company } from "@/app/interfaces/processes";
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import api from "../..";
 
 export const useCompany = (
   cnpj: string,
-  config?: UseQueryOptions<Company, Error, Company, unknown[]>
+  config?: UseQueryOptions<Company, Error, Company, QueryKey>
 ) => {
-  const queryResponse = useQuery<Company, Error, Company, unknown[]>({
+  const queryResponse = useQuery<Company, Error, Company, QueryKey>({
     queryKey: ["company", cnpj],
     queryFn: () => getFindCompany(cnpj),
     enabled: Boolean(cnpj),

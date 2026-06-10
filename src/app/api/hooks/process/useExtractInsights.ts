@@ -17,8 +17,8 @@ export function useExtractInsights() {
     try {
       const { data } = await api.post("/process/run-documents-insights", params);
       return data;
-    } catch (err: any) {
-      setError(err.message || "Erro desconhecido");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
       throw err;
     } finally {
       setLoading(false);

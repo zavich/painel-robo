@@ -10,7 +10,7 @@ interface ChangeStageRequest {
 interface ChangeStageResponse {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export const useChangeStage = (
@@ -20,26 +20,17 @@ export const useChangeStage = (
 
   return useMutation<ChangeStageResponse, Error, ChangeStageRequest>({
     mutationFn: (data: ChangeStageRequest) => postChangeStage(data),
-    onSuccess: async (data, variables) => {
-      // Invalidar todas as queries de processo
-      await queryClient.invalidateQueries({
-        queryKey: ['process'],
-        type: 'all'
-      });
-
-      // Invalidar lista de processos
-      await queryClient.invalidateQueries({
-        queryKey: ['processes'],
-        type: 'all'
-      });
-
-      // Forçar refetch específico se temos o processId
+    onSuccess: async (_data, variables) => {
+      // Invalidar apenas o processo específico e a lista (BUG-013)
+      const promises: Promise<void>[] = [
+        queryClient.invalidateQueries({ queryKey: ['processes'] }),
+      ];
       if (variables.processId) {
-        await queryClient.refetchQueries({
-          queryKey: ['process', variables.processId],
-          type: 'all'
-        });
+        promises.push(
+          queryClient.invalidateQueries({ queryKey: ['process', variables.processId] }),
+        );
       }
+      await Promise.all(promises);
     },
     retry: false,
     ...(config || {}),

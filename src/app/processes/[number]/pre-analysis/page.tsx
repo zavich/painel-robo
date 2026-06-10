@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { FileSearch, Save, X, DollarSign } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProcessAutoRefresh } from "@/app/hooks/useProcessAutoRefresh";
+import { logger } from "@/app/lib/logger";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useUpdateProcessForm } from "@/app/api/hooks/process/useUpdateProcessForm";
@@ -20,7 +21,7 @@ export default function PreAnalysisPage() {
 
   const { process, isLoading, refetch } = useProcessAutoRefresh({
     processId: id,
-    enabled: false,
+    enabled: true,
     intervalMs: 10000,
   });
 
@@ -36,10 +37,14 @@ export default function PreAnalysisPage() {
   // Atualizar observação quando o processo carregar
   useEffect(() => {
     if (process?.formPipedrive) {
-      const initialObservacao = (process.formPipedrive as any)?.observacaoPreAnalise || "";
-      const initialValue = (process.formPipedrive as any)?.value || "";
-      const initialCalculoAutos = (process.formPipedrive as any)?.calculoAutos || "";
-      const initialCalculoAutosValue = (process.formPipedrive as any)?.calculoAutosValue || "";
+      const initialObservacao = process.formPipedrive.observacaoPreAnalise || "";
+      const initialValue =
+        process.formPipedrive.value !== undefined &&
+        process.formPipedrive.value !== null
+          ? String(process.formPipedrive.value)
+          : "";
+      const initialCalculoAutos = process.formPipedrive.calculoAutos || "";
+      const initialCalculoAutosValue = process.formPipedrive.calculoAutosValue || "";
       setObservacaoPreAnalise(initialObservacao);
       setValue(initialValue);
       setCalculoAutos(initialCalculoAutos);
@@ -49,10 +54,14 @@ export default function PreAnalysisPage() {
 
   // Detectar mudanças
   useEffect(() => {
-    const originalObservacao = (process?.formPipedrive as any)?.observacaoPreAnalise || "";
-    const originalValue = (process?.formPipedrive as any)?.value || "";
-    const originalCalculoAutos = (process?.formPipedrive as any)?.calculoAutos || "";
-    const originalCalculoAutosValue = (process?.formPipedrive as any)?.calculoAutosValue || "";
+    const originalObservacao = process?.formPipedrive?.observacaoPreAnalise || "";
+    const rawOriginalValue = process?.formPipedrive?.value;
+    const originalValue =
+      rawOriginalValue !== undefined && rawOriginalValue !== null
+        ? String(rawOriginalValue)
+        : "";
+    const originalCalculoAutos = process?.formPipedrive?.calculoAutos || "";
+    const originalCalculoAutosValue = process?.formPipedrive?.calculoAutosValue || "";
     setHasChanges(
       observacaoPreAnalise !== originalObservacao || 
       value !== originalValue ||
@@ -67,7 +76,7 @@ export default function PreAnalysisPage() {
       const FIELD_KEY_CALCULO_AUTOS = "7da05be1e1c53f0d7595f883512baf69cf832f88"; // Cálculo nos autos
       
       // Enviar dados do formulário + title do processo (se existir)
-      const dataToSend: any = {
+      const dataToSend: Record<string, string | number> = {
         [FIELD_KEY_OBSERVACAO]: observacaoPreAnalise,
         observacaoPreAnalise: observacaoPreAnalise,
         value: parseFloat(value) || 0,
@@ -89,8 +98,13 @@ export default function PreAnalysisPage() {
         }
       }
       
+      if (!process?.number) {
+        toast.error("Processo não carregado.");
+        return;
+      }
+
       await updateFormMutation.mutateAsync({
-        processNumber: process!.number,
+        processNumber: process.number,
         formData: dataToSend,
       });
 
@@ -99,7 +113,7 @@ export default function PreAnalysisPage() {
       toast.success("Pré-Análise salva com sucesso!");
     } catch (error) {
       toast.error("Erro ao salvar Pré-Análise");
-      console.error("Erro:", error);
+      logger.error("Erro ao salvar Pré-Análise:", error as object);
     }
   };
 
@@ -293,4 +307,3 @@ export default function PreAnalysisPage() {
     </div>
   );
 }
-

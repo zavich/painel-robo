@@ -6,13 +6,12 @@ export type AddNoteDto = {
   dealId?: number;
 };
 
-async function addPipedriveNote(data: AddNoteDto) {
-  const res = await api.post("/pipedrive/add-note", data);
-  return res.data;
+async function addPipedriveNote(data: AddNoteDto): Promise<void> {
+  await api.post("/pipedrive/add-note", data);
 }
 
 export function useAddPipedriveNote(
-  options?: UseMutationOptions<any, Error, AddNoteDto>
+  options?: UseMutationOptions<void, Error, AddNoteDto>
 ) {
   return useMutation({ mutationFn: addPipedriveNote, ...(options || {}) });
 }

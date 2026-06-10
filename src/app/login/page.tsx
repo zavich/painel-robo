@@ -1,12 +1,18 @@
 "use client";
 
-import { Gavel, Scale, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Gavel, LucideIcon, Scale, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import LoginForm from "./Form";
 
-function Feature({ icon: Icon, title, description }: any) {
+interface FeatureProps {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
+
+function Feature({ icon: Icon, title, description }: FeatureProps) {
   return (
     <div className="flex items-center gap-4 p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition backdrop-blur-sm">
       <div className="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center">

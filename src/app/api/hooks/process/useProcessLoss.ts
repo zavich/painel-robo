@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
 import api from "../..";
-import { PipedriveFormData } from '@/components/process/PipedriveFormCard';
+import type { PipedriveFormData } from '@/components/process/PipedriveForm.types';
 
 interface LossRequest {
   processId: string;
@@ -16,7 +16,7 @@ interface LossRequest {
 interface LossResponse {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export const useProcessLoss = (
@@ -27,26 +27,17 @@ export const useProcessLoss = (
 
   return useMutation<LossResponse, Error, LossRequest>({
     mutationFn: (data: LossRequest) => postProcessLoss(data),
-    onSuccess: async (data, variables) => {
-      // Invalidar todas as queries de processo
-      await queryClient.invalidateQueries({
-        queryKey: ['process'],
-        type: 'all'
-      });
-
-      // Forçar refetch específico se temos o processId
+    onSuccess: async () => {
+      // Invalidar apenas o processo específico e a lista (BUG-013)
+      const promises: Promise<void>[] = [
+        queryClient.invalidateQueries({ queryKey: ['processes'] }),
+      ];
       if (processId) {
-        await queryClient.refetchQueries({
-          queryKey: ['process', processId],
-          type: 'all'
-        });
+        promises.push(
+          queryClient.invalidateQueries({ queryKey: ['process', processId] }),
+        );
       }
-
-      // Invalidar lista de processos
-      await queryClient.invalidateQueries({
-        queryKey: ['processes'],
-        type: 'all'
-      });
+      await Promise.all(promises);
     },
     retry: false,
     ...(config || {}),

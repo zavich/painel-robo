@@ -1,5 +1,6 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, UseQueryOptions, QueryKey } from '@tanstack/react-query';
 import api from "../..";
+import { logger } from '@/app/lib/logger';
 
 export interface AvailableStage {
   key: string;
@@ -8,9 +9,9 @@ export interface AvailableStage {
 }
 
 export const useAvailableStages = (
-  config?: UseQueryOptions<AvailableStage[], Error, AvailableStage[], unknown[]>
+  config?: UseQueryOptions<AvailableStage[], Error, AvailableStage[], QueryKey>
 ) => {
-  const queryResponse = useQuery<AvailableStage[], Error, AvailableStage[], unknown[]>({
+  const queryResponse = useQuery<AvailableStage[], Error, AvailableStage[], QueryKey>({
     queryKey: ["available-stages"],
     queryFn: () => getAvailableStages(),
     staleTime: 1000 * 60 * 10, // 10 minutes
@@ -28,7 +29,7 @@ export async function getAvailableStages() {
     // Garantir que sempre retorna um array
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('Erro ao buscar stages disponíveis:', error);
+    logger.error('Erro ao buscar stages disponíveis:', error as object);
     return [];
   }
 }

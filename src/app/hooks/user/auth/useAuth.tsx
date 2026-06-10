@@ -4,20 +4,27 @@ import { useRouter } from "next/navigation";
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useState,
 } from "react";
 import { toast } from "react-toastify";
 import { AuthContextType } from "./props";
-import { SigninRequestType, UserType } from "@/app/interfaces/user";
+import {
+  SigninRequestType,
+  UserType,
+} from "@/app/interfaces/user";
 import api from "@/app/api";
-import Cookies from "js-cookie"; // Adicione esta importação
+import { logger } from "@/app/lib/logger";
+import Cookies from "js-cookie";
+import { hasUserPermission } from "./permissions";
 
 export const AuthContext = createContext({} as AuthContextType);
 export interface AuthProviderProps {
   children: ReactNode; // Define children como um ReactNode
 }
+
 export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
   const { children } = props;
   const [user, setUser] = useState<UserType>({} as UserType);
@@ -29,6 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
   const clearAuthCookies = () => {
     Cookies.remove("token");
     Cookies.remove("refreshToken");
+    Cookies.remove("prosolutti_accessToken");
   };
 
   const signIn = async (data: SigninRequestType) => {
@@ -40,6 +48,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
       setUser(userData);
       router.replace("/");
     } catch (error: unknown) {
+      await api.post("/auth/logout").catch(() => undefined);
+      clearAuthCookies();
+      setUser({} as UserType);
+      setIsAuthenticated(false);
+
       const axiosError = error as AxiosError;
 
       if (axiosError.response) {
@@ -78,14 +91,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     };
 
     checkAuth();
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const logout = async () => {
     try {
       await api.post("/auth/logout");
     } catch (error) {
-      // Mesmo se o logout falhar no servidor, limpar o estado local
-      console.warn("Erro ao fazer logout no servidor:", error);
+      logger.warn("Erro ao fazer logout no servidor:", error as object);
+      toast.warn(
+        "Logout parcial: a sessão no servidor pode não ter sido encerrada. Feche o navegador para garantir.",
+      );
     } finally {
       // Sempre limpar o estado local e redirecionar
       clearAuthCookies();
@@ -94,6 +110,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
       router.replace("/login");
     }
   };
+  const hasPermission = useCallback(
+    (key: string) => hasUserPermission(user, key),
+    [user],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -103,6 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
         isLoading,
         signIn,
         logout,
+        hasPermission,
       }}
     >
       {children}

@@ -1,5 +1,6 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, UseQueryOptions, QueryKey } from '@tanstack/react-query';
 import api from "../..";
+import { logger } from '@/app/lib/logger';
 
 export interface RejectionReason {
   key: string;
@@ -7,9 +8,9 @@ export interface RejectionReason {
 }
 
 export const useRejectionReasons = (
-  config?: UseQueryOptions<RejectionReason[], Error, RejectionReason[], unknown[]>
+  config?: UseQueryOptions<RejectionReason[], Error, RejectionReason[], QueryKey>
 ) => {
-  const queryResponse = useQuery<RejectionReason[], Error, RejectionReason[], unknown[]>({
+  const queryResponse = useQuery<RejectionReason[], Error, RejectionReason[], QueryKey>({
     queryKey: ["rejection-reasons"],
     queryFn: () => getRejectionReasons(),
     staleTime: 1000 * 60 * 10, // 10 minutes
@@ -27,12 +28,12 @@ export async function getRejectionReasons() {
     // Garantir que sempre retorna um array e mapear para o formato esperado
     if (!Array.isArray(data)) return [];
     // Mapear de { _id, key, label } para { key, label }
-    return data.map((item: any) => ({
+    return data.map((item: RejectionReason) => ({
       key: item.key,
       label: item.label,
     }));
   } catch (error) {
-    console.error('Erro ao buscar motivos de recusa:', error);
+    logger.error('Erro ao buscar motivos de recusa:', error as object);
     return [];
   }
 }

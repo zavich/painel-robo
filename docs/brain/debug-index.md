@@ -47,7 +47,7 @@ Checar:
 
 - `src/app/login/page.tsx` (formulario e chamada de API).
 - `AuthProvider` em `src/app/hooks/user/auth/`.
-- Cookies de autenticacao (js-cookie).
+- Cookie httpOnly `prosolutti_accessToken` e resposta de `/auth/me`.
 - Resposta do endpoint de login no backend.
 - Se `middleware.ts` esta redirecionando corretamente.
 

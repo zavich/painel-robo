@@ -1,15 +1,16 @@
 import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
 import api from "../..";
+import { FormPipedrive } from '@/app/interfaces/processes';
 
 interface UpdateFormRequest {
   processNumber: string; // Número do processo, não o _id
-  formData: any;
+  formData: FormPipedrive & Record<string, string | number | boolean | object | null | undefined>;
 }
 
 interface UpdateFormResponse {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export const useUpdateProcessForm = (
@@ -46,8 +47,8 @@ export async function updateProcessForm(data: UpdateFormRequest) {
   
   // Extrair title se existir (deve ir fora do formPipedrive)
   const { title, ...restFormData } = formData;
-  
-  const payload: any = {
+
+  const payload: { formPipedrive: Omit<typeof formData, 'title'>; title?: string } = {
     formPipedrive: restFormData
   };
   

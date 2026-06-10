@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useRejectionReasons } from "@/app/api/hooks/process/useRejectionReasons";
 import { useTheme } from "@/app/hooks/use-theme-client";
 import { Situation } from "@/app/interfaces/processes";
@@ -69,7 +70,7 @@ export interface FilterValues {
 
 export interface FiltersBarProps {
   filters: FilterValues;
-  onFiltersChange: (filters: any) => void;
+  onFiltersChange: (filters: FilterValues) => void;
   onApplyFilters: () => void;
   onClearFilters: () => void;
   isLoading?: boolean;
@@ -107,7 +108,7 @@ const defaultFilters: FilterValues = {
   hasAcordao: false,
 };
 
-export function FiltersBar({
+export const FiltersBar = memo(function FiltersBar({
   filters,
   onFiltersChange,
   onApplyFilters,
@@ -148,7 +149,7 @@ export function FiltersBar({
     }
   }, [filters.search, onApplyFilters]);
 
-  const updateFilter = (key: keyof FilterValues, value: unknown) => {
+  const updateFilter = (key: keyof FilterValues, value: FilterValues[keyof FilterValues]) => {
     const newFilters = { ...filters, [key]: value };
     onFiltersChange(newFilters);
     // Auto-apply filters for status, type, lossReason, contentFilter changes and date changes (immediate)
@@ -842,4 +843,4 @@ export function FiltersBar({
       </CardContent>
     </Card>
   );
-}
+});

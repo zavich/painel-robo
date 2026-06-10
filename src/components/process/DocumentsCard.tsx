@@ -20,7 +20,7 @@ import PDFViewerHeader from "@/components/shared/PdfViewerHeader";
 const PDFViewer = dynamic(() => import("@/components/shared/PDFViewer"), {
   ssr: false,
 });
-import InsightGeneric from "@/components/insights/InsightGeneric";
+import InsightGeneric, { type JsonObject } from "@/components/insights/InsightGeneric";
 import { useDocumentDetails } from "@/app/api/hooks/process/useDocumentDetails";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
@@ -32,7 +32,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useExtractInsights } from "@/app/api/hooks/process/useExtractInsights";
-import { usePrompts } from "@/app/api/hooks/process/usePrompts";
+import { usePrompts } from "@/app/api/hooks/prompts/usePrompts";
+import { logger } from "@/app/lib/logger";
 import { useRemoveInsights } from "@/app/api/hooks/process/useRemoveInsights";
 import { StatusExtractionInsight } from "@/app/interfaces/processes";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
@@ -58,7 +59,7 @@ export function DocumentsCard({
 }: DocumentsCardProps) {
   const [openCalcModal, setOpenCalcModal] = useState(false);
   const { fetchPDF } = useFetchPDF();
-  const [calcInitial] = useState<any>(null);
+  const [calcInitial] = useState<null>(null);
   const [calcDocTitle] = useState<string>("");
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
@@ -337,7 +338,7 @@ export function DocumentsCard({
     }
   }
 
-  const handleSendCalculationToPipedrive = async (calculationData: any) => {
+  const handleSendCalculationToPipedrive = async (calculationData: JsonObject) => {
     if (!processNumber) {
       toast.error("Número do processo não encontrado");
       return;
@@ -350,7 +351,7 @@ export function DocumentsCard({
 
     try {
       // Verificar se valor é válido (não null, não undefined, não vazio)
-      const isValidValue = (value: any): boolean => {
+      const isValidValue = (value: string | number | boolean | object | null | undefined): boolean => {
         if (value === null || value === undefined) return false;
         if (typeof value === "string" && value.trim() === "") return false;
         if (typeof value === "number" && value === 0) return false;
@@ -358,7 +359,7 @@ export function DocumentsCard({
       };
 
       // Formatar valores monetários
-      const formatCurrency = (value: any): string | null => {
+      const formatCurrency = (value: string | number | boolean | object | null | undefined): string | null => {
         // Se já é string formatada (ex: "R$ 18.000,00"), retornar como está
         if (typeof value === "string" && value.includes("R$")) {
           return value;
@@ -371,12 +372,12 @@ export function DocumentsCard({
       };
 
       // Formatar datas
-      const formatDate = (dateStr: any): string | null => {
+      const formatDate = (dateStr: string | number | boolean | object | null | undefined): string | null => {
         if (!dateStr) return null;
         if (typeof dateStr === "string" && dateStr.includes("/"))
           return dateStr;
         try {
-          const date = new Date(dateStr);
+          const date = new Date(dateStr as string | number | Date);
           return date.toLocaleDateString("pt-BR");
         } catch {
           return null;
@@ -399,7 +400,7 @@ export function DocumentsCard({
         isValidValue(calculationData.owner_type || calculationData.ownerType)
       ) {
         const ownerType =
-          calculationData.owner_type || calculationData.ownerType;
+          (calculationData.owner_type || calculationData.ownerType) as string;
         responsavel.push(
           `   Tipo: ${ownerType.charAt(0).toUpperCase() + ownerType.slice(1)}`,
         );
@@ -689,7 +690,7 @@ export function DocumentsCard({
 
                       window.URL.revokeObjectURL(url);
                     } catch (err) {
-                      console.error(err);
+                      logger.error("Erro ao baixar documento:", err as object);
                     }
                   }}
                   className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"
@@ -906,7 +907,7 @@ export function DocumentsCard({
                   </div>
 
                   <InsightGeneric
-                    data={document.data}
+                    data={document.data ?? {}}
                     documentTitle={document.title}
                     processNumber={processNumber}
                     onSendToPipedrive={handleSendCalculationToPipedrive}

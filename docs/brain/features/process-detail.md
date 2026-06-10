@@ -13,6 +13,10 @@ Use este mapa quando a task envolver detalhe de processo, documentos, movimentos
 ## Pontos de entrada
 
 - `src/app/processes/[number]/page.tsx`: pagina de detalhe.
+- `src/app/processes/[number]/hooks/useProcessPageState.ts`: orquestracao de estado da pagina.
+- `src/app/processes/[number]/hooks/useProcessFormState.ts`: sincronizacao do formulario e dirty state.
+- `src/app/processes/[number]/hooks/useProcessTitleEditor.ts`: edicao de titulo do processo.
+- `src/app/processes/[number]/hooks/useProcessUpdateMonitor.ts`: monitoramento de atualizacao remota e sync.
 - `src/app/processes/[number]/analysis/page.tsx`: pagina de analise.
 - `src/app/processes/[number]/pre-analysis/page.tsx`: pagina de pre-analise.
 - `src/app/processes/[number]/document/[documentId]/page.tsx`: visualizador de documento.
@@ -27,6 +31,9 @@ Use este mapa quando a task envolver detalhe de processo, documentos, movimentos
 - `src/components/process/ProcessPartsCard.tsx`: partes (reclamante, reclamada, advogados).
 - `src/components/process/ProcessDocumentModal.tsx`: modal de visualizacao PDF.
 - `src/components/insights/InsightGeneric.tsx`: exibicao de insight AI.
+- `src/app/processes/[number]/components/ProcessTimelineSection.tsx`: coluna esquerda da pagina de detalhe.
+- `src/app/processes/[number]/components/ProcessSidebar.tsx`: tabs de documentos/atividades.
+- `src/app/processes/[number]/components/ProcessActionDialogs.tsx`: composicao dos modais da pagina.
 - `src/app/api/hooks/process/useProcess.ts`: query de processo unitario.
 - `src/app/api/hooks/process/useExtractInsights.ts`: mutacao para extrair insights.
 - `src/app/api/hooks/process/useNewMovements.ts`: novos movimentos.
@@ -37,8 +44,8 @@ Use este mapa quando a task envolver detalhe de processo, documentos, movimentos
 
 ## Fluxo resumido
 
-1. Pagina carrega com `useProcess(number)`.
-2. Renderiza header, info card, partes, timeline, documentos e atividades.
+1. `useProcessPageState()` compoe `useProcessAutoRefresh`, `useProcessFormState`, `useProcessTitleEditor` e `useProcessUpdateMonitor`.
+2. `page.tsx` renderiza `ProcessHeader`, `ProcessTimelineSection`, `ProcessSidebar` e `ProcessActionDialogs`.
 3. Documentos mostram status de extracao (PENDING, PROCESSING, COMPLETED, ERROR).
 4. Usuario pode solicitar extracao de insights via `useExtractInsights`.
 5. Insights sao exibidos por tipo de documento (PeticaoInicial, Sentenca, Acordao, etc.).

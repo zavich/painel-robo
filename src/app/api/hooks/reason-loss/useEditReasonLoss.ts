@@ -1,7 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ReasonLoss } from "./useReasonLoss";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import api from "../..";
 
 export interface UpdateReasonLossRequest {
   key: string;
@@ -13,20 +11,8 @@ export function useEditReasonLoss() {
 
   const mutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateReasonLossRequest }) => {
-      const res = await fetch(`${API_URL}/reason-loss/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: "Erro ao atualizar motivo de recusa" }));
-        throw new Error(error.message || "Erro ao atualizar motivo de recusa");
-      }
-      return await res.json();
+      const { data: response } = await api.patch(`/reason-loss/${id}`, data);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reason-loss"] });

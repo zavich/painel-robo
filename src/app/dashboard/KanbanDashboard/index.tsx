@@ -1,7 +1,4 @@
-import {
-  Activity,
-  ActivityType,
-} from "@/app/api/hooks/process/useCreateActivity";
+import { Activity } from "@/app/api/hooks/process/useCreateActivity";
 import { useProcessFetch } from "@/app/api/hooks/process/useInsertProcess";
 import { useRejectionReasons } from "@/app/api/hooks/process/useRejectionReasons";
 import { useProcesses } from "@/app/api/hooks/processes/useProcesses";
@@ -11,16 +8,13 @@ import { useToast } from "@/app/hooks/use-toast";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { Process } from "@/app/interfaces/processes";
 import { UserRolesEnum } from "@/app/interfaces/user";
+import { logger } from "@/app/lib/logger";
 import { exportToExcel } from "@/app/utils/excelExport";
-import { capitalizeWords } from "@/app/utils/format";
-import { getProcessTitle } from "@/app/utils/processPartsUtils";
 import { ExportColumnsDialog } from "@/components/ExportColumnsDialog";
 import { FiltersBar } from "@/components/FiltersBar";
 import InsertProcessModal from "@/components/process/InsertProcessModal";
 import { MassEditPanel } from "@/components/process/MassEditPanel";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination } from "@/components/ui/pagination";
 import {
   Table,
@@ -30,17 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { isWithinInterval, parseISO } from "date-fns";
-import { Download, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { hasError } from "@/app/utils/processSyncStatus";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ProcessTableHeader } from "./ProcessTableHeader";
+import { ProcessTableRow } from "./ProcessTableRow";
+import { ProcessTableToolbar } from "./ProcessTableToolbar";
 
 export default function KanbanDashboard() {
   const { user } = useAuth();
@@ -64,8 +53,28 @@ export default function KanbanDashboard() {
   const { data: usersData } = useAssignableUsers();
   const { data: rejectionReasons } = useRejectionReasons();
 
+  type ApiFilterParams = {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    classProcess?: string;
+    startDate?: string;
+    endDate?: string;
+    lossReason?: string;
+    emptyDocuments?: boolean;
+    emptyInstances?: boolean;
+    hasNewMovementsNow?: boolean;
+    hasSecondInstance?: boolean;
+    hasAutos?: boolean;
+    hasAcordao?: boolean;
+    type?: string;
+    assignedTo?: string;
+    stage?: string;
+  };
+
   const apiFilters = useMemo(() => {
-    const baseFilters: any = {
+    const baseFilters: ApiFilterParams = {
       page,
       limit: 25,
     };
@@ -131,7 +140,7 @@ export default function KanbanDashboard() {
 
   // Separate API filters params (without page and limit) - used for MassEditPanel when selecting all
   const apiFiltersParams = useMemo(() => {
-    const params: any = {};
+    const params: ApiFilterParams = {};
 
     if (filters.search && String(filters.search) !== "") {
       params.search = String(filters.search);
@@ -308,7 +317,7 @@ export default function KanbanDashboard() {
 
           let retries = 0;
           let pageSuccess = false;
-          let lastError: any = null;
+          let lastError: object | null = null;
 
           // Tenta a página atual até MAX_RETRIES vezes
           while (retries <= MAX_RETRIES && !pageSuccess) {
@@ -339,24 +348,31 @@ export default function KanbanDashboard() {
               if (page < maxPages) {
                 await new Promise((resolve) => setTimeout(resolve, 300));
               }
-            } catch (pageError: any) {
+            } catch (pageError: unknown) {
               retries++;
-              lastError = pageError;
+              lastError = pageError as object;
 
+              const err = pageError as {
+                response?: {
+                  data?: { message?: string };
+                  status?: number | string;
+                };
+                message?: string;
+              };
               const errorMessage =
-                pageError?.response?.data?.message ||
-                pageError?.message ||
+                err?.response?.data?.message ||
+                err?.message ||
                 "Erro desconhecido";
-              const statusCode = pageError?.response?.status || "desconhecido";
+              const statusCode = err?.response?.status || "desconhecido";
 
-              console.error(
+              logger.error(
                 `❌ Erro ${statusCode} na página ${page} (tentativa ${retries}/${MAX_RETRIES + 1}):`,
                 errorMessage,
               );
 
               // Se esgotou todas as tentativas, PARA COMPLETAMENTE
               if (retries > MAX_RETRIES) {
-                console.error(
+                logger.error(
                   `💥 PARANDO EXPORTAÇÃO - Todas as tentativas falharam na página ${page}`,
                 );
 
@@ -388,7 +404,7 @@ export default function KanbanDashboard() {
 
           // Se chegou aqui e não teve sucesso, algo deu muito errado
           if (!pageSuccess) {
-            console.error(
+            logger.error(
               `💥 ERRO CRÍTICO: Página ${page} não foi carregada após todas as tentativas`,
             );
             throw new Error(
@@ -442,44 +458,47 @@ export default function KanbanDashboard() {
   }, [paginationInfo]);
 
   // Helper function to filter activities based on user role
-  const getFilteredActivities = (process: Process): Activity[] => {
-    const activities: Activity[] = (process as any)?.activities || [];
+  const getFilteredActivities = useCallback(
+    (process: Process): Activity[] => {
+      const activities: Activity[] = process?.activities || [];
 
-    if (user?.role === UserRolesEnum.ADMIN) {
-      // Admin vê todas as atividades
-      return activities;
-    } else {
-      // Outros usuários veem apenas atividades em que estão envolvidos
-      const userId = (user as any)?._id;
-      if (!userId) return [];
+      if (user?.role === UserRolesEnum.ADMIN) {
+        // Admin vê todas as atividades
+        return activities;
+      } else {
+        // Outros usuários veem apenas atividades em que estão envolvidos
+        const userId = user?._id;
+        if (!userId) return [];
 
-      return activities.filter((activity) => {
-        // Verificar se o usuário está atribuído à atividade
-        const assignedToId =
-          typeof activity.assignedTo === "string"
-            ? activity.assignedTo
-            : activity.assignedTo?._id;
+        return activities.filter((activity) => {
+          // Verificar se o usuário está atribuído à atividade
+          const assignedToId =
+            typeof activity.assignedTo === "string"
+              ? activity.assignedTo
+              : activity.assignedTo?._id;
 
-        // Verificar se o usuário completou a atividade
-        const completedById =
-          typeof activity.completedBy === "string"
-            ? activity.completedBy
-            : activity.completedBy?._id;
+          // Verificar se o usuário completou a atividade
+          const completedById =
+            typeof activity.completedBy === "string"
+              ? activity.completedBy
+              : activity.completedBy?._id;
 
-        // Verificar se o usuário atribuiu a atividade
-        const assignedById =
-          typeof activity.assignedBy === "string"
-            ? activity.assignedBy
-            : activity.assignedBy?._id;
+          // Verificar se o usuário atribuiu a atividade
+          const assignedById =
+            typeof activity.assignedBy === "string"
+              ? activity.assignedBy
+              : activity.assignedBy?._id;
 
-        return (
-          assignedToId === userId ||
-          completedById === userId ||
-          assignedById === userId
-        );
-      });
-    }
-  };
+          return (
+            assignedToId === userId ||
+            completedById === userId ||
+            assignedById === userId
+          );
+        });
+      }
+    },
+    [user?._id, user?.role],
+  );
 
   // Get selected count based on mode
   const selectedCount = useMemo(() => {
@@ -533,6 +552,11 @@ export default function KanbanDashboard() {
       return true;
     });
   }, [allProcesses, filters]);
+
+  const visibleProcessIds = useMemo(
+    () => filteredProcesses.map((process) => process._id),
+    [filteredProcesses],
+  );
 
   // Check if all visible processes are selected
   const allVisibleSelected = useMemo(() => {
@@ -795,7 +819,6 @@ export default function KanbanDashboard() {
                       <TableHead>Data</TableHead>
                       <TableHead className="text-center">Instâncias</TableHead>
                       <TableHead className="text-center">Documentos</TableHead>
-                      <TableHead className="text-center">Atividades</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -825,9 +848,6 @@ export default function KanbanDashboard() {
                         <TableCell className="text-center">
                           <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse mx-auto"></div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse mx-auto"></div>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -837,146 +857,27 @@ export default function KanbanDashboard() {
           ) : (
             /* List/Table View */
             <div className="backdrop-blur-sm rounded-2xl border shadow-lg overflow-hidden bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
-              <div className="px-6 py-4 border-b flex items-center justify-between border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-foreground tracking-tight">
-                  Lista de Processos
-                </h2>
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleOpenExportDialog}
-                    className="gap-2 border-border bg-background hover:bg-primary/10 text-foreground"
-                    disabled={filteredProcesses.length === 0}
-                  >
-                    <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">Exportar</span>
-                  </Button>
-                  <div className="px-3 py-1 rounded-full text-sm font-semibold border transition-colors bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-300 dark:border-yellow-500/20">
-                    {(() => {
-                      const total = totalProcessesInDB;
-                      return `${total} ${total === 1 ? "processo" : "processos"}`;
-                    })()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Bar - Shows when items are selected */}
-              {selectedCount > 0 && (
-                <div className="px-6 py-3 border-b flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border-gray-200 dark:border-gray-700">
-                  <span className="text-sm font-medium text-foreground">
-                    {selectedCount} selecionado{selectedCount !== 1 ? "s" : ""}
-                  </span>
-                  <div className="flex-1" />
-                </div>
-              )}
-
-              {/* Banner for selecting all from database */}
-              {selectAllMode === "page" &&
-                allVisibleSelected &&
-                totalProcessesInDB > filteredProcesses.length && (
-                  <div className="px-6 py-3 border-b flex items-center gap-3 bg-primary/10 border-primary/20 dark:border-gray-700">
-                    <span className="text-sm text-foreground">
-                      {filteredProcesses.length} processo
-                      {filteredProcesses.length !== 1 ? "s" : ""} selecionado
-                      {filteredProcesses.length !== 1 ? "s" : ""} nesta página.
-                    </span>
-                    <button
-                      onClick={() => setSelectAllMode("all")}
-                      className="text-sm font-semibold underline text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      Selecionar todos os {totalProcessesInDB} processos
-                    </button>
-                  </div>
-                )}
-
-              {/* Banner showing all selected */}
-              {selectAllMode === "all" && (
-                <div className="px-6 py-3 border-b flex items-center gap-3 bg-primary/10 border-primary/20 dark:border-gray-700">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    Todos os {totalProcessesInDB} processos estão selecionados.
-                  </span>
-                  <button
-                    onClick={() => {
-                      setSelectAllMode("page");
-                      setSelectedProcessIds(
-                        new Set(filteredProcesses.map((p) => p._id)),
-                      );
-                    }}
-                    className="text-sm font-semibold underline text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                  >
-                    Limpar seleção
-                  </button>
-                </div>
-              )}
+              <ProcessTableToolbar
+                totalProcessesInDB={totalProcessesInDB}
+                filteredProcesses={filteredProcesses}
+                selectedCount={selectedCount}
+                selectAllMode={selectAllMode}
+                allVisibleSelected={allVisibleSelected}
+                handleOpenExportDialog={handleOpenExportDialog}
+                setSelectAllMode={setSelectAllMode}
+                setSelectedProcessIds={setSelectedProcessIds}
+              />
 
               <div className="overflow-x-auto overflow-y-visible">
                 <div className="min-w-max">
                   <Table>
-                    <TableHeader>
-                      <TableRow className="border-gray-200 dark:border-gray-700">
-                        <TableHead className="w-12">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="flex items-center justify-center">
-                                  <Checkbox
-                                    checked={
-                                      allVisibleSelected &&
-                                      filteredProcesses.length > 0
-                                        ? true
-                                        : someVisibleSelected
-                                          ? "indeterminate"
-                                          : false
-                                    }
-                                    onCheckedChange={(checked) => {
-                                      if (
-                                        checked === true ||
-                                        checked === "indeterminate"
-                                      ) {
-                                        // Select all visible
-                                        setSelectedProcessIds(
-                                          new Set(
-                                            filteredProcesses.map((p) => p._id),
-                                          ),
-                                        );
-                                        setSelectAllMode("page");
-                                      } else {
-                                        // Deselect all
-                                        setSelectedProcessIds(new Set());
-                                        setSelectAllMode(null);
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="text-xs">
-                                  {allVisibleSelected
-                                    ? "Desmarcar todos"
-                                    : someVisibleSelected
-                                      ? `Selecionar todos os ${filteredProcesses.length} visíveis`
-                                      : `Selecionar todos os ${filteredProcesses.length} visíveis`}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableHead>
-                        <TableHead>Título</TableHead>
-                        <TableHead>Número do Processo</TableHead>
-                        <TableHead>Valor da Causa</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead className="text-center">
-                          Instâncias
-                        </TableHead>
-                        <TableHead className="text-center">
-                          Documentos
-                        </TableHead>
-                        <TableHead className="text-center">
-                          Atividades
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
+                    <ProcessTableHeader
+                      allVisibleSelected={allVisibleSelected}
+                      someVisibleSelected={someVisibleSelected}
+                      filteredProcesses={filteredProcesses}
+                      setSelectedProcessIds={setSelectedProcessIds}
+                      setSelectAllMode={setSelectAllMode}
+                    />
                     <TableBody>
                       {filteredProcesses.length === 0 ? (
                         <TableRow>
@@ -987,264 +888,17 @@ export default function KanbanDashboard() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredProcesses.map((process) => {
-                          const isSelected = selectedProcessIds.has(
-                            process._id,
-                          );
-                          return (
-                            <TableRow
-                              key={process._id}
-                              className={`transition-all duration-150 cursor-pointer ${
-                                isSelected
-                                  ? "bg-primary/10 border-primary/30 dark:border-blue-700/50"
-                                  : "hover:bg-gray-50 border-gray-200 dark:hover:bg-gray-700/50 dark:border-gray-700"
-                              }`}
-                            >
-                              <TableCell
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Toggle selection on cell click
-                                  if (selectAllMode === "all") {
-                                    // When unchecking from "all" mode, populate with all visible except this one
-                                    const newSet = new Set(
-                                      filteredProcesses.map((p) => p._id),
-                                    );
-                                    newSet.delete(process._id);
-                                    setSelectedProcessIds(newSet);
-                                  } else {
-                                    const newSet = new Set(selectedProcessIds);
-                                    if (isSelected) {
-                                      newSet.delete(process._id);
-                                    } else {
-                                      newSet.add(process._id);
-                                    }
-                                    setSelectedProcessIds(newSet);
-                                  }
-                                }}
-                                className="cursor-pointer text-center align-middle group"
-                              >
-                                <div className="flex items-center justify-center p-1 rounded-md transition-colors group-hover:bg-blue-50 dark:group-hover:bg-transparent">
-                                  <Checkbox
-                                    checked={
-                                      selectAllMode === "all" || isSelected
-                                    }
-                                    onCheckedChange={(checked) => {
-                                      if (selectAllMode === "all") {
-                                        // When unchecking from "all" mode, populate with all visible except this one
-                                        const newSet = new Set(
-                                          filteredProcesses.map((p) => p._id),
-                                        );
-                                        newSet.delete(process._id);
-                                        setSelectedProcessIds(newSet);
-                                        setSelectAllMode(null);
-                                      } else {
-                                        const newSet = new Set(
-                                          selectedProcessIds,
-                                        );
-                                        if (checked) {
-                                          newSet.add(process._id);
-                                        } else {
-                                          newSet.delete(process._id);
-                                        }
-                                        setSelectedProcessIds(newSet);
-                                      }
-                                    }}
-                                  />
-                                </div>
-                              </TableCell>
-                              <TableCell
-                                className="font-medium"
-                                onClick={() =>
-                                  (window.location.href = `/processes/${process.number}`)
-                                }
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex flex-col gap-1 min-w-0">
-                                    <span className="text-sm font-semibold text-foreground truncate">
-                                      {capitalizeWords(
-                                        getProcessTitle(
-                                          process.processParts || [],
-                                          process.number,
-                                          process.title ||
-                                            (process as any).formPipedrive
-                                              ?.title,
-                                        ),
-                                      )}
-                                    </span>
-                                    {process.processOwner?.user?.email && (
-                                      <span className="text-xs text-gray-600 dark:text-gray-500 truncate">
-                                        {process.processOwner.user.email}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  {/* Indicador de erro (aparece na tabela) */}
-                                  {hasError(process.processStatus) && (
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className="ml-2 p-1 rounded-md text-red-700 bg-red-50/90 dark:bg-red-900/80 cursor-help">
-                                          <AlertCircle className="h-4 w-4" />
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent
-                                        side="top"
-                                        className="max-w-xs bg-red-50 text-red-900 border border-red-200 dark:bg-red-800 dark:text-red-100 dark:border-red-700 shadow-sm"
-                                      >
-                                        <div className="text-sm">
-                                          <div className="font-medium mb-1">
-                                            Problema no processamento
-                                          </div>
-                                          <div className="text-xs">
-                                            {process.processStatus
-                                              ?.errorReason ||
-                                              process.processStatus?.log ||
-                                              process.processStatus?.name}
-                                          </div>
-                                        </div>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell
-                                onClick={() =>
-                                  (window.location.href = `/processes/${process.number}`)
-                                }
-                              >
-                                <span className="text-xs font-mono text-muted-foreground">
-                                  {process.number}
-                                </span>
-                              </TableCell>
-                              <TableCell
-                                onClick={() =>
-                                  (window.location.href = `/processes/${process.number}`)
-                                }
-                              >
-                                {process.valueCase ? (
-                                  <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                                    {new Intl.NumberFormat("pt-BR", {
-                                      style: "currency",
-                                      currency: "BRL",
-                                    }).format(process.valueCase)}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-gray-400 dark:text-gray-600">
-                                    -
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell
-                                onClick={() =>
-                                  (window.location.href = `/processes/${process.number}`)
-                                }
-                              >
-                                <span className="text-xs text-muted-foreground">
-                                  {process.createdAt
-                                    ? new Date(
-                                        process.createdAt,
-                                      ).toLocaleDateString("pt-BR")
-                                    : "-"}
-                                </span>
-                              </TableCell>
-                              <TableCell
-                                className="text-center"
-                                onClick={() =>
-                                  (window.location.href = `/processes/${process.number}`)
-                                }
-                              >
-                                {process.hasInstancias ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="border-primary text-primary bg-primary/10 dark:border-blue-500 dark:text-blue-400 dark:bg-blue-950/30"
-                                  >
-                                    ✓
-                                  </Badge>
-                                ) : (
-                                  <span className="text-xs text-gray-400 dark:text-gray-600">
-                                    -
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell
-                                className="text-center"
-                                onClick={() =>
-                                  (window.location.href = `/processes/${process.number}`)
-                                }
-                              >
-                                {process.hasDocuments ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="border-emerald-500 text-emerald-600 bg-emerald-500/10 dark:border-green-500 dark:text-green-400 dark:bg-green-950/30"
-                                  >
-                                    ✓
-                                  </Badge>
-                                ) : (
-                                  <span className="text-xs text-gray-400 dark:text-gray-600">
-                                    -
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell
-                                className="text-center"
-                                onClick={() =>
-                                  (window.location.href = `/processes/${process.number}`)
-                                }
-                              >
-                                {(() => {
-                                  const filteredActivities =
-                                    getFilteredActivities(process);
-
-                                  if (filteredActivities.length === 0) {
-                                    return (
-                                      <span className="text-xs text-gray-400 dark:text-gray-600">
-                                        -
-                                      </span>
-                                    );
-                                  }
-
-                                  // Mapear tipos de atividade para labels
-                                  const activityLabels: Record<
-                                    ActivityType,
-                                    string
-                                  > = {
-                                    PRE_ANALISE: "Pré-Análise",
-                                    ANALISE: "Análise",
-                                    CALCULO: "Cálculo",
-                                  };
-
-                                  return (
-                                    <div className="flex flex-col gap-1 items-center">
-                                      {filteredActivities.map(
-                                        (activity, index) => {
-                                          const label =
-                                            activityLabels[activity.type] ||
-                                            activity.type;
-                                          const isCompleted =
-                                            activity.isCompleted;
-
-                                          return (
-                                            <Badge
-                                              key={activity._id || index}
-                                              variant="outline"
-                                              className={`text-xs ${
-                                                isCompleted
-                                                  ? "border-emerald-500 text-emerald-600 bg-emerald-500/10 dark:border-green-500 dark:text-green-400 dark:bg-green-950/30"
-                                                  : "border-yellow-500 text-yellow-700 bg-yellow-50 dark:border-yellow-500 dark:text-yellow-400 dark:bg-yellow-950/30"
-                                              }`}
-                                              title={`${label}${isCompleted ? " - Concluída" : " - Pendente"}`}
-                                            >
-                                              {label}
-                                            </Badge>
-                                          );
-                                        },
-                                      )}
-                                    </div>
-                                  );
-                                })()}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
+                        filteredProcesses.map((process) => (
+                          <ProcessTableRow
+                            key={process._id}
+                            process={process}
+                            isSelected={selectedProcessIds.has(process._id)}
+                            selectAllMode={selectAllMode}
+                            visibleProcessIds={visibleProcessIds}
+                            setSelectedProcessIds={setSelectedProcessIds}
+                            setSelectAllMode={setSelectAllMode}
+                          />
+                        ))
                       )}
                     </TableBody>
                   </Table>

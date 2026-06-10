@@ -26,10 +26,8 @@ export function useUpdateActivityNotes(processId?: string) {
       return response;
     },
     onSuccess: async () => {
-      // Invalidar queries relacionadas ao processo
-      await queryClient.invalidateQueries({ queryKey: ['process'], type: 'all' });
       if (processId) {
-        await queryClient.refetchQueries({ queryKey: ['process', processId], type: 'all' });
+        await queryClient.invalidateQueries({ queryKey: ['process', processId] });
       }
     },
     retry: false,

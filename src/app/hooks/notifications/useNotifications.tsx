@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient, type QueryObserverResult } from 
 import api from "@/app/api";
 import { useAuth } from "../user/auth/useAuth";
 import { getNotificationsSocket, disconnectNotificationsSocket } from "@/lib/socket";
+import { logger } from "@/app/lib/logger";
 
 export type NotificationType = "ACTIVITY" | "SYSTEM";
 
@@ -32,21 +33,32 @@ interface NotificationsContextValue {
 
 const NotificationsContext = createContext<NotificationsContextValue | undefined>(undefined);
 
+interface NotificationsResponse {
+  notifications?: NotificationDoc[];
+  data?: NotificationDoc[] | { items?: NotificationDoc[] };
+  items?: NotificationDoc[];
+  docs?: NotificationDoc[];
+}
+
 async function fetchNotifications(): Promise<NotificationDoc[]> {
-  const { data } = await api.get("/notifications/me", {
+  const { data } = await api.get<NotificationDoc[] | NotificationsResponse>("/notifications/me", {
     params: { page: 1, limit: 50 },
   });
 
   // Estruturas possíveis: array direto, {data: []}, {items: []}, {data: {items: []}}, {docs: []}
-  const maybeArray =
-    (Array.isArray(data) && data) ||
-    (Array.isArray((data as any)?.notifications) && (data as any).notifications) ||
-    (Array.isArray((data as any)?.data) && (data as any).data) ||
-    (Array.isArray((data as any)?.items) && (data as any).items) ||
-    (Array.isArray((data as any)?.data?.items) && (data as any).data.items) ||
-    (Array.isArray((data as any)?.docs) && (data as any).docs);
+  if (Array.isArray(data)) return data;
 
-  return maybeArray || [];
+  const response = data as NotificationsResponse;
+
+  if (Array.isArray(response.notifications)) return response.notifications;
+  if (Array.isArray(response.data)) return response.data;
+  if (Array.isArray(response.items)) return response.items;
+  if (response.data && !Array.isArray(response.data) && Array.isArray(response.data.items)) {
+    return response.data.items;
+  }
+  if (Array.isArray(response.docs)) return response.docs;
+
+  return [];
 }
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
@@ -83,22 +95,22 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    const handleConnect = () => setIsConnected(true);
+    const handleConnect = () => {
+      lastErrorMessageRef.current = null;
+      setIsConnected(true);
+    };
     const handleDisconnect = () => setIsConnected(false);
-    const handleError = (err: any) => {
-      const message = err?.message || String(err || "erro socket notification");
+    const handleError = (err: Error) => {
+      const message = err.message || String(err || "erro socket notification");
       // Evita spam no console
       if (lastErrorMessageRef.current !== message) {
-        console.warn("Não foi possível conectar às notificações em tempo real.", message);
+        logger.warn("Não foi possível conectar às notificações em tempo real.", message);
         lastErrorMessageRef.current = message;
       }
     };
 
     socket.on("notification", handleNotification);
-    socket.on("connect", () => {
-      lastErrorMessageRef.current = null;
-      handleConnect();
-    });
+    socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleError);
 
@@ -160,4 +172,3 @@ export function useNotifications() {
   }
   return ctx;
 }
-

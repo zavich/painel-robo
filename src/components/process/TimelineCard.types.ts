@@ -1,0 +1,4 @@
+export enum InstanceEnum {
+  FIRST_INSTANCE = "PRIMEIRO_GRAU",
+  SECOND_INSTANCE = "SEGUNDO_GRAU",
+}

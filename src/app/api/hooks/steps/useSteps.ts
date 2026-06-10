@@ -1,5 +1,5 @@
 import { GetResponseType } from "@/app/interfaces/requests";
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import api from "../..";
 import { Steps } from "@/app/interfaces/steps";
 
@@ -27,10 +27,10 @@ export function useSteps(
     GetStepsResponseType,
     Error,
     GetStepsResponseType,
-    unknown[]
+    QueryKey
   >
 ) {
-  return useQuery<GetStepsResponseType, Error, GetStepsResponseType, unknown[]>(
+  return useQuery<GetStepsResponseType, Error, GetStepsResponseType, QueryKey>(
     {
       queryKey: ["steps", params],
       queryFn: () => getSteps(params),

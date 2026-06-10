@@ -1,5 +1,5 @@
 import { GetResponseType } from "@/app/interfaces/requests";
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import api from "../..";
 import { Company } from "@/app/interfaces/processes";
 
@@ -31,14 +31,14 @@ export function useCompanies(
     GetCompaniesResponseType,
     Error,
     GetCompaniesResponseType,
-    unknown[]
+    QueryKey
   >
 ) {
   return useQuery<
     GetCompaniesResponseType,
     Error,
     GetCompaniesResponseType,
-    unknown[]
+    QueryKey
   >({
     queryKey: ["companies", params],
     queryFn: () => getCompanies(params),

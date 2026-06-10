@@ -6,7 +6,7 @@ import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { StageProcess } from "@/app/interfaces/processes";
 import { RejectionReason } from "@/app/api/hooks/process/useRejectionReasons";
-import { PipedriveFormData } from "./PipedriveFormCard";
+import type { PipedriveFormData } from "./PipedriveForm.types";
 import { useState } from "react";
 
 interface RejectionDialogProps {

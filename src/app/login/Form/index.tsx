@@ -1,4 +1,3 @@
-import { useTheme } from "@/app/hooks/use-theme-client";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -6,38 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertCircle,
-  Eye,
-  EyeOff,
-  Gavel,
-  Lock,
-  Mail,
-  Scale,
-  Shield,
-} from "lucide-react";
+import { AlertCircle, Gavel, Lock, Mail, Scale, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-// Schema de validação
 const loginSchema = z.object({
   email: z
     .string()
     .min(1, "E-mail é obrigatório")
     .email("E-mail inválido")
     .max(255, "E-mail muito longo"),
-  password: z
-    .string()
-    .min(6, "Senha deve ter pelo menos 6 caracteres")
-    .max(100, "Senha muito longa"),
+  password: z.string().min(1, "Senha é obrigatória"),
   rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const { signIn } = useAuth();
@@ -45,7 +30,7 @@ const LoginForm = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid, isDirty },
+    formState: { errors, isValid },
     watch,
     setValue,
     clearErrors,
@@ -88,11 +73,15 @@ const LoginForm = () => {
     clearErrors();
 
     try {
-      await signIn(data);
-    } catch (error: any) {
+      await signIn({ email: data.email, password: data.password });
+    } catch (error: unknown) {
+      const axiosErr = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
       setLoginError(
-        error?.response?.data?.message ||
-          error?.message ||
+        axiosErr?.response?.data?.message ||
+          axiosErr?.message ||
           "Erro ao fazer login.",
       );
     } finally {
@@ -102,7 +91,6 @@ const LoginForm = () => {
 
   return (
     <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-8">
-      {/* HEADER */}
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-secondary shadow-md">
@@ -115,7 +103,6 @@ const LoginForm = () => {
         <p className="text-sm text-muted-foreground">Acesse sua conta</p>
       </div>
 
-      {/* ERROR */}
       {loginError && (
         <div className="mb-6 p-4 rounded-xl border border-destructive bg-destructive/10 flex items-center gap-3">
           <AlertCircle className="h-5 w-5 text-destructive" />
@@ -123,9 +110,7 @@ const LoginForm = () => {
         </div>
       )}
 
-      {/* FORM */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* EMAIL */}
         <div className="space-y-2">
           <Label className="text-sm text-foreground">E-mail</Label>
 
@@ -147,30 +132,22 @@ const LoginForm = () => {
           )}
         </div>
 
-        {/* PASSWORD */}
         <div className="space-y-2">
-          <Label className="text-sm text-gray-800">Senha</Label>
+          <Label className="text-sm text-foreground">Senha</Label>
 
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
 
             <Input
               {...register("password")}
-              type={showPassword ? "text" : "password"}
-              placeholder="Digite sua senha"
+              type="password"
+              placeholder="Sua senha"
+              autoComplete="current-password"
               className={cn(
                 "pl-10 h-11 bg-white/70 border border-white/30 text-gray-900 placeholder:text-gray-500 focus-visible:ring-2 focus-visible:ring-secondary/60",
-                errors.email && "border-destructive",
+                errors.password && "border-destructive",
               )}
             />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              {showPassword ? <EyeOff /> : <Eye />}
-            </button>
           </div>
 
           {errors.password && (
@@ -180,19 +157,13 @@ const LoginForm = () => {
           )}
         </div>
 
-        {/* REMEMBER */}
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
             <Checkbox {...register("rememberMe")} />
             <Label className="text-muted-foreground">Lembrar-me</Label>
           </div>
-
-          <a className="text-secondary hover:underline cursor-pointer">
-            Esqueci minha senha
-          </a>
         </div>
 
-        {/* BUTTON */}
         <Button
           type="submit"
           variant="secondary"
@@ -203,14 +174,12 @@ const LoginForm = () => {
         </Button>
       </form>
 
-      {/* DIVIDER */}
       <div className="my-8 flex items-center">
         <div className="flex-1 border-t border-white/20" />
         <span className="px-3 text-xs text-gray-500">ou</span>
         <div className="flex-1 border-t border-white/20" />
       </div>
 
-      {/* ACTION */}
       <Button
         variant="outline"
         className="w-full border-white/30 text-gray-800 hover:bg-white/60 "
@@ -218,7 +187,6 @@ const LoginForm = () => {
         Solicitar acesso
       </Button>
 
-      {/* FEATURES */}
       <div className="mt-6 grid grid-cols-2 gap-3">
         <div className="flex items-center gap-2 p-3 rounded-lg border border-white/20 bg-white/60 backdrop-blur-sm">
           <Shield className="h-4 w-4 text-secondary" />

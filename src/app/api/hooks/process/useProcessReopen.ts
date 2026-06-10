@@ -4,7 +4,7 @@ import api from "../..";
 interface ReopenResponse {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: Record<string, string | number | boolean | object | null | undefined>;
 }
 
 export function useProcessReopen(
@@ -20,12 +20,13 @@ export function useProcessReopen(
       return response;
     },
     onSuccess: async () => {
-      // Invalidar queries relacionadas ao processo
-      await queryClient.invalidateQueries({ queryKey: ['process'], type: 'all' });
+      const promises: Promise<void>[] = [
+        queryClient.invalidateQueries({ queryKey: ['processes'] }),
+      ];
       if (processId) {
-        await queryClient.refetchQueries({ queryKey: ['process', processId], type: 'all' });
+        promises.push(queryClient.invalidateQueries({ queryKey: ['process', processId] }));
       }
-      await queryClient.invalidateQueries({ queryKey: ['processes'], type: 'all' });
+      await Promise.all(promises);
     },
     retry: false,
     ...(config || {}),

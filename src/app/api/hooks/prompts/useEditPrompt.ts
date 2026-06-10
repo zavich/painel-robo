@@ -10,7 +10,6 @@ export function useEditPrompt() {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
       },
       body: JSON.stringify({ type: prompt.type, text: prompt.content }),
     });

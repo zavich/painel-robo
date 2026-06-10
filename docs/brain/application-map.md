@@ -7,7 +7,7 @@ Documento inicial de scan geral. Mapas detalhados de feature ficam em `features/
 ## Paginas
 
 - `/` (`src/app/page.tsx`): redireciona para `/dashboard`.
-- `/login` (`src/app/login/page.tsx`): formulario de login com email/senha.
+- `/login` (`src/app/login/page.tsx`): formulario de login com email + senha (`{ email, password }` -> robo-api).
 - `/dashboard` (`src/app/dashboard/page.tsx`): Kanban principal com processos.
 - `/dashboard/companies` (`src/app/dashboard/companies/page.tsx`): gestao de empresas.
 - `/dashboard/prompts` (`src/app/dashboard/prompts/page.tsx`): gestao de prompts AI (admin).

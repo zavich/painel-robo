@@ -52,7 +52,7 @@ export default function AnalysisPage() {
 
   const { process, isLoading } = useProcessAutoRefresh({
     processId: id,
-    enabled: false,
+    enabled: true,
     intervalMs: 10000,
   });
   const [form, setForm] = useState<FormType>({

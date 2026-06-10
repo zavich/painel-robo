@@ -41,7 +41,7 @@ export function useAssignProcessOwner(
     AssignOwnerResponse,
     Error,
     AssignProcessOwnerParams,
-    unknown
+    void
   >
 ) {
   const queryClient = useQueryClient();
@@ -50,7 +50,7 @@ export function useAssignProcessOwner(
     AssignOwnerResponse,
     Error,
     AssignProcessOwnerParams,
-    unknown
+    void
   >({
     mutationFn: assignProcessOwner,
     onSuccess: () => {

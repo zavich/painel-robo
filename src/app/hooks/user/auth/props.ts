@@ -34,6 +34,11 @@ export interface AuthContextType {
    * Faz o logout do usuário
    */
   logout(): void;
+
+  /**
+   * Verifica se o usuário possui uma permissão específica
+   */
+  hasPermission(key: string): boolean;
 }
 
 export interface UserDataType {

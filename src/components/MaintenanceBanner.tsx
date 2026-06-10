@@ -1,29 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { logger } from "@/app/lib/logger";
 
 export function MaintenanceBanner() {
   const router = useRouter();
   const pathname = usePathname();
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const isMaintenancePage = pathname === "/maintenance";
 
   useEffect(() => {
-    // Verifica a variável de ambiente no cliente
-    const maintenanceMode = 
-      process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true" ||
-      process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "1";
-    
-    setIsMaintenanceMode(maintenanceMode);
+    let isMounted = true;
 
-    if (maintenanceMode && !isMaintenancePage) {
-      router.push("/maintenance");
-    } else if (!maintenanceMode && isMaintenancePage) {
-      router.push("/login");
-    }
+    const syncMaintenanceMode = async () => {
+      try {
+        const response = await fetch("/api/maintenance-status", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = (await response.json()) as { maintenanceMode: boolean };
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (data.maintenanceMode && !isMaintenancePage) {
+          router.push("/maintenance");
+        } else if (!data.maintenanceMode && isMaintenancePage) {
+          router.push("/login");
+        }
+      } catch (error) {
+        logger.warn("Falha ao sincronizar maintenance mode:", error as object);
+      }
+    };
+
+    void syncMaintenanceMode();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isMaintenancePage, router]);
 
   return null;
 }
-
