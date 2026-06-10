@@ -21,6 +21,11 @@ export interface AuthContextType {
   isAuthenticated: boolean;
 
   /**
+   * Indica se a checagem inicial de autenticação (/auth/me) ainda está em andamento
+   */
+  isLoading: boolean;
+
+  /**
    * Faz o login do usuário
    */
   signIn(data: SigninRequestType): Promise<void>;
