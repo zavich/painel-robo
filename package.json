@@ -4,9 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start -p 3000 -H 0.0.0.0",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest --runInBand",
+    "render:task-definition": "node ./scripts/render-task-definition.mjs",
+    "copy-pdf-assets": "mkdir -p public && cp -r node_modules/pdfjs-dist/cmaps public/cmaps && cp -r node_modules/pdfjs-dist/standard_fonts public/standard_fonts",
+    "postinstall": "npm run copy-pdf-assets",
+    "prebuild": "npm run copy-pdf-assets"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -34,6 +39,8 @@
     "date-fns": "^4.1.0",
     "docx": "^9.6.1",
     "file-saver": "^2.0.5",
+    "isomorphic-dompurify": "^3.14.0",
+    "jose": "^6.2.3",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.523.0",
     "marked": "^16.3.0",
@@ -58,6 +65,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/jest": "^29.5.14",
     "@types/file-saver": "^2.0.7",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
@@ -67,7 +75,9 @@
     "@types/turndown": "^5.0.6",
     "eslint": "^9",
     "eslint-config-next": "^16.0.0",
+    "jest": "^29.7.0",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.0",
     "tw-animate-css": "^1.3.4",
     "typescript": "^5"
   }

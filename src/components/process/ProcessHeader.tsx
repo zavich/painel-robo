@@ -6,25 +6,15 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Process,
   Situation,
-  ProcessPart,
   Company,
-  SpecialRule,
 } from "@/app/interfaces/processes";
 import {
   getClaimant,
   getDefendant,
   getProcessTitle,
 } from "@/app/utils/processPartsUtils";
-import { getStageLabel } from "@/app/utils/processUtils";
 import { capitalizeWords } from "@/app/utils/format";
 import {
   Check,
@@ -33,35 +23,23 @@ import {
   RefreshCw,
   Building2,
   User2,
-  AlertCircle,
   Users,
-  ChevronDown,
-  ChevronUp,
   XCircle,
   FileSearch,
   FileText,
   Copy,
-  Info,
-  ClipboardList,
-  User,
   Link2,
-  Settings,
   ExternalLink,
   Edit2,
   Save,
 } from "lucide-react";
 import { useState } from "react";
-import { mascararCNPJ, formatCpf } from "@/app/utils/masks";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useTheme } from "@/app/hooks/use-theme-client";
+import { logger } from "@/app/lib/logger";
+import { ProcessPartsModal } from "./ProcessPartsModal";
+import { ProcessStatusBadges } from "./ProcessStatusBadges";
+import { ProcessActionsDropdown } from "./ProcessActionsDropdown";
 
 interface ProcessHeaderProps {
   process: Process;
@@ -122,6 +100,8 @@ export function ProcessHeader({
 }: ProcessHeaderProps) {
   const [showPartsModal, setShowPartsModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { theme } = useTheme();
+  const [processMenuOpen, setProcessMenuOpen] = useState(false);
 
   const handleCopyProcessNumber = async () => {
     if (process?.number) {
@@ -130,7 +110,7 @@ export function ProcessHeader({
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
-        console.error("Erro ao copiar:", err);
+        logger.error("Erro ao copiar número do processo:", err as object);
       }
     }
   };
@@ -142,7 +122,7 @@ export function ProcessHeader({
   const initialPetition = process?.documents?.find(
     (doc) => doc.title === "Petição Inicial",
   );
-  const initialPetitionData = initialPetition?.data as any;
+  const initialPetitionData = initialPetition?.data;
 
   const claimantName =
     initialPetitionData?.qualificacao_reclamante?.nome_completo ||
@@ -152,7 +132,7 @@ export function ProcessHeader({
 
   // Obter título do processo usando a mesma lógica do KanbanCard
   // Prioriza título editado, depois formPipedrive.title, depois gera automaticamente
-  const savedTitle = process?.title || (process as any)?.formPipedrive?.title;
+  const savedTitle = process?.title || process?.formPipedrive?.title;
   const displayTitle = getProcessTitle(
     process?.processParts || [],
     process?.number,
@@ -561,289 +541,13 @@ export function ProcessHeader({
           </span>
         </Button>
 
-        {isRefetching && !isSyncing && (
-          <div className="flex items-center gap-1 ml-1 sm:ml-2">
-            <RefreshCw className="h-3 w-3 text-primary animate-spin" />
-            <span className="text-[10px] sm:text-xs text-primary font-medium">
-              Atualizando...
-            </span>
-          </div>
-        )}
-        {(isSyncing || process?.processStatus?.name === "Processando") && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-cyan-500 dark:bg-cyan-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help animate-pulse">
-                <RefreshCw className="h-3 w-3 animate-spin" />
-                <span className="hidden sm:inline">Sincronizando</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
-            >
-              <div className="space-y-2">
-                <p className="font-bold text-cyan-600 dark:text-cyan-400">
-                  Sincronização em Andamento
-                </p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  O processo está sendo sincronizado. Aguarde a conclusão para
-                  visualizar os dados atualizados.
-                </p>
-                {process?.processStatus?.log && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Status:</span>{" "}
-                    {process.processStatus.log}
-                  </p>
-                )}
-                {process?.processStatus?.updatedAt && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Última atualização:{" "}
-                    {new Date(process.processStatus.updatedAt).toLocaleString(
-                      "pt-BR",
-                    )}
-                  </p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {!process?.dealId && process?.situation === Situation.PENDING && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-500 dark:bg-amber-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help">
-                <AlertCircle className="h-3 w-3" />
-                <span className="hidden sm:inline">Sem Deal ID</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
-            >
-              <div className="space-y-2">
-                <p className="font-bold text-amber-600 dark:text-amber-400">
-                  Processo sem Deal ID do Pipedrive
-                </p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Este processo não possui um dealId vinculado ao Pipedrive.
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Entre em contato com o suporte ou verifique a integração com o
-                  Pipedrive.
-                </p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {/* Badge para processo SEM vínculo - clicável */}
-        {process?.class === "MAIN" &&
-          !process?.calledByProvisionalLawsuitNumber && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onLinkProvisionalExecution?.();
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-yellow-500 to-amber-600 dark:from-yellow-600 dark:to-amber-700 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-pointer hover:from-yellow-600 hover:to-amber-700 dark:hover:from-yellow-700 dark:hover:to-amber-800 transition-all"
-                >
-                  <AlertCircle className="h-3 w-3" />
-                  <span className="hidden sm:inline">
-                    Inserir Execução Provisória
-                  </span>
-                  <span className="sm:hidden">Inserir Exec.</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
-              >
-                <div className="space-y-2">
-                  <p className="font-bold text-yellow-600 dark:text-yellow-400">
-                    Vincular Execução Provisória
-                  </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Este processo não possui uma execução provisória vinculada.
-                    Clique para inserir e vincular uma execução provisória a
-                    este processo principal.
-                  </p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        {process?.dealId && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <a
-                href={`https://prosolutti.pipedrive.com/deal/${process.dealId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-700 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm hover:shadow-md hover:from-emerald-600 hover:to-teal-700 transition-all cursor-pointer"
-              >
-                <ExternalLink className="h-3 w-3" />
-                <span className="hidden sm:inline">Pipedrive</span>
-              </a>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
-            >
-              <div className="space-y-2">
-                <p className="font-bold text-emerald-600 dark:text-emerald-400">
-                  Ver Deal no Pipedrive
-                </p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  Clique para abrir este processo no Pipedrive em uma nova aba.
-                </p>
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 mt-2">
-                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-                    <span className="font-semibold">Deal ID:</span>{" "}
-                    {process.dealId}
-                  </p>
-                </div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {process?.processStatus?.name ===
-          "Extração de movimentações Finalizada" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-500 dark:bg-blue-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help animate-pulse">
-                <RefreshCw className="h-3 w-3 animate-spin" />
-                <span className="hidden sm:inline">Processando Docs</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
-            >
-              <div className="space-y-2">
-                <p className="font-bold text-blue-600 dark:text-blue-400">
-                  Sincronizando Documentos
-                </p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  As movimentações foram sincronizadas com sucesso. Aguarde
-                  enquanto os documentos são processados.
-                </p>
-                {process.processStatus.log && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Status:</span>{" "}
-                    {process.processStatus.log}
-                  </p>
-                )}
-                {process.processStatus.updatedAt && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Última atualização:{" "}
-                    {new Date(process.processStatus.updatedAt).toLocaleString(
-                      "pt-BR",
-                    )}
-                  </p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {process?.processStatus?.name === "Error" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 dark:bg-red-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help">
-                <AlertCircle className="h-3 w-3" />
-                <span className="hidden sm:inline">Erro</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
-            >
-              <div className="space-y-2">
-                <p className="font-bold text-red-600 dark:text-red-400">
-                  Erro no Processamento
-                </p>
-                {process.processStatus.errorReason && (
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    <span className="font-semibold">Motivo:</span>{" "}
-                    {process.processStatus.errorReason}
-                  </p>
-                )}
-                {process.processStatus.log && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Log:</span>{" "}
-                    {process.processStatus.log}
-                  </p>
-                )}
-                {process.processStatus.updatedAt && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(process.processStatus.updatedAt).toLocaleString(
-                      "pt-BR",
-                    )}
-                  </p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {process?.situation === Situation.LOSS && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 dark:bg-red-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help">
-                <XCircle className="h-3 w-3" />
-                <span className="hidden sm:inline">Declinado</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="max-w-md p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl"
-            >
-              <div className="space-y-2">
-                <p className="font-bold text-red-600 dark:text-red-400">
-                  Processo Declinado
-                </p>
-                {process?.processDecisions?.history?.find(
-                  (h) => h.status === Situation.LOSS,
-                )?.rejection_reason && (
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    <span className="font-semibold">Motivo:</span>{" "}
-                    {
-                      process.processDecisions.history.find(
-                        (h) => h.status === Situation.LOSS,
-                      )?.rejection_reason
-                    }
-                  </p>
-                )}
-                {process?.processDecisions?.history?.find(
-                  (h) => h.status === Situation.LOSS,
-                )?.rejection_description && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Descrição:</span>{" "}
-                    {
-                      process.processDecisions.history.find(
-                        (h) => h.status === Situation.LOSS,
-                      )?.rejection_description
-                    }
-                  </p>
-                )}
-                {process?.stage && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold">Etapa:</span>{" "}
-                    {getStageLabel(process.stage)}
-                  </p>
-                )}
-                {process?.processDecisions?.history?.find(
-                  (h) => h.status === Situation.LOSS,
-                )?.createdAt && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Data da recusa:{" "}
-                    {new Date(
-                      process.processDecisions.history.find(
-                        (h) => h.status === Situation.LOSS,
-                      )?.createdAt || "",
-                    ).toLocaleString("pt-BR")}
-                  </p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
+        <ProcessStatusBadges
+          process={process}
+          isRefetching={isRefetching}
+          isSyncing={isSyncing}
+          onRemoveProvisionalLink={onRemoveProvisionalLink}
+          onLinkProvisionalExecution={onLinkProvisionalExecution}
+        />
       </div>
     </div>
   );
@@ -891,9 +595,6 @@ export function ProcessHeader({
     </>
   );
 
-  const { theme } = useTheme();
-  const [processMenuOpen, setProcessMenuOpen] = useState(false);
-
   return (
     <>
       {/* Simplified Process Header - without AppHeader to avoid duplication */}
@@ -929,119 +630,18 @@ export function ProcessHeader({
               </div>
 
               {/* Process Actions Menu */}
-              {(onViewProcessInfo ||
-                onAssignMember ||
-                onChangeStage ||
-                onSync) && (
-                <DropdownMenu
-                  open={processMenuOpen}
-                  onOpenChange={setProcessMenuOpen}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`h-9 px-3 ${
-                        theme === "dark"
-                          ? "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
-                          : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Ações</span>
-                      <ChevronDown className="h-4 w-4 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className={`w-56 ${
-                      theme === "dark"
-                        ? "bg-slate-800 border-slate-700"
-                        : "bg-white border-slate-200"
-                    }`}
-                  >
-                    {onViewPreAnalysis && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          onViewPreAnalysis();
-                          setProcessMenuOpen(false);
-                        }}
-                        className="gap-2 md:hidden"
-                      >
-                        <FileSearch className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                        Pré-Análise
-                      </DropdownMenuItem>
-                    )}
-                    {onViewAnalysis && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          onViewAnalysis();
-                          setProcessMenuOpen(false);
-                        }}
-                        className="gap-2 md:hidden"
-                      >
-                        <FileText className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                        Análise
-                      </DropdownMenuItem>
-                    )}
-                    {(onViewPreAnalysis || onViewAnalysis) &&
-                      (onViewProcessInfo ||
-                        onAssignMember ||
-                        onChangeStage ||
-                        onSync) && (
-                        <DropdownMenuSeparator className="md:hidden" />
-                      )}
-                    {onViewProcessInfo && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          onViewProcessInfo();
-                          setProcessMenuOpen(false);
-                        }}
-                        className="gap-2"
-                      >
-                        <ClipboardList className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                        Informações do Processo
-                      </DropdownMenuItem>
-                    )}
-                    {onAssignMember && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          onAssignMember();
-                          setProcessMenuOpen(false);
-                        }}
-                        className="gap-2"
-                      >
-                        <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        Atribuir Membro
-                      </DropdownMenuItem>
-                    )}
-                    {isAdmin && onChangeStage && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          onChangeStage();
-                          setProcessMenuOpen(false);
-                        }}
-                        className="gap-2"
-                      >
-                        <Settings className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        Alterar Etapa do Processo
-                      </DropdownMenuItem>
-                    )}
-                    {onSync && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          onSync();
-                          setProcessMenuOpen(false);
-                        }}
-                        className="gap-2"
-                      >
-                        <RefreshCw className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                        Sincronizar Processo
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+              <ProcessActionsDropdown
+                theme={theme}
+                isAdmin={isAdmin}
+                open={processMenuOpen}
+                onOpenChange={setProcessMenuOpen}
+                onViewPreAnalysis={onViewPreAnalysis}
+                onViewAnalysis={onViewAnalysis}
+                onViewProcessInfo={onViewProcessInfo}
+                onAssignMember={onAssignMember}
+                onChangeStage={onChangeStage}
+                onSync={onSync}
+              />
             </div>
           </div>
 
@@ -1062,155 +662,14 @@ export function ProcessHeader({
         </div>
       </div>
 
-      {/* Modal de Partes e Empresas */}
-      <Dialog open={showPartsModal} onOpenChange={setShowPartsModal}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary dark:text-primary" />
-              Partes e Empresas do Processo
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto pr-2 space-y-6">
-            {/* Polo Ativo */}
-            {activeParts.length > 0 && (
-              <div className="min-w-0">
-                <h4 className="font-semibold text-sm mb-3 text-green-600 dark:text-green-400 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full flex-shrink-0"></span>
-                  Polo Ativo ({activeParts.length})
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {activeParts.map((part, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-card dark:bg-card border border-border dark:border-border rounded-lg p-3 text-sm"
-                    >
-                      <Badge variant="outline" className="mb-2 text-xs">
-                        {part.tipo}
-                      </Badge>
-                      <p className="font-medium text-foreground dark:text-card-foreground mb-1 break-words">
-                        {part.nome}
-                      </p>
-                      {part.documento?.numero && (
-                        <p className="text-muted-foreground dark:text-muted text-xs break-all">
-                          {part.documento.tipo === "CPF"
-                            ? `CPF: ${formatCpf(part.documento.numero)}`
-                            : `${part.documento.tipo}: ${part.documento.numero}`}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Polo Passivo */}
-            {passiveParts.length > 0 && (
-              <div className="min-w-0">
-                <h4 className="font-semibold text-sm mb-3 text-red-600 dark:text-red-400 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></span>
-                  Polo Passivo ({passiveParts.length})
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {passiveParts.map((part, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-card dark:bg-card border border-border dark:border-border rounded-lg p-3 text-sm"
-                    >
-                      <Badge variant="outline" className="mb-2 text-xs">
-                        {part.tipo}
-                      </Badge>
-                      <p className="font-medium text-foreground dark:text-card-foreground mb-1 break-words">
-                        {part.nome}
-                      </p>
-                      {part.documento?.numero && (
-                        <p className="text-muted-foreground dark:text-muted text-xs break-all">
-                          {part.documento.tipo === "CPF"
-                            ? `CPF: ${formatCpf(part.documento.numero)}`
-                            : `${part.documento.tipo}: ${part.documento.numero}`}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Empresas */}
-            {companies.length > 0 && (
-              <div className="min-w-0">
-                <h4 className="font-semibold text-sm mb-3 text-primary dark:text-primary flex items-center gap-2">
-                  <Building2 className="h-4 w-4 flex-shrink-0 text-primary dark:text-primary" />
-                  Empresas Envolvidas ({companies.length})
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {companies.map((company, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => {
-                        onCompanyClick?.(company);
-                        setShowPartsModal(false);
-                      }}
-                      className="bg-primary/10 dark:bg-primary-foreground/10 border border-primary dark:border-primary-foreground rounded-lg p-3 text-sm cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors"
-                    >
-                      <p className="font-medium text-foreground dark:text-card-foreground mb-1 break-words">
-                        {company.name}
-                      </p>
-                      <p className="text-muted-foreground dark:text-muted mb-2 text-xs break-all">
-                        CNPJ: {mascararCNPJ(company.cnpj)}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {company.score !== undefined && (
-                          <Badge
-                            variant={
-                              company.score >= 7 ? "default" : "destructive"
-                            }
-                            className="text-xs"
-                          >
-                            Score: {company.score}
-                          </Badge>
-                        )}
-                        {company.specialRule && (
-                          <Badge
-                            variant={
-                              company.specialRule === SpecialRule.SOLVENT
-                                ? "default"
-                                : "destructive"
-                            }
-                            className="text-xs"
-                          >
-                            {company.specialRule === SpecialRule.SOLVENT
-                              ? "Solvente"
-                              : "Insolvente"}
-                          </Badge>
-                        )}
-                        {!company.specialRule && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs text-muted-foreground dark:text-muted"
-                          >
-                            Solvência: N/D
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Mensagem quando não há partes */}
-            {activeParts.length === 0 &&
-              passiveParts.length === 0 &&
-              companies.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground dark:text-muted">
-                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50 text-primary dark:text-primary" />
-                  <p>Nenhuma parte ou empresa encontrada para este processo.</p>
-                </div>
-              )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ProcessPartsModal
+        open={showPartsModal}
+        onOpenChange={setShowPartsModal}
+        activeParts={activeParts}
+        passiveParts={passiveParts}
+        companies={companies}
+        onCompanyClick={onCompanyClick}
+      />
     </>
   );
 }

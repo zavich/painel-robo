@@ -2,6 +2,9 @@
 
 import { io, Socket } from "socket.io-client";
 
+type SocketReadyCallback = (socket: Socket) => void;
+const socketReadyCallbacks = new Set<SocketReadyCallback>();
+
 let socketInstance: Socket | null = null;
 
 function resolveSocketUrl() {
@@ -30,6 +33,15 @@ export function getNotificationsSocket(userId?: string) {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
+
+    // Dispara callbacks pendentes de whenSocketReady() ao conectar
+    socketInstance.on("connect", () => {
+      if (socketReadyCallbacks.size > 0) {
+        const cbs = [...socketReadyCallbacks];
+        socketReadyCallbacks.clear();
+        cbs.forEach((cb) => cb(socketInstance!));
+      }
+    });
   } else {
     // Update auth data if user changes
     socketInstance.auth = { userId };
@@ -46,5 +58,38 @@ export function disconnectNotificationsSocket() {
     socketInstance.disconnect();
     socketInstance = null;
   }
+}
+
+export function getExistingSocket(): Socket | null {
+  return socketInstance;
+}
+
+/**
+ * Registra um callback a ser chamado assim que o socket estiver conectado.
+ * Se já estiver conectado, chama imediatamente.
+ * Retorna uma função de cleanup que cancela o registro caso o componente
+ * desmonte antes da conexão ser estabelecida.
+ */
+export function whenSocketReady(cb: SocketReadyCallback): () => void {
+  // Caso 1: socket já conectado — chamar imediatamente
+  if (socketInstance?.connected) {
+    cb(socketInstance);
+    return () => {};
+  }
+
+  // Caso 2: socket criado mas ainda conectando — ouvir connect diretamente
+  if (socketInstance) {
+    const onConnect = () => cb(socketInstance!);
+    socketInstance.once("connect", onConnect);
+    return () => {
+      socketInstance?.off("connect", onConnect);
+    };
+  }
+
+  // Caso 3: socket ainda não criado — enfileirar para quando getNotificationsSocket inicializar
+  socketReadyCallbacks.add(cb);
+  return () => {
+    socketReadyCallbacks.delete(cb);
+  };
 }
 

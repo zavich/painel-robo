@@ -4,8 +4,9 @@ import React, { useRef, useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useTheme } from "@/app/hooks/use-theme-client";
 import { useFetchPDF } from "@/app/api/hooks/process/useFetchPDF";
+import { logger } from "@/app/lib/logger";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
 
 interface PDFViewerProps {
   pdfUrl: string; // Ignorado, agora usamos a rota
@@ -39,7 +40,8 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
   );
   const [isDocumentReady, setIsDocumentReady] = useState(false);
   const isMountedRef = useRef(true);
-  const renderTasksRef = useRef<any[]>([]);
+  const renderTasksRef = useRef<{ cancel?: () => void }[]>([]);
+  const blobUrlRef = useRef<string | null>(null);
   const { theme } = useTheme();
   const pageWrappersRef = useRef<(HTMLDivElement | null)[]>([]);
   const [visiblePageState, setVisiblePageState] = useState(pageNumber || 1);
@@ -58,7 +60,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
     const originalWarn = console.warn;
     const originalError = console.error;
 
-    console.warn = (...args: any[]) => {
+    console.warn = (...args: Parameters<typeof console.warn>) => {
       const message = args[0]?.toString() || "";
       if (
         (message.includes("TextLayer") && message.includes("cancel")) ||
@@ -70,7 +72,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
       originalWarn.apply(console, args);
     };
 
-    console.error = (...args: any[]) => {
+    console.error = (...args: Parameters<typeof console.error>) => {
       const message = args[0]?.toString() || "";
       if (
         (message.includes("TextLayer") && message.includes("cancel")) ||
@@ -208,9 +210,9 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
 
   // Memoizar options para evitar reloads desnecessários - usar ref para garantir mesma referência
   const documentOptionsRef = useRef({
-    cMapUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+    cMapUrl: `/cmaps/`,
     cMapPacked: true,
-    standardFontDataUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+    standardFontDataUrl: `/standard_fonts/`,
   });
   const documentOptions = documentOptionsRef.current;
 
@@ -378,27 +380,35 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
   const { fetchPDF } = useFetchPDF();
 
   useEffect(() => {
-    let abortController = new AbortController();
+    let cancelled = false;
+
+    // Revogar blob anterior antes de criar novo
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
     setPdfBlobUrl(null);
     setIsDocumentReady(false);
 
     const fetchBlob = async () => {
       try {
         const blob = await fetchPDF(pdfUrl);
-        if (!blob) throw new Error("Erro ao buscar PDF");
+        if (!blob || cancelled) return;
 
         const url = URL.createObjectURL(blob);
-        console.log(`PDF blob fetched: ${blob.size} bytes, URL: ${url}`);
-
+        blobUrlRef.current = url;
         setPdfBlobUrl(url);
       } catch (e) {
-        setPdfBlobUrl(null);
+        if (!cancelled) setPdfBlobUrl(null);
       }
     };
     fetchBlob();
     return () => {
-      abortController.abort();
-      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+      cancelled = true;
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
   }, [pdfUrl, retryKey]);
 
@@ -436,7 +446,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
           }
         }}
         onLoadError={(error) => {
-          console.debug("PDF load error:", error);
+          logger.debug("PDF load error:", error as object);
           setIsDocumentReady(false);
         }}
         loading={
@@ -487,7 +497,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
                       !errorMsg.includes("cancel") &&
                       !errorMsg.includes("AbortException")
                     ) {
-                      console.debug(`Page ${idx + 1} render error:`, errorMsg);
+                      logger.debug(`Page ${idx + 1} render error:`, errorMsg);
                     }
                   }}
                 />
@@ -519,7 +529,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
                 !errorMsg.includes("cancel") &&
                 !errorMsg.includes("AbortException")
               ) {
-                console.debug(`Page ${pageNumber} render error:`, errorMsg);
+                logger.debug(`Page ${pageNumber} render error:`, errorMsg);
               }
             }}
           />

@@ -1,3 +1,4 @@
+import DOMPurify from "isomorphic-dompurify";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,39 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "../ui/button";
-import { StageProcess } from "@/app/interfaces/processes";
 import { getStageLabel } from "@/app/utils/processUtils";
 import dynamic from "next/dynamic";
 import { marked } from 'marked';
 import { useTheme } from "@/app/hooks/use-theme-client";
 import TurndownService from 'turndown';
+import { logger } from "@/app/lib/logger";
+import type { PipedriveFormData } from "./PipedriveForm.types";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
-
-export interface PipedriveFormData {
-  title: string;
-  processNumber: string;
-  stageLabel?: StageProcess;
-  executionNumber?: string;
-  duplicated: string;
-  dl: string;
-  firstDegree: string;
-  secondDefendantResponsibility: string;
-  defendants: string;
-  analysis: string;
-  calculoAutos: string;
-  calculoAutosValue: string;
-  calculoHomologado: string;
-  execucaoProvisoria: string;
-  prazo: string;
-  abatimento: string;
-  observacao: string;
-  observacaoPreAnalise: string;
-  sucumbencia: string;
-  freeJustice: string;
-  conclusion: string;
-  value?: string;
-}
 
 interface PipedriveFormCardProps {
   form: PipedriveFormData;
@@ -73,7 +50,7 @@ export function PipedriveFormCard({
           setAnalysisMarkdown(markdown);
           lastProcessedAnalysisRef.current = form.analysis;
         } catch (error) {
-          console.error('Erro ao converter HTML para Markdown:', error);
+          logger.error('Erro ao converter HTML para Markdown:', error as object);
           // Se falhar, tentar extrair apenas o texto
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = form.analysis;
@@ -222,8 +199,8 @@ export function PipedriveFormCard({
           <Label className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{label}</Label>
           <div className="bg-muted dark:bg-gray-700 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm font-medium text-primary dark:text-gray-100 min-h-[120px]">
             {value ? (
-              <div 
-                dangerouslySetInnerHTML={{ __html: value }} 
+              <div
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
                 className="prose prose-sm max-w-none dark:prose-invert"
               />
             ) : (

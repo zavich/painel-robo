@@ -8,6 +8,7 @@
 /maintenance                      → maintenance/page.tsx
 /not-found                        → not-found.tsx
 /health                           → health/route.ts (GET → { ok: true })
+/api/maintenance-status           → api/maintenance-status/route.ts (GET → { maintenanceMode: boolean })
 /dashboard                        → dashboard/page.tsx (Kanban/table view)
 /dashboard/companies              → dashboard/companies/page.tsx
 /dashboard/prompts                → dashboard/prompts/page.tsx (admin only no nav)
@@ -40,15 +41,16 @@ Arquivo: `src/components/layout/MainShell.tsx`
 
 ## Auth guard
 
-- **NAO existe middleware de auth**. O `AuthProvider` chama `GET /auth/me` on mount. Se falha (401), redireciona para `/login`.
-- Middleware (`middleware.ts`): apenas lida com modo manutencao, NAO com auth.
-- **Sem role guard por rota**: paginas admin acessiveis por URL para nao-admins. Protecao e no service layer do backend.
+- `middleware.ts` valida o cookie JWT (`prosolutti_accessToken`) server-side com `jose.jwtVerify` nas rotas protegidas.
+- Se o token for invalido ou expirado, redireciona para `/login` e limpa o cookie.
+- O `AuthProvider` continua chamando `GET /auth/me` para hidratar usuario e permissoes no client.
+- **Sem role guard por rota**: paginas admin ainda podem ser acessadas por URL, mas as acoes dependem das permissoes retornadas pelo backend e dos guards do `robo-api`.
 
 ## Maintenance mode
 
 - Env vars `MAINTENANCE_MODE` ou `NEXT_PUBLIC_MAINTENANCE_MODE` = `"true"` ou `"1"`
 - Quando ativo: todas rotas redirecionam para `/maintenance` (exceto assets estaticos)
-- `MaintenanceBanner`: banner persistente quando `NEXT_PUBLIC_MAINTENANCE_MODE` esta setado
+- `MaintenanceBanner` sincroniza o estado via `GET /api/maintenance-status` com `cache: "no-store"` e redireciona client-side quando necessario
 
 ## Notification routing
 

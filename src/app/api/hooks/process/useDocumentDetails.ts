@@ -29,8 +29,8 @@ export function useDocumentDetails({
       const { data } = await api.get(`/process/${processNumber}/documents/${documentId}`);
       setDocumento(data);
       return data;
-    } catch (err: any) {
-      setError(err.message || "Erro ao buscar detalhes do documento");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao buscar detalhes do documento");
       return null;
     } finally {
       setLoading(false);

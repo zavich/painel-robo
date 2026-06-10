@@ -16,8 +16,8 @@ export function useRemoveInsights() {
     try {
       const { data } = await api.delete(`/process/${processNumber}/documents/${documentId}`);
       return data;
-    } catch (err: any) {
-      setError(err.message || "Erro ao remover insights");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao remover insights");
       throw err;
     } finally {
       setLoading(false);

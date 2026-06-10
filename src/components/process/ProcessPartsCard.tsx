@@ -9,7 +9,7 @@ import { capitalizeWords } from "@/app/utils/format";
 
 interface ProcessPartsCardProps {
   processParts: ProcessPart[];
-  onCompanyClick: (company: any) => void;
+  onCompanyClick: (company: Company) => void;
   companies: Company[];
   isLoading?: boolean;
 }

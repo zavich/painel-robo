@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import { Prompt } from "@/app/interfaces/processes";
 import api from "../..";
 
@@ -16,7 +16,7 @@ interface PromptsParams {
   search?: string;
 }
 
-export const getPrompts = (params: PromptsParams) =>
+export const getPrompts = (params: PromptsParams = {}) =>
   api
     .get<GetPromptsResponseType>("/prompts", {
       params,
@@ -24,21 +24,21 @@ export const getPrompts = (params: PromptsParams) =>
     .then((res) => res.data);
 
 export function usePrompts(
-  params: PromptsParams,
+  params: PromptsParams = {},
   config?: UseQueryOptions<
     GetPromptsResponseType,
     Error,
     GetPromptsResponseType,
-    unknown[]
+    QueryKey
   >
 ) {
-  return useQuery<
+  const query = useQuery<
     GetPromptsResponseType,
     Error,
     GetPromptsResponseType,
-    unknown[]
+    QueryKey
   >({
-    queryKey: ["prompts", params],
+    queryKey: ["prompts", JSON.stringify(params)],
     queryFn: () => getPrompts(params),
     refetchOnWindowFocus: false,
     ...(config || {}),
@@ -50,4 +50,11 @@ export function usePrompts(
       totalPages: 1,
     },
   });
+
+  return {
+    ...query,
+    prompts: query.data,
+    loading: query.isLoading || query.isFetching,
+    error: query.error?.message ?? null,
+  };
 }

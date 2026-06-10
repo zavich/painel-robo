@@ -7,6 +7,8 @@ import { useToast } from "@/app/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCreateMassActivity } from "@/app/api/hooks/process/useCreateMassActivity";
 import { ActivityType } from "@/app/api/hooks/process/useCreateActivity";
+import { logger } from "@/app/lib/logger";
+import type { ProcessesParams } from "@/app/api/hooks/processes/useProcesses";
 
 interface MassEditPanelProps {
   selectedProcesses: Process[];
@@ -14,13 +16,13 @@ interface MassEditPanelProps {
   users?: Array<{ _id?: string; id?: string; email: string }>;
   selectAllMode?: 'page' | 'all' | null;
   totalSelected?: number;
-  apiFilters?: any; // Filters to apply when selecting all from DB
+  apiFilters?: ProcessesParams; // Filters to apply when selecting all from DB
   isAdmin?: boolean; // Whether the current user is an admin
 }
 
 interface EditField {
   action: "keep" | "edit";
-  value: any;
+  value: string | null;
 }
 
 export function MassEditPanel({ 
@@ -53,10 +55,10 @@ export function MassEditPanel({
     { type: "", assignedTo: "" }
   ]);
 
-  const handleFieldChange = (fieldName: keyof typeof fields, action: "keep" | "edit", value?: any) => {
+  const handleFieldChange = (fieldName: keyof typeof fields, action: "keep" | "edit", value?: string) => {
     setFields(prev => ({
       ...prev,
-      [fieldName]: { action, value: action === "edit" ? value : null }
+      [fieldName]: { action, value: action === "edit" ? (value ?? null) : null }
     }));
   };
 
@@ -144,7 +146,7 @@ export function MassEditPanel({
                 await new Promise(resolve => setTimeout(resolve, 100));
               }
             } catch (pageError) {
-              console.error(`Error fetching page ${page}:`, pageError);
+              logger.error(`Error fetching page ${page}:`, pageError as object);
               hasMore = false;
             }
           }
@@ -198,10 +200,11 @@ export function MassEditPanel({
             if (result.errors && result.errors.length > 0) {
               errors.push(...result.errors.map(e => e.error));
             }
-          } catch (error: any) {
-            console.error(`Error creating activity ${activity.type}:`, error);
+          } catch (error: unknown) {
+            logger.error(`Error creating activity ${activity.type}:`, error as object);
             totalFailed += processIds.length;
-            errors.push(`Erro ao criar ${activity.type}: ${error?.response?.data?.message || error.message}`);
+            const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
+            errors.push(`Erro ao criar ${activity.type}: ${axiosErr?.response?.data?.message || axiosErr?.message || 'Erro desconhecido'}`);
           }
         }
 
@@ -211,15 +214,23 @@ export function MassEditPanel({
           variant: totalFailed > 0 ? "destructive" : "default",
         });
 
-        // Invalidate queries to refresh data
-        await queryClient.invalidateQueries({ queryKey: ["processes"] });
+        await Promise.all([
+          ...processIds.map((processId) =>
+            queryClient.invalidateQueries({
+              queryKey: ["process", processId],
+              refetchType: "none",
+            }),
+          ),
+          queryClient.invalidateQueries({ queryKey: ["processes"] }),
+        ]);
 
         handleClose();
-      } catch (error: any) {
-        console.error("Error creating mass activities:", error);
+      } catch (error: unknown) {
+        logger.error("Error creating mass activities:", error as object);
+        const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
         toast({
           title: "Erro ao criar atividades",
-          description: error?.response?.data?.message || "Ocorreu um erro ao criar as atividades em massa.",
+          description: axiosErr?.response?.data?.message || "Ocorreu um erro ao criar as atividades em massa.",
           variant: "destructive",
         });
         setIsSubmitting(false);
@@ -444,4 +455,3 @@ export function MassEditPanel({
     </div>
   );
 }
-

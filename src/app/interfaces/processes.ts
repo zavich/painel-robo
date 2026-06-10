@@ -1,3 +1,30 @@
+export type ActivityType = "PRE_ANALISE" | "ANALISE" | "CALCULO";
+
+export interface ActivityUser {
+  _id: string;
+  email: string;
+  name?: string;
+  role?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Activity {
+  _id?: string;
+  type: ActivityType;
+  assignedTo: string | ActivityUser;
+  assignedBy?: string | ActivityUser;
+  isCompleted: boolean;
+  completedAt: string | null;
+  completedBy: string | null | ActivityUser;
+  notes: string | null;
+  status?: "APPROVE" | "LOSS";
+  lossReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProcessStep {
   _id: string;
   name: string;
@@ -210,6 +237,7 @@ export interface FormPipedrive {
   defendants?: string;
   analysis?: string;
   calculoAutos?: string;
+  calculoAutosValue?: string;
   calculoHomologado?: string;
   naturezaJuridica?: string;
   execucaoProvisoria?: string;
@@ -227,7 +255,7 @@ export interface FormPipedrive {
   alvara?: string;
   cessaoCredito?: string;
   minValueEstimate?: string;
-  value?: string;
+  value?: string | number;
 }
 
 interface ProcessOwner {
@@ -301,7 +329,7 @@ export interface Process {
   processMain?: Process;
   simpleCalcProposals: SimpleCalcProposal;
   observation: Observation;
-  insights: any[];
+  insights: Record<string, string | number | boolean | object | null | undefined>[];
   stage?: StageProcess;
   stageId: number;
   formPipedrive?: FormPipedrive;
@@ -320,6 +348,7 @@ export interface Process {
     segundoGrau: number | null;
     tst: number | null;
   };
+  activities?: Activity[];
 }
 
 export enum SpecialRule {
@@ -340,6 +369,35 @@ export enum StatusExtractionInsight {
   ERROR = "ERROR",
 }
 
+export interface InsightData {
+  ownerType?: string;
+  owner?: string;
+  margemPercentual?: number | string;
+  margem_percentual?: number | string;
+  valorComMargem?: number | string;
+  valor_com_margem?: number | string;
+  valorPosFgts?: number | string;
+  valor_pos_fgts?: number | string;
+  valorPosHonorarios?: number | string;
+  valor_pos_honorarios?: number | string;
+  desagio50?: number | string;
+  desagio_50?: number | string;
+  desagio30?: number | string;
+  desagio_30?: number | string;
+  qualificacao_reclamante?: {
+    estado_civil?: string;
+    nacionalidade?: string;
+    nome_completo?: string;
+    endereco_completo?: string;
+    data_nascimento?: string;
+    filiacao?: string;
+    cpf?: string;
+    rg?: string;
+    pis_pasep?: string;
+  };
+  [key: string]: string | number | boolean | object | null | undefined;
+}
+
 export interface DocumentExtract {
   _id: string;
   title: string;
@@ -347,7 +405,7 @@ export interface DocumentExtract {
   uniqueName: string;
   date: string;
   status: StatusExtractionInsight;
-  data?: any;
+  data?: InsightData;
 }
 
 export enum PromptType {

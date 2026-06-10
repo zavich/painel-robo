@@ -24,6 +24,7 @@ import { formatCurrency, formatDate } from "@/app/utils/processUtils";
 import {
   PeticaoInicialData,
   Process,
+  ProcessPart,
   Situation,
 } from "@/app/interfaces/processes";
 import Link from "next/link";
@@ -31,6 +32,7 @@ import { formatCpf } from "@/app/utils/masks";
 import { useInsertExecution } from "@/app/api/hooks/processes/useInsertExecution";
 import { useRemoveProvisionalLawsuit } from "@/app/api/hooks/processes/useRemoveProvisionalLawsuit";
 import { toast } from "react-toastify";
+import { logger } from "@/app/lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +45,7 @@ import { ProcessStatusComponent } from "@/components/ProcessStatusComponent";
 
 interface ProcessInfoCardProps {
   process?: Process;
-  claimant: any;
+  claimant: ProcessPart | null | undefined;
   isEditing?: boolean;
   initialPetition?: PeticaoInicialData;
   onProcessUpdate?: () => void;
@@ -139,9 +141,10 @@ export function ProcessInfoCard({
       if (onProcessUpdate) {
         onProcessUpdate();
       }
-    } catch (error: any) {
-      toast.error(error?.message || "Erro ao remover vínculo do processo provisório");
-      console.error("Erro ao remover processo provisório:", error);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err?.message || "Erro ao remover vínculo do processo provisório");
+      logger.error("Erro ao remover processo provisório:", error as object);
     } finally {
       setIsRemoving(false);
     }

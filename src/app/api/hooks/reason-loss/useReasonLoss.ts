@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, UseQueryOptions, QueryKey } from '@tanstack/react-query';
 import api from "../..";
 
 export interface ReasonLoss {
@@ -34,14 +34,14 @@ export function useReasonLoss(
     GetReasonLossResponseType,
     Error,
     GetReasonLossResponseType,
-    unknown[]
+    QueryKey
   >
 ) {
   return useQuery<
     GetReasonLossResponseType,
     Error,
     GetReasonLossResponseType,
-    unknown[]
+    QueryKey
   >({
     queryKey: ["reason-loss", params],
     queryFn: () => getReasonLoss(params),

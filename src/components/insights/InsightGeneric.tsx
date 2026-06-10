@@ -1,27 +1,42 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Check } from "lucide-react";
+import { logger } from "@/app/lib/logger";
+
+type JsonPrimitive = string | number | boolean | null | undefined;
+export type JsonObject = { [key: string]: string | number | boolean | object | null | undefined };
 
 interface InsightGenericProps {
-  data: any;
+  data: JsonObject;
   documentTitle?: string;
   processNumber?: string;
-  onSendToPipedrive?: (data: any) => Promise<void>;
+  onSendToPipedrive?: (data: JsonObject) => Promise<void>;
 }
+
+type RenderableValue = string | number | boolean | object | null | undefined;
 
 export default function InsightGeneric({ data, documentTitle, processNumber, onSendToPipedrive }: InsightGenericProps) {
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const sentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timeout ao desmontar (BUG-012)
+  useEffect(() => {
+    return () => {
+      if (sentTimeoutRef.current) clearTimeout(sentTimeoutRef.current);
+    };
+  }, []);
+
   if (!data) return null;
 
-  const formatCurrency = (value: any) => {
+  const formatCurrency = (value: RenderableValue): React.ReactNode => {
     if (typeof value === 'number' && value > 0) {
       return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
     }
-    return value;
+    return String(value ?? '');
   };
 
-  const formatDate = (dateString: any) => {
+  const formatDate = (dateString: RenderableValue): React.ReactNode => {
     if (typeof dateString === 'string' && dateString.includes('-')) {
       try {
         const date = new Date(dateString);
@@ -30,17 +45,17 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
         return dateString;
       }
     }
-    return dateString;
+    return String(dateString ?? '');
   };
 
-  const formatValue = (key: string, value: any): any => {
+  const formatValue = (key: string, value: RenderableValue): React.ReactNode => {
     if (value === null || value === undefined) return "-";
-    
+
     // Formatação específica baseada no nome da chave
     if (key.toLowerCase().includes('valor') || key.toLowerCase().includes('salario')) {
       return formatCurrency(value);
     }
-    
+
     if (key.toLowerCase().includes('data') || key.toLowerCase().includes('date')) {
       return formatDate(value);
     }
@@ -49,10 +64,10 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
       return value.replace(/_/g, ' ');
     }
 
-    return value;
+    return String(value);
   };
 
-  const renderValue = (key: string, value: any, level: number = 0): React.ReactNode => {
+  const renderValue = (key: string, value: RenderableValue, level: number = 0): React.ReactNode => {
     if (value === null || value === undefined) {
       return <span className="text-muted-foreground">-</span>;
     }
@@ -61,12 +76,12 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
       if (value.length === 0) {
         return <span className="text-muted-foreground">Nenhum item</span>;
       }
-      
+
       return (
         <ul className="list-disc ml-4 space-y-1">
           {value.map((item, idx) => (
             <li key={idx} className="text-sm break-words">
-              {typeof item === 'object' ? renderObject(item, level + 1) : formatValue(key, item)}
+              {typeof item === 'object' && item !== null ? renderObject(item as JsonObject, level + 1) : formatValue(key, item as RenderableValue)}
             </li>
           ))}
         </ul>
@@ -74,17 +89,17 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
     }
 
     if (typeof value === 'object') {
-      return renderObject(value, level + 1);
+      return renderObject(value as JsonObject, level + 1);
     }
 
     return <span className="break-words inline-block max-w-full">{formatValue(key, value)}</span>;
   };
 
-  const renderObject = (obj: any, level: number = 0): React.ReactNode => {
+  const renderObject = (obj: JsonObject, level: number = 0): React.ReactNode => {
     if (!obj || typeof obj !== 'object') return null;
 
     const entries = Object.entries(obj).filter(([_, value]) => value !== null && value !== undefined);
-    
+
     if (entries.length === 0) {
       return <span className="text-muted-foreground">Sem dados disponíveis</span>;
     }
@@ -124,14 +139,14 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
 
   const handleSendToPipedrive = async () => {
     if (!onSendToPipedrive) return;
-    
+
     setIsSending(true);
     try {
       await onSendToPipedrive(data);
       setSent(true);
-      setTimeout(() => setSent(false), 3000);
+      sentTimeoutRef.current = setTimeout(() => setSent(false), 3000);
     } catch (error) {
-      console.error('Erro ao enviar para Pipedrive:', error);
+      logger.error("Erro ao enviar para Pipedrive:", error as object);
     } finally {
       setIsSending(false);
     }
@@ -145,7 +160,7 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
             <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-blue-600 rounded-full"></div>
             <h4 className="font-bold text-lg text-primary break-words">{getTitle()}</h4>
           </div>
-          
+
           {/* Botão para enviar Planilha de Cálculo ao Pipedrive */}
           {isCalculationSheet && onSendToPipedrive && (
             <Button
@@ -154,8 +169,8 @@ export default function InsightGeneric({ data, documentTitle, processNumber, onS
               onClick={handleSendToPipedrive}
               disabled={isSending || sent}
               className={`flex items-center gap-2 ${
-                sent 
-                  ? "border-green-500 text-green-600 dark:text-green-400" 
+                sent
+                  ? "border-green-500 text-green-600 dark:text-green-400"
                   : "bg-blue-600 hover:bg-blue-700 text-white"
               }`}
             >

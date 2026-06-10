@@ -86,8 +86,8 @@ export function ReasonLossModal({
       onClose();
       setKey("");
       setLabel("");
-    } catch (e: any) {
-      alert(e.message || "Erro ao salvar motivo de recusa");
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Erro ao salvar motivo de recusa");
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Process } from "../interfaces/processes";
 import { getProcessTitle } from "./processPartsUtils";
@@ -10,6 +9,9 @@ export const exportToExcel = async (
   selectedColumns: string[] = [],
 ) => {
   try {
+    // PERF-007: lazy-load XLSX to avoid blocking the initial bundle
+    const XLSX = await import("xlsx");
+
     // Criar um novo workbook
     const workbook = XLSX.utils.book_new();
 
@@ -73,7 +75,7 @@ export const exportToExcel = async (
 
     // Preparar os dados para exportação - espelhando exatamente a tabela
     const exportData = data.map((item) => {
-      const row: Record<string, any> = {};
+      const row: Record<string, string | undefined> = {};
 
       columnsToExport.forEach((columnId) => {
         const header = columnHeaders[columnId];
@@ -84,7 +86,7 @@ export const exportToExcel = async (
               getProcessTitle(
                 item.processParts || [],
                 item.number,
-                item.title || (item as any).formPipedrive?.title,
+                item.title || item.formPipedrive?.title,
               ),
             );
             const owner = item.processOwner?.user?.email;

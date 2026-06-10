@@ -1,4 +1,4 @@
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions, QueryKey } from "@tanstack/react-query";
 import api from "../..";
 import { Process } from "@/app/interfaces/processes";
 
@@ -26,7 +26,7 @@ export interface GetProcessesResponseType {
   totalPages: number;
 }
 
-interface ProcessesParams {
+export interface ProcessesParams {
   page?: number;
   limit?: number;
   step?: string;
@@ -54,14 +54,14 @@ export function useProcesses(
     GetProcessesResponseType,
     Error,
     GetProcessesResponseType,
-    unknown[]
+    QueryKey
   >
 ) {
   return useQuery<
     GetProcessesResponseType,
     Error,
     GetProcessesResponseType,
-    unknown[]
+    QueryKey
   >({
     queryKey: ["processes", JSON.stringify(params)],
     queryFn: () => getProcesses(params),

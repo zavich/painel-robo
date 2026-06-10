@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import { format, startOfDay, subDays, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, ChevronDownIcon } from "lucide-react";
@@ -22,7 +23,7 @@ interface DateFilterProps {
   className?: string;
 }
 
-export function DateFilter({ value, onChange, className }: DateFilterProps) {
+export const DateFilter = memo(function DateFilter({ value, onChange, className }: DateFilterProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("hoje");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(value);
   const [isCustomOpen, setIsCustomOpen] = useState(false);
@@ -152,4 +153,4 @@ export function DateFilter({ value, onChange, className }: DateFilterProps) {
       </div>
     </div>
   );
-}
+});

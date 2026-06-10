@@ -9,6 +9,7 @@ export interface UserType {
   email: string;
   isActive: boolean;
   role: UserRolesEnum;
+  permissions?: string[];
 }
 export interface SigninRequestType {
   email: string;

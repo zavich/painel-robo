@@ -1,65 +1,6 @@
 {
-  "taskDefinitionArn": "arn:aws:ecs:us-east-2:339340413604:task-definition/painel-robo:1",
-  "containerDefinitions": [
-    {
-      "name": "painel-robo",
-      "image": "339340413604.dkr.ecr.us-east-2.amazonaws.com/painel-robo:latest",
-      "cpu": 0,
-      "portMappings": [
-        {
-          "containerPort": 3000,
-          "hostPort": 3000,
-          "protocol": "tcp"
-        }
-      ],
-      "essential": true,
-      "mountPoints": [],
-      "volumesFrom": [],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/painel-robo",
-          "awslogs-region": "us-east-2",
-          "awslogs-stream-prefix": "ecs"
-        }
-      },
-      "systemControls": []
-    }
-  ],
-  "family": "painel-robo",
-  "executionRoleArn": "arn:aws:iam::339340413604:role/robo-task-role",
+  "family": "<TASK_FAMILY>",
   "networkMode": "awsvpc",
-  "revision": 1,
-  "volumes": [],
-  "status": "ACTIVE",
-  "requiresAttributes": [
-    {
-      "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
-    },
-    {
-      "name": "ecs.capability.execution-role-awslogs"
-    },
-    {
-      "name": "com.amazonaws.ecs.capability.ecr-auth"
-    },
-    {
-      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
-    },
-    {
-      "name": "ecs.capability.secrets.asm.environment-variables"
-    },
-    {
-      "name": "ecs.capability.execution-role-ecr-pull"
-    },
-    {
-      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
-    },
-    {
-      "name": "ecs.capability.task-eni"
-    }
-  ],
-  "placementConstraints": [],
-  "compatibilities": ["EC2", "FARGATE", "MANAGED_INSTANCES"],
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
@@ -67,7 +8,59 @@
     "cpuArchitecture": "X86_64",
     "operatingSystemFamily": "LINUX"
   },
-  "registeredAt": "2026-04-14T20:25:00.079Z",
-  "registeredBy": "arn:aws:iam::339340413604:user/rafael.nicacio",
-  "tags": []
+
+  "executionRoleArn": "<EXECUTION_ROLE_ARN>",
+
+  "containerDefinitions": [
+    {
+      "name": "painel-robo",
+      "image": "<IMAGE_URI>",
+      "essential": true,
+
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "JWT_SECRET_KEY",
+          "valueFrom": "<SECRET_ARN_PREFIX>:JWT_SECRET_KEY::"
+        },
+        {
+          "name": "NEXT_API_KEY_MASTER",
+          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_API_KEY_MASTER::"
+        },
+        {
+          "name": "NEXT_PUBLIC_API_URL",
+          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_PUBLIC_API_URL::"
+        },
+        {
+          "name": "NEXT_PUBLIC_MAINTENANCE_MODE",
+          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_PUBLIC_MAINTENANCE_MODE::"
+        },
+        {
+          "name": "NEXT_PUBLIC_API_WS",
+          "valueFrom": "arn:aws:ssm:<AWS_REGION>:<AWS_ACCOUNT_ID>:parameter/NEXT_PUBLIC_API_WS"
+        }
+      ],
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "<LOG_GROUP>",
+          "awslogs-region": "<AWS_REGION>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
 }
