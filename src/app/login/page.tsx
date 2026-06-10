@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Gavel, LucideIcon, Scale, Shield } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import LoginForm from "./Form";
 
@@ -28,27 +28,20 @@ function Feature({ icon: Icon, title, description }: FeatureProps) {
 }
 
 export default function LoginPage() {
-  const [isLoaded, setIsLoaded] = useState(false);
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  // SSO: se já houver uma sessão de autenticação válida (cookie compartilhado
-  // no domínio .juri.local), o /auth/me autentica o usuário e o encaminhamos
-  // para a app em vez de mostrar o login.
+  // SSO: se já houver uma sessão de autenticação válida detectada via /auth/me,
+  // o usuário é autenticado e o encaminhamos para a app em vez de mostrar o login.
   useEffect(() => {
     if (isAuthenticated) {
       router.replace("/");
     }
   }, [isAuthenticated, router]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoaded(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   // Enquanto a checagem inicial (/auth/me) não terminar — ou se o usuário já
   // estiver autenticado e prestes a ser redirecionado — não renderiza o login,
-  // evitando o flicker da tela para quem entra via SSO.
+  // evitando o flicker da tela para quem entra via sessão de autenticação válida.
   if (isLoading || isAuthenticated) {
     return null;
   }
@@ -62,11 +55,7 @@ export default function LoginPage() {
         <div className="absolute top-20 left-20 w-40 h-40 bg-secondary/20 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-20 w-40 h-40 bg-secondary/20 rounded-full blur-3xl" />
       </div>
-      <div
-        className={`w-full max-w-6xl grid lg:grid-cols-2 gap-12 relative z-10 transition-all duration-700 ${
-          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-        }`}
-      >
+      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 relative z-10 animate-fade-in-up">
         {/* LEFT */}
         <div className="hidden lg:flex flex-col justify-center space-y-10">
           {/* BRAND */}
