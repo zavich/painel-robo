@@ -58,6 +58,7 @@ jobs:
       - name: Render Task Definition
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
           TASK_FAMILY: ${{ env.TASK_FAMILY }}
           IMAGE_URI: ${{ env.IMAGE_URI }}
           EXECUTION_ROLE_ARN: ${{ secrets.EXECUTION_ROLE_ARN }}
