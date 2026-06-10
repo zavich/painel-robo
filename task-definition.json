@@ -49,7 +49,7 @@
         },
         {
           "name": "NEXT_PUBLIC_API_WS",
-          "valueFrom": "arn:aws:ssm:<AWS_REGION>:<AWS_ACCOUNT_ID>:parameter/NEXT_PUBLIC_API_WS"
+          "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_PUBLIC_API_WS::"
         }
       ],
 
