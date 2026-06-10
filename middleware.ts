@@ -1,8 +1,11 @@
-import { jwtVerify } from "jose";
+import { decodeJwt, importSPKI, jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const AUTH_COOKIE = "prosolutti_accessToken";
+const AUTH_COOKIE = "auth_token";
+
+const ROBO_ISSUER = "painel-robo";
+const JURI_ISSUER = "api.juri.capital";
 
 const PUBLIC_PATHS = ["/login", "/maintenance", "/api/auth", "/health"];
 
@@ -174,11 +177,26 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  const jwtSecret = process.env.JWT_SECRET_KEY;
-  if (!jwtSecret) {
-    // Má configuração de deploy — retorna 500 para não deletar cookies válidos
-    // nem prender o usuário em loop de redirecionamento
-    console.error("[middleware] CRITICAL: JWT_SECRET_KEY não configurada");
+  // RS256 multi-issuer: seleciona a chave pública pelo claim `iss` do token
+  // (lido sem verificar assinatura, só para escolher a chave correta).
+  let iss: string | undefined;
+  try {
+    iss = decodeJwt(token).iss as string | undefined;
+  } catch {
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.delete(AUTH_COOKIE);
+    return applySecurityHeaders(response, request, nonce);
+  }
+
+  const rawKey =
+    iss === ROBO_ISSUER
+      ? process.env.JWT_PUBLIC_KEY_ROBO_API
+      : iss === JURI_ISSUER
+        ? process.env.JWT_PUBLIC_KEY_JURI_API
+        : undefined;
+
+  if (!rawKey) {
+    console.error(`[middleware] CRITICAL: chave pública não configurada para issuer '${iss}'`);
     return applySecurityHeaders(
       new NextResponse("Erro de configuração do servidor", { status: 500 }),
       request,
@@ -187,8 +205,8 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(jwtSecret);
-    await jwtVerify(token, secret);
+    const publicKey = await importSPKI(rawKey, "RS256");
+    await jwtVerify(token, publicKey);
     return applySecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),
       request,

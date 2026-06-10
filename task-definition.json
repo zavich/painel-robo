@@ -50,6 +50,14 @@
         {
           "name": "NEXT_PUBLIC_API_WS",
           "valueFrom": "<SECRET_ARN_PREFIX>:NEXT_PUBLIC_API_WS::"
+        },
+        {
+          "name": "JWT_PUBLIC_KEY_ROBO_API",
+          "valueFrom": "<SECRET_ARN_PREFIX>:JWT_PUBLIC_KEY_ROBO_API::"
+        },
+        {
+          "name": "JWT_PUBLIC_KEY_JURI_API",
+          "valueFrom": "<SECRET_ARN_PREFIX>:JWT_PUBLIC_KEY_JURI_API::"
         }
       ],
 
