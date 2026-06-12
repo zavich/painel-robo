@@ -60,6 +60,7 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
     setCapturedCount(null);
     setMalformedNumbers([]);
     if (event.target.files && event.target.files.length > 0) {
+      setProcessNumber("");
       const file = event.target.files[0];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
