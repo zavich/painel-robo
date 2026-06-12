@@ -17,14 +17,48 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const PROCESS_NUMBER_PATTERN = /^\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}$/;
+  const PROCESS_NUMBER_MATCH_PATTERN = /\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/g;
+  const PROCESS_NUMBER_CANDIDATE_PATTERN = /\d[\d.-]{8,30}/g;
+
   const [processNumber, setProcessNumber] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [capturedCount, setCapturedCount] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [malformedNumbers, setMalformedNumbers] = useState<string[]>([]);
+
+  const sanitizeCandidate = (value: string) =>
+    value.replace(/^[^\d]+|[^\d]+$/g, "").trim();
+
+  const collectMalformedNumbers = (
+    arr: (string | number | null | undefined)[],
+  ): string[] => {
+    const invalid = new Set<string>();
+
+    arr.forEach((cell) => {
+      const text = String(cell ?? "");
+      const candidates = text.match(PROCESS_NUMBER_CANDIDATE_PATTERN) ?? [];
+
+      candidates.forEach((rawCandidate) => {
+        const candidate = sanitizeCandidate(rawCandidate);
+
+        if (!candidate) {
+          return;
+        }
+
+        if (!PROCESS_NUMBER_PATTERN.test(candidate)) {
+          invalid.add(candidate);
+        }
+      });
+    });
+
+    return Array.from(invalid);
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMessage(null);
     setCapturedCount(null);
+    setMalformedNumbers([]);
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
@@ -37,14 +71,12 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
       }
 
       // Helper: conta todas ocorrências do padrão em um array de células
-      const processNumberPattern =
-        "\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4}";
-      const processNumberRegex = new RegExp(processNumberPattern);
-      const processNumberRegexGlobal = new RegExp(processNumberPattern, "g");
-      const countMatchesInArray = (arr: (string | number | null | undefined)[]) =>
+      const countMatchesInArray = (
+        arr: (string | number | null | undefined)[],
+      ) =>
         arr.reduce((sum: number, cell: string | number | null | undefined) => {
           const s = String(cell ?? "");
-          const matches = s.match(processNumberRegexGlobal);
+          const matches = s.match(PROCESS_NUMBER_MATCH_PATTERN);
           return sum + (matches ? matches.length : 0);
         }, 0);
 
@@ -52,16 +84,26 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
         Papa.parse(file, {
           complete: (result) => {
             // Flatten rows and count matches (considera múltiplas ocorrências por célula)
-            const flattened: (string | number | null | undefined)[] = ([] as (string | number | null | undefined)[]).concat(...(result.data as (string | number | null | undefined)[][]));
+            const flattened: (string | number | null | undefined)[] = (
+              [] as (string | number | null | undefined)[]
+            ).concat(
+              ...(result.data as (string | number | null | undefined)[][]),
+            );
             const count = countMatchesInArray(flattened);
 
-            const isValid = (result.data as (string | number | null | undefined)[][]).every((row) => {
-              return row.some((cell) =>
-                processNumberRegex.test(String(cell)),
-              );
-            });
+            const malformed = collectMalformedNumbers(flattened);
 
-            if (!isValid) {
+            if (malformed.length > 0) {
+              setMalformedNumbers(malformed);
+              setErrorMessage(
+                "Encontramos números de processo mal formatados no arquivo.",
+              );
+              setSelectedFile(null);
+              setCapturedCount(null);
+              return;
+            }
+
+            if (count === 0) {
               setErrorMessage(
                 "O arquivo CSV contém dados inválidos. Certifique-se de que os números de processo estão no formato correto.",
               );
@@ -110,7 +152,18 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
             // contar ocorrências usando a função que considera múltiplas ocorrências por célula
             const flattened = ([] as string[]).concat(...rows);
             const count = countMatchesInArray(flattened);
+            const malformed = collectMalformedNumbers(flattened);
             const hasValidProcessNumber = count > 0;
+
+            if (malformed.length > 0) {
+              setMalformedNumbers(malformed);
+              setErrorMessage(
+                "Encontramos números de processo mal formatados no arquivo.",
+              );
+              setSelectedFile(null);
+              setCapturedCount(null);
+              return;
+            }
 
             if (!allNonEmpty || !hasValidProcessNumber) {
               setErrorMessage(
@@ -142,6 +195,15 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
   };
 
   const handleSubmit = () => {
+    setErrorMessage(null);
+    setMalformedNumbers([]);
+
+    if (processNumber && !PROCESS_NUMBER_PATTERN.test(processNumber.trim())) {
+      setMalformedNumbers([processNumber.trim()]);
+      setErrorMessage("O número digitado está mal formatado.");
+      return;
+    }
+
     if (selectedFile) {
       onSubmit(processNumber, selectedFile);
     } else {
@@ -157,6 +219,7 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
     setProcessNumber("");
     setSelectedFile(null);
     setErrorMessage(null);
+    setMalformedNumbers([]);
     setCapturedCount(null);
     onClose();
   };
@@ -216,6 +279,23 @@ const InsertProcessModal: React.FC<InsertProcessModalProps> = ({
             )}
             {errorMessage && (
               <p className="text-sm text-red-600 mt-2">{errorMessage}</p>
+            )}
+            {malformedNumbers.length > 0 && (
+              <div className="mt-2 rounded border border-red-200 bg-red-50 p-2">
+                <p className="text-sm font-medium text-red-700">
+                  Números mal formatados encontrados:
+                </p>
+                <ul className="mt-1 list-disc pl-5 text-sm text-red-700">
+                  {malformedNumbers.slice(0, 10).map((value) => (
+                    <li key={value}>{value}</li>
+                  ))}
+                </ul>
+                {malformedNumbers.length > 10 && (
+                  <p className="mt-1 text-xs text-red-700">
+                    E mais {malformedNumbers.length - 10} número(s).
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
