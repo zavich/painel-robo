@@ -1,5 +1,4 @@
 "use client";
-import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import React, {
   createContext,
@@ -11,11 +10,9 @@ import React, {
 } from "react";
 import { toast } from "react-toastify";
 import { AuthContextType } from "./props";
-import {
-  SigninRequestType,
-  UserType,
-} from "@/app/interfaces/user";
+import { UserType } from "@/app/interfaces/user";
 import api from "@/app/api";
+import { AxiosError } from "axios";
 import { logger } from "@/app/lib/logger";
 import Cookies from "js-cookie";
 import { hasUserPermission } from "./permissions";
@@ -39,47 +36,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     Cookies.remove("prosolutti_accessToken");
   };
 
-  const signIn = async (data: SigninRequestType) => {
-    try {
-      clearAuthCookies();
-      await api.post("/auth/login", data);
-      const { data: userData } = await api.get("/auth/me");
-      setIsAuthenticated(true);
-      setUser(userData);
-      router.replace("/");
-    } catch (error: unknown) {
-      await api.post("/auth/logout").catch(() => undefined);
-      clearAuthCookies();
-      setUser({} as UserType);
-      setIsAuthenticated(false);
-
-      const axiosError = error as AxiosError;
-
-      if (axiosError.response) {
-        const errorMessage =
-          (axiosError.response.data as { message: string })?.message ||
-          "Falha ao fazer login.";
-        // toast.error(errorMessage);
-        // Re-lançar o erro para que o formulário possa capturar
-        throw new Error(errorMessage);
-      } else if (axiosError.request) {
-        const errorMessage = "Não foi possível conectar ao servidor.";
-        // toast.error(errorMessage);
-        throw new Error(errorMessage);
-      } else {
-        // toast.error(axiosError.message);
-        throw new Error(axiosError.message);
-      }
-    }
-  };
   useEffect(() => {
-    const checkAuth = async () => {
+    const bootstrapSsoSession = async () => {
       try {
-        const { data } = await api.get("/auth/me");
+        // SSO + JIT provisioning: criar usuário é uma escrita, então fica num
+        // POST explícito. O GET /auth/me virou somente-leitura e retorna 401 se
+        // o usuário ainda não existe na robo-api. Chamamos /auth/sso/session uma
+        // única vez no bootstrap: provisiona (se necessário) e devolve o perfil
+        // (mesmo shape do /auth/me, idempotente se o usuário já existe).
+        const { data } = await api.post("/auth/sso/session");
         setUser(data);
         setIsAuthenticated(true);
-        // router.replace("/");
       } catch (error) {
+        const axiosError = error as AxiosError<{ message?: string }>;
+
+        if (axiosError.response?.status === 429) {
+          // Rate limit (10 req/min): apenas avisar, sem reentrar em loop.
+          toast.warn(
+            "Muitas tentativas de autenticação. Aguarde um instante e atualize a página.",
+          );
+        } else if (axiosError.response?.data?.message === "Conta desativada") {
+          toast.error(
+            "Sua conta está desativada. Procure um administrador para reativá-la.",
+          );
+        }
+
         // Limpar cookies e estado em caso de erro de autenticação
         clearAuthCookies();
         setUser({} as UserType);
@@ -90,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
       }
     };
 
-    checkAuth();
+    bootstrapSsoSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -122,7 +103,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
         setUser,
         isAuthenticated,
         isLoading,
-        signIn,
         logout,
         hasPermission,
       }}
