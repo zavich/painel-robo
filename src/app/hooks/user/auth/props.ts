@@ -21,14 +21,15 @@ export interface AuthContextType {
   isAuthenticated: boolean;
 
   /**
-   * Indica se a checagem inicial de autenticação (/auth/me) ainda está em andamento
+   * Indica se o bootstrap inicial de autenticação (POST /auth/sso/session)
+   * ainda está em andamento
    */
   isLoading: boolean;
 
   /**
    * Faz o logout do usuário
    */
-  logout(): void;
+  logout(): Promise<void>;
 
   /**
    * Verifica se o usuário possui uma permissão específica

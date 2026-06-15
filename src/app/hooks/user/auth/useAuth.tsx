@@ -51,11 +51,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
         const axiosError = error as AxiosError<{ message?: string }>;
 
         if (axiosError.response?.status === 429) {
-          // Rate limit (10 req/min): apenas avisar, sem reentrar em loop.
+          // Rate limit (10 req/min): NÃO derrubar a sessão. Múltiplas abas
+          // recarregando podem estourar o limite mesmo com um cookie válido —
+          // limpar cookies/redirecionar aqui faria logout indevido. Apenas
+          // avisamos e mantemos o estado para um novo retry no próximo load.
           toast.warn(
             "Muitas tentativas de autenticação. Aguarde um instante e atualize a página.",
           );
-        } else if (axiosError.response?.data?.message === "Conta desativada") {
+          return;
+        }
+
+        if (axiosError.response?.data?.message === "Conta desativada") {
           toast.error(
             "Sua conta está desativada. Procure um administrador para reativá-la.",
           );
