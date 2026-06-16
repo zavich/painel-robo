@@ -11,7 +11,3 @@ export interface UserType {
   role: UserRolesEnum;
   permissions?: string[];
 }
-export interface SigninRequestType {
-  email: string;
-  password: string;
-}
