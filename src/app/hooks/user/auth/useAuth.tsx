@@ -10,12 +10,13 @@ import React, {
 } from "react";
 import { toast } from "react-toastify";
 import { AuthContextType } from "./props";
-import { UserType } from "@/app/interfaces/user";
+import { SigninRequestType, UserType } from "@/app/interfaces/user";
 import api from "@/app/api";
 import { AxiosError } from "axios";
 import { logger } from "@/app/lib/logger";
 import Cookies from "js-cookie";
 import { hasUserPermission } from "./permissions";
+import { isDevLoginEnabled } from "@/app/login/dev-login";
 
 export const AuthContext = createContext({} as AuthContextType);
 export interface AuthProviderProps {
@@ -39,6 +40,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
   useEffect(() => {
     const bootstrapSsoSession = async () => {
       try {
+        // Em desenvolvimento o SSO não funciona (cookie só vive em
+        // .juri.capital), então fazemos apenas uma checagem somente-leitura da
+        // sessão existente via GET /auth/me. Sem sessão → cai no formulário de
+        // login dev (sem disparar JIT provisioning).
+        if (isDevLoginEnabled) {
+          const { data } = await api.get("/auth/me");
+          setUser(data);
+          setIsAuthenticated(true);
+          return;
+        }
+
         // SSO + JIT provisioning: criar usuário é uma escrita, então fica num
         // POST explícito. O GET /auth/me virou somente-leitura e retorna 401 se
         // o usuário ainda não existe na robo-api. Chamamos /auth/sso/session uma
@@ -81,6 +93,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Login por e-mail/senha — usado somente pela tela de login de
+  // desenvolvimento. Em produção a sessão vem do SSO e este método não é
+  // exercitado pela UI.
+  const signIn = async (data: SigninRequestType) => {
+    // Defesa em profundidade: o login por senha só existe em desenvolvimento.
+    // Em produção a sessão vem exclusivamente do SSO; bloqueamos qualquer
+    // chamada acidental em runtime em vez de silenciosamente bater em /auth/login.
+    if (!isDevLoginEnabled) {
+      throw new Error(
+        "Login por e-mail/senha está disponível apenas em desenvolvimento.",
+      );
+    }
+
+    try {
+      clearAuthCookies();
+      await api.post("/auth/login", {
+        email: data.email,
+        password: data.password,
+      });
+      const { data: userData } = await api.get("/auth/me");
+      setUser(userData);
+      setIsAuthenticated(true);
+      router.replace("/");
+    } catch (error: unknown) {
+      await api.post("/auth/logout").catch(() => undefined);
+      clearAuthCookies();
+      setUser({} as UserType);
+      setIsAuthenticated(false);
+
+      const axiosError = error as AxiosError<{ message?: string }>;
+
+      if (axiosError.response) {
+        throw new Error(
+          axiosError.response.data?.message || "Falha ao fazer login.",
+        );
+      }
+      if (axiosError.request) {
+        throw new Error("Não foi possível conectar ao servidor.");
+      }
+      throw new Error(axiosError.message);
+    }
+  };
+
   const logout = async () => {
     try {
       await api.post("/auth/logout");
@@ -109,6 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
         setUser,
         isAuthenticated,
         isLoading,
+        signIn,
         logout,
         hasPermission,
       }}

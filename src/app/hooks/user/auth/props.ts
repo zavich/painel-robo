@@ -1,4 +1,4 @@
-import { UserType } from "@/app/interfaces/user";
+import { SigninRequestType, UserType } from "@/app/interfaces/user";
 
 export interface AuthContextType {
   /**
@@ -25,6 +25,13 @@ export interface AuthContextType {
    * ainda está em andamento
    */
   isLoading: boolean;
+
+  /**
+   * Faz login por e-mail/senha. Disponível apenas em ambiente de
+   * desenvolvimento (o fluxo de produção usa SSO). Lança em caso de falha
+   * para que o formulário possa exibir a mensagem de erro.
+   */
+  signIn(data: SigninRequestType): Promise<void>;
 
   /**
    * Faz o logout do usuário

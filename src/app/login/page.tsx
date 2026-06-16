@@ -1,9 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Gavel, Lock, LucideIcon, Scale, Shield } from "lucide-react";
 import { useEffect } from "react";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
+import { isDevLoginEnabled } from "./dev-login";
+
+// O formulário de login dev é carregado dinamicamente e apenas quando a flag
+// está ativa. Em builds de produção `isDevLoginEnabled` é o literal `false`,
+// então o ramo abaixo vira `() => null` e o `import("./Form")` cai em código
+// morto — o módulo (e suas dependências) é eliminado do bundle.
+const DevLoginForm = isDevLoginEnabled
+  ? dynamic(() => import("./Form"))
+  : () => null;
 
 interface FeatureProps {
   icon: LucideIcon;
@@ -101,41 +111,45 @@ export default function LoginPage() {
 
         {/* RIGHT */}
         <div className="flex items-center justify-center">
-          <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-8">
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-secondary shadow-md">
-                  <Lock className="h-8 w-8 text-secondary-foreground" />
+          {isDevLoginEnabled ? (
+            <DevLoginForm />
+          ) : (
+            <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-8">
+              <div className="text-center mb-8">
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-secondary shadow-md">
+                    <Lock className="h-8 w-8 text-secondary-foreground" />
+                  </div>
+                </div>
+
+                <h1 className="text-2xl font-bold text-foreground">
+                  Juri Capital
+                </h1>
+
+                <p className="text-sm text-muted-foreground">Acesso restrito</p>
+              </div>
+
+              <div className="text-center space-y-3 text-sm text-muted-foreground">
+                <p>Não encontramos uma sessão ativa neste navegador.</p>
+                <p>
+                  Se a sua sessão expirou, atualize a página ou tente acessar
+                  novamente.
+                </p>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-white/20 bg-white/60 backdrop-blur-sm">
+                  <Shield className="h-4 w-4 text-secondary" />
+                  <span className="text-xs text-gray-700">Seguro</span>
+                </div>
+
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-white/20 bg-white/60 backdrop-blur-sm">
+                  <Gavel className="h-4 w-4 text-secondary" />
+                  <span className="text-xs text-gray-700">Confiável</span>
                 </div>
               </div>
-
-              <h1 className="text-2xl font-bold text-foreground">
-                Juri Capital
-              </h1>
-
-              <p className="text-sm text-muted-foreground">Acesso restrito</p>
             </div>
-
-            <div className="text-center space-y-3 text-sm text-muted-foreground">
-              <p>Não encontramos uma sessão ativa neste navegador.</p>
-              <p>
-                Se a sua sessão expirou, atualize a página ou tente acessar
-                novamente.
-              </p>
-            </div>
-
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 p-3 rounded-lg border border-white/20 bg-white/60 backdrop-blur-sm">
-                <Shield className="h-4 w-4 text-secondary" />
-                <span className="text-xs text-gray-700">Seguro</span>
-              </div>
-
-              <div className="flex items-center gap-2 p-3 rounded-lg border border-white/20 bg-white/60 backdrop-blur-sm">
-                <Gavel className="h-4 w-4 text-secondary" />
-                <span className="text-xs text-gray-700">Confiável</span>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
