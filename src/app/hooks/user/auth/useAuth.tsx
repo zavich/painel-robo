@@ -97,6 +97,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
   // desenvolvimento. Em produção a sessão vem do SSO e este método não é
   // exercitado pela UI.
   const signIn = async (data: SigninRequestType) => {
+    // Defesa em profundidade: o login por senha só existe em desenvolvimento.
+    // Em produção a sessão vem exclusivamente do SSO; bloqueamos qualquer
+    // chamada acidental em runtime em vez de silenciosamente bater em /auth/login.
+    if (!isDevLoginEnabled) {
+      throw new Error(
+        "Login por e-mail/senha está disponível apenas em desenvolvimento.",
+      );
+    }
+
     try {
       clearAuthCookies();
       await api.post("/auth/login", {

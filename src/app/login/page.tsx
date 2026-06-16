@@ -1,11 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Gavel, Lock, LucideIcon, Scale, Shield } from "lucide-react";
 import { useEffect } from "react";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { isDevLoginEnabled } from "./dev-login";
-import LoginForm from "./Form";
+
+// O formulário de login dev é carregado dinamicamente e apenas quando a flag
+// está ativa. Em builds de produção `isDevLoginEnabled` é o literal `false`,
+// então o ramo abaixo vira `() => null` e o `import("./Form")` cai em código
+// morto — o módulo (e suas dependências) é eliminado do bundle.
+const DevLoginForm = isDevLoginEnabled
+  ? dynamic(() => import("./Form"))
+  : () => null;
 
 interface FeatureProps {
   icon: LucideIcon;
@@ -104,7 +112,7 @@ export default function LoginPage() {
         {/* RIGHT */}
         <div className="flex items-center justify-center">
           {isDevLoginEnabled ? (
-            <LoginForm />
+            <DevLoginForm />
           ) : (
             <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl p-8">
               <div className="text-center mb-8">
