@@ -955,11 +955,7 @@ export default function KanbanDashboard() {
         <MassEditPanel
           selectedProcesses={selectAllMode === "all" ? [] : selectedProcesses}
           onClose={handleCloseMassEdit}
-          users={usersData?.users || []}
-          selectAllMode={selectAllMode}
           totalSelected={selectedCount}
-          apiFilters={selectAllMode === "all" ? apiFiltersParams : undefined}
-          isAdmin={user?.role === UserRolesEnum.ADMIN}
         />
       )}
 
