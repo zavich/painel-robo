@@ -255,6 +255,21 @@ export default function KanbanDashboard() {
     return data?.processes || [];
   }, [data]);
 
+  const hasActiveFilters =
+    Boolean(filters.search) ||
+    filters.status !== "all" ||
+    Boolean(filters.type && filters.type !== "all") ||
+    Boolean(filters.lossReason && filters.lossReason !== "all") ||
+    Boolean(filters.startDate) ||
+    Boolean(filters.endDate) ||
+    Boolean(filters.emptyDocuments) ||
+    Boolean(filters.emptyInstances) ||
+    Boolean(filters.hasNewMovementsNow) ||
+    Boolean(filters.hasSecondInstance) ||
+    Boolean(filters.hasAutos) ||
+    Boolean(filters.hasAcordao) ||
+    Boolean(filters.contentFilter);
+
   const selectedProcesses = useMemo(() => {
     return allProcesses.filter((p) => selectedProcessIds.has(p._id));
   }, [allProcesses, selectedProcessIds]);
@@ -747,46 +762,26 @@ export default function KanbanDashboard() {
           </div>
 
           {/* Skeleton loading for filtered results */}
-          {isLoading &&
-            (filters.search ||
-              filters.status !== "all" ||
-              (filters.type && filters.type !== "all") ||
-              (filters.lossReason && filters.lossReason !== "all") ||
-              filters.startDate ||
-              filters.endDate ||
-              filters.emptyDocuments ||
-              filters.emptyInstances ||
-              filters.hasNewMovementsNow) && (
-              <div className="space-y-8">
-                {/* List/Table Skeleton */}
-                <div className="rounded-2xl border overflow-hidden bg-card/80 backdrop-blur-xl border-border shadow-xl">
-                  <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <div className="h-6 w-48 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
-                  </div>
-                  <div className="p-6 space-y-3">
-                    {[...Array(8)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="h-16 rounded-lg animate-pulse bg-gray-100 dark:bg-gray-700/50"
-                      ></div>
-                    ))}
-                  </div>
+          {isLoading && hasActiveFilters ? (
+            <div className="space-y-8">
+              {/* List/Table Skeleton */}
+              <div className="rounded-2xl border overflow-hidden bg-card/80 backdrop-blur-xl border-border shadow-xl">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="h-6 w-48 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
+                </div>
+                <div className="p-6 space-y-3">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-16 rounded-lg animate-pulse bg-gray-100 dark:bg-gray-700/50"
+                    ></div>
+                  ))}
                 </div>
               </div>
-            )}
-
-          {/* Actual content */}
-          {/* Loading skeleton for list load (inicial e paginação) sem filtros */}
-          {isLoading &&
-          !filters.search &&
-          filters.status === "all" &&
-          (!filters.type || filters.type === "all") &&
-          (!filters.lossReason || filters.lossReason === "all") &&
-          !filters.startDate &&
-          !filters.endDate &&
-          !filters.emptyDocuments &&
-          !filters.emptyInstances &&
-          !filters.hasNewMovementsNow ? (
+            </div>
+          ) : isLoading && !hasActiveFilters ? (
+            /* Actual content */
+            /* Loading skeleton for list load (inicial e paginação) sem filtros */
             <div className="backdrop-blur-sm rounded-2xl border shadow-lg overflow-hidden bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
               <div className="px-6 py-4 border-b flex items-center justify-between border-gray-200 dark:border-gray-700">
                 <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
