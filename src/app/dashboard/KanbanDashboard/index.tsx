@@ -772,25 +772,12 @@ export default function KanbanDashboard() {
                     ))}
                   </div>
                 </div>
-
-                {/* Loading indicator */}
-                <div className="flex justify-center py-8">
-                  <div className="rounded-2xl shadow-lg p-6 border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 border-4 rounded-full animate-spin border-blue-200 dark:border-blue-400 border-t-blue-500"></div>
-                      <span className="font-medium text-foreground">
-                        Aplicando filtros...
-                      </span>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 
           {/* Actual content */}
-          {/* Loading skeleton for initial load (page 1, no filters) */}
+          {/* Loading skeleton for list load (inicial e paginação) sem filtros */}
           {isLoading &&
-          page === 1 &&
           !filters.search &&
           filters.status === "all" &&
           (!filters.type || filters.type === "all") &&
