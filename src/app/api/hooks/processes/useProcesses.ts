@@ -50,11 +50,9 @@ export const getProcesses = (params: ProcessesParams) =>
 
 export function useProcesses(
   params: ProcessesParams,
-  config?: UseQueryOptions<
-    GetProcessesResponseType,
-    Error,
-    GetProcessesResponseType,
-    QueryKey
+  config?: Omit<
+    UseQueryOptions<GetProcessesResponseType, Error, GetProcessesResponseType, QueryKey>,
+    "queryKey" | "queryFn"
   >
 ) {
   return useQuery<

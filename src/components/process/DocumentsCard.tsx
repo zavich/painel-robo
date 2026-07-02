@@ -35,7 +35,8 @@ import { useExtractInsights } from "@/app/api/hooks/process/useExtractInsights";
 import { usePrompts } from "@/app/api/hooks/prompts/usePrompts";
 import { logger } from "@/app/lib/logger";
 import { useRemoveInsights } from "@/app/api/hooks/process/useRemoveInsights";
-import { StatusExtractionInsight } from "@/app/interfaces/processes";
+import { useExtractMovementInsights } from "@/app/api/hooks/process/useExtractMovementInsights";
+import { InsightData, StatusExtractionInsight } from "@/app/interfaces/processes";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { useAddPipedriveNote } from "@/app/api/hooks/process/useAddPipedriveNote";
 import { toast } from "react-toastify";
@@ -48,6 +49,17 @@ interface DocumentsCardProps {
   processNumber?: string;
   dealId?: number;
   onManagePrompts?: () => void;
+  // PDF gerado no cliente (ex: texto de movimentação do PJe) — quando
+  // presente, exibe direto nesse mesmo painel, sem buscar documento no Mongo.
+  // Quando vem de uma movimentação (movementId/texto presentes), os insights
+  // de IA são extraídos sobre o texto da movimentação em vez de um arquivo.
+  overrideDocument?: {
+    title: string;
+    blob: Blob;
+    movementId?: number;
+    texto?: string;
+  } | null;
+  onCloseOverrideDocument?: () => void;
 }
 
 export function DocumentsCard({
@@ -56,6 +68,8 @@ export function DocumentsCard({
   processNumber,
   dealId,
   onManagePrompts,
+  overrideDocument,
+  onCloseOverrideDocument,
 }: DocumentsCardProps) {
   const [openCalcModal, setOpenCalcModal] = useState(false);
   const { fetchPDF } = useFetchPDF();
@@ -81,9 +95,41 @@ export function DocumentsCard({
   } = useDocumentDetails({
     processNumber: processNumber || "",
     documentId: selectedDocumentId || "",
-    enabled: !!selectedDocumentId && !!processNumber,
+    enabled: !!selectedDocumentId && !!processNumber && !overrideDocument,
     interval: shouldPoll ? 5000 : 0,
   });
+
+  // Não usar `!!movementId`: um id de movimentação 0 (fallback quando o Athena
+  // não traz um movimentacao_id numérico) é um valor válido, não "ausência".
+  const isMovementOverride = overrideDocument?.movementId !== undefined;
+
+  // Insights de movimentação não são persistidos em nenhum banco (o texto vem
+  // do Athena, sem processo necessariamente existente no Mongo) — o resultado
+  // vive só localmente enquanto esse overrideDocument estiver aberto.
+  const [movementInsightData, setMovementInsightData] =
+    useState<InsightData | null>(null);
+  const [movementInsightError, setMovementInsightError] = useState(false);
+
+  useEffect(() => {
+    setMovementInsightData(null);
+    setMovementInsightError(false);
+  }, [overrideDocument?.movementId, overrideDocument?.title]);
+
+  // Visão unificada só para a parte de insights: documento real do Mongo ou
+  // a movimentação cujo texto foi transformado em PDF (overrideDocument).
+  const effectiveDocument: DocumentExtract | null = isMovementOverride
+    ? ({
+        _id: String(overrideDocument!.movementId),
+        title: overrideDocument!.title,
+        status: movementInsightData
+          ? StatusExtractionInsight.COMPLETED
+          : movementInsightError
+            ? StatusExtractionInsight.ERROR
+            : StatusExtractionInsight.PENDING,
+        data: movementInsightData ?? undefined,
+      } as DocumentExtract)
+    : document;
+  const effectiveRefetch = isMovementOverride ? () => {} : refetchDocument;
 
   const {
     extractInsights,
@@ -95,6 +141,7 @@ export function DocumentsCard({
     loading: removeLoading,
     error: errorRemove,
   } = useRemoveInsights();
+  const { extractMovementInsights } = useExtractMovementInsights();
   const {
     prompts,
     loading: loadingPrompts,
@@ -102,7 +149,7 @@ export function DocumentsCard({
   } = usePrompts();
   const addNoteMutation = useAddPipedriveNote();
 
-  const documentStatus = document?.status as StatusExtractionInsight;
+  const documentStatus = effectiveDocument?.status as StatusExtractionInsight;
 
   // Função para detectar o prompt baseado no título do documento
   const detectPromptFromTitle = useCallback(
@@ -161,13 +208,15 @@ export function DocumentsCard({
     const result =
       documentStatus === StatusExtractionInsight.PROCESSING ||
       // Se completou mas não tem dados ainda e está extraindo, ainda está processando
-      (documentStatus === StatusExtractionInsight.COMPLETED && !document?.data);
+      (documentStatus === StatusExtractionInsight.COMPLETED &&
+        !effectiveDocument?.data);
 
     return result;
   };
 
   const getHasInsights = () =>
-    !!document?.data && documentStatus === StatusExtractionInsight.COMPLETED;
+    !!effectiveDocument?.data &&
+    documentStatus === StatusExtractionInsight.COMPLETED;
 
   useEffect(() => {
     const processing =
@@ -175,14 +224,14 @@ export function DocumentsCard({
       isExtracting ||
       documentStatus === StatusExtractionInsight.PROCESSING ||
       (documentStatus === StatusExtractionInsight.COMPLETED &&
-        !document?.data &&
+        !effectiveDocument?.data &&
         isExtracting);
 
     setShouldPoll(processing);
 
     if (
       documentStatus === StatusExtractionInsight.COMPLETED &&
-      document?.data
+      effectiveDocument?.data
     ) {
       setIsExtracting(false);
       setIsRemoving(false);
@@ -194,33 +243,75 @@ export function DocumentsCard({
       setIsRemoving(false);
       setShouldPoll(false);
     }
-  }, [documentStatus, document?.data, isExtracting, isRemoving]);
+  }, [documentStatus, effectiveDocument?.data, isExtracting, isRemoving]);
 
   // Seleciona automaticamente o prompt quando o modal abrir e houver documento
   useEffect(() => {
     if (
       openInsightsModal &&
-      document?.title &&
+      effectiveDocument?.title &&
       prompts?.prompts &&
       prompts?.prompts?.length > 0
     ) {
       // Sempre detecta e seleciona o prompt quando o modal abrir
       // Isso garante que o prompt correto esteja selecionado para reextração
-      const detectedPromptId = detectPromptFromTitle(document.title);
+      const detectedPromptId = detectPromptFromTitle(effectiveDocument.title);
       if (detectedPromptId && !selectedPromptId) {
         setSelectedPromptId(detectedPromptId);
       }
     }
   }, [
     openInsightsModal,
-    document?.title,
+    effectiveDocument?.title,
     prompts?.prompts?.length,
     selectedPromptId,
     detectPromptFromTitle,
   ]);
 
+  async function callExtractInsights(promptId: string) {
+    if (isMovementOverride) {
+      logger.log(
+        `[MovementInsights] Botão de extração acionado — movementId=${overrideDocument?.movementId}, título="${overrideDocument?.title}"`,
+      );
+      try {
+        const result = await extractMovementInsights({
+          texto: overrideDocument!.texto || "",
+          prompt: promptId,
+        });
+        setMovementInsightData(result?.data ?? {});
+        setMovementInsightError(false);
+      } catch (err) {
+        setMovementInsightError(true);
+        throw err;
+      }
+      return;
+    }
+
+    if (!document?._id) return;
+    await extractInsights({
+      number: processNumber || "",
+      documents: [document._id],
+      prompt: promptId,
+    });
+  }
+
+  async function callRemoveInsights() {
+    if (isMovementOverride) {
+      // Nada persistido pra movimentação — só limpa o resultado local.
+      setMovementInsightData(null);
+      setMovementInsightError(false);
+      return;
+    }
+
+    if (!document?._id) return;
+    await removeInsights({
+      processNumber: processNumber || "",
+      documentId: document._id,
+    });
+  }
+
   async function handleExtractInsights() {
-    if (!selectedPromptId || !document?._id) return;
+    if (!selectedPromptId || !effectiveDocument?._id) return;
 
     // Força atualização imediata dos estados para garantir que o carregamento apareça
     flushSync(() => {
@@ -238,14 +329,18 @@ export function DocumentsCard({
     });
 
     try {
-      await extractInsights({
-        number: processNumber || "",
-        documents: [document._id],
-        prompt: selectedPromptId,
-      });
-      // ✅ Aguarda um pouco antes de refetch para dar tempo do backend processar
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      refetchDocument();
+      await callExtractInsights(selectedPromptId);
+      if (isMovementOverride) {
+        // Resultado já veio na resposta do POST — não há o que aguardar/repetir.
+        flushSync(() => {
+          setIsExtracting(false);
+          setShouldPoll(false);
+        });
+      } else {
+        // ✅ Aguarda um pouco antes de refetch para dar tempo do backend processar
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        effectiveRefetch();
+      }
     } catch (err) {
       flushSync(() => {
         setIsExtracting(false);
@@ -255,10 +350,10 @@ export function DocumentsCard({
   }
 
   async function handleReExtractSameType() {
-    if (isExtracting || isRemoving || !document?._id) return;
+    if (isExtracting || isRemoving || !effectiveDocument?._id) return;
 
     // Detecta automaticamente o prompt baseado no título do documento
-    const detectedPromptId = detectPromptFromTitle(document.title);
+    const detectedPromptId = detectPromptFromTitle(effectiveDocument.title);
     const promptToUse = selectedPromptId || detectedPromptId;
 
     if (!promptToUse) {
@@ -286,13 +381,10 @@ export function DocumentsCard({
     });
 
     try {
-      await removeInsights({
-        processNumber: processNumber || "",
-        documentId: document._id,
-      });
+      await callRemoveInsights();
 
       // Força refetch imediato para atualizar o status do documento após remoção
-      await refetchDocument();
+      await effectiveRefetch();
 
       setIsRemoving(false);
 
@@ -301,15 +393,18 @@ export function DocumentsCard({
         setIsExtracting(true);
       });
 
-      await extractInsights({
-        number: processNumber || "",
-        documents: [document._id],
-        prompt: promptToUse,
-      });
+      await callExtractInsights(promptToUse);
 
-      // ✅ Aguarda um pouco antes de refetch para dar tempo do backend processar
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      refetchDocument();
+      if (isMovementOverride) {
+        flushSync(() => {
+          setIsExtracting(false);
+          setShouldPoll(false);
+        });
+      } else {
+        // ✅ Aguarda um pouco antes de refetch para dar tempo do backend processar
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        effectiveRefetch();
+      }
     } catch (err) {
       flushSync(() => {
         setIsExtracting(false);
@@ -321,18 +416,15 @@ export function DocumentsCard({
   }
 
   async function handleRemoveOnly() {
-    if (isRemoving || !document?._id) return;
+    if (isRemoving || !effectiveDocument?._id) return;
 
     setIsRemoving(true);
     try {
-      await removeInsights({
-        processNumber: processNumber || "",
-        documentId: document._id,
-      });
+      await callRemoveInsights();
       setSelectedPromptId("");
       setIsRemoving(false);
       setShouldPoll(false);
-      refetchDocument();
+      effectiveRefetch();
     } catch (err) {
       setIsRemoving(false);
     }
@@ -586,10 +678,27 @@ export function DocumentsCard({
 					<CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">Documentos</CardTitle>
 				</div>
 			</CardHeader> */}
-      {selectedDocumentId && document ? (
+      {(selectedDocumentId && document) || overrideDocument ? (
         <CardContent className="pt-0 flex-1 flex flex-col min-h-0 relative">
           {/* Renderizar visualizador de documento */}
           <div className="flex-1 flex flex-col min-h-0 bg-muted/20 rounded-lg border border-border">
+            {overrideDocument && (
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/40">
+                <p className="text-sm font-medium truncate">
+                  {overrideDocument.title}
+                </p>
+                {onCloseOverrideDocument && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onCloseOverrideDocument}
+                    className="h-7 px-2 text-xs"
+                  >
+                    Fechar
+                  </Button>
+                )}
+              </div>
+            )}
             <PDFViewerHeader
               pageNumber={pageNumber}
               numPages={numPages}
@@ -607,9 +716,10 @@ export function DocumentsCard({
               searchIndex={searchIndex}
             />
             <div className="flex-1 min-h-0">
-              {document?.temp_link?.toLowerCase().endsWith(".pdf") ? (
+              {overrideDocument || document?.temp_link?.toLowerCase().endsWith(".pdf") ? (
                 <PDFViewer
-                  pdfUrl={document?.temp_link}
+                  pdfUrl={document?.temp_link || ""}
+                  blobOverride={overrideDocument?.blob}
                   pageNumber={pageNumber}
                   scale={scale}
                   numPages={numPages}
@@ -641,11 +751,14 @@ export function DocumentsCard({
           {/* Botões de ação no canto inferior direito - fixos em relação ao CardContent */}
           <div className="absolute bottom-2 sm:bottom-4 right-2 sm:right-13 z-50 flex gap-1 sm:gap-2 pointer-events-none">
             <div className="flex gap-1 sm:gap-2 pointer-events-auto">
-              {/* Botão para gerenciar insights - sempre visível quando há documento */}
-              {document && (
+              {/* Botão para gerenciar insights - visível para documentos reais e para
+                  PDFs gerados a partir do texto de uma movimentação (extração
+                  direta sobre o texto, sem depender do processo existir no Mongo) */}
+              {effectiveDocument && (!overrideDocument || isMovementOverride) && (
                 <Button
                   variant={
-                    document?.status === "COMPLETED" && document?.data
+                    effectiveDocument?.status === "COMPLETED" &&
+                    effectiveDocument?.data
                       ? "default"
                       : "secondary"
                   }
@@ -655,7 +768,8 @@ export function DocumentsCard({
                 >
                   <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">
-                    {document?.status === "COMPLETED" && document?.data
+                    {effectiveDocument?.status === "COMPLETED" &&
+                    effectiveDocument?.data
                       ? "Ver Insights"
                       : "Gerenciar Insights"}
                   </span>
@@ -664,7 +778,29 @@ export function DocumentsCard({
                   )}
                 </Button>
               )}
-              {document?.temp_link && (
+              {overrideDocument && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    const url = window.URL.createObjectURL(overrideDocument.blob);
+                    const a = window.document.createElement("a");
+                    a.href = url;
+                    a.download = overrideDocument.title.endsWith(".pdf")
+                      ? overrideDocument.title
+                      : `${overrideDocument.title}.pdf`;
+                    window.document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                  }}
+                  className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"
+                  aria-label="Download"
+                >
+                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              )}
+              {document?.temp_link && !overrideDocument && (
                 <Button
                   variant="default"
                   size="sm"
@@ -751,7 +887,7 @@ export function DocumentsCard({
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-semibold">Insights da IA</h3>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                    {document?.title}
+                    {effectiveDocument?.title}
                   </p>
                 </div>
                 {getIsProcessing() && (
@@ -813,7 +949,7 @@ export function DocumentsCard({
                     </p>
                   </div>
                 </div>
-              ) : getHasInsights() && document ? (
+              ) : getHasInsights() && effectiveDocument ? (
                 <div className="space-y-4 pb-4">
                   {/* Opções de gerenciamento acima dos insights */}
                   <div className="sticky top-0 z-10 bg-gradient-to-br from-background via-background to-background/95 backdrop-blur-lg border-b border-border/50 shadow-sm">
@@ -907,8 +1043,8 @@ export function DocumentsCard({
                   </div>
 
                   <InsightGeneric
-                    data={document.data ?? {}}
-                    documentTitle={document.title}
+                    data={effectiveDocument.data ?? {}}
+                    documentTitle={effectiveDocument.title}
                     processNumber={processNumber}
                     onSendToPipedrive={handleSendCalculationToPipedrive}
                   />

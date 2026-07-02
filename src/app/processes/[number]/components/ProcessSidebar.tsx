@@ -12,6 +12,13 @@ type ProcessSidebarProps = {
   refetchProcess: () => Promise<Process | undefined>;
   selectedDocumentId: string | null;
   setActiveRightTab: (tab: "documents" | "activities") => void;
+  overrideDocument?: {
+    title: string;
+    blob: Blob;
+    movementId?: number;
+    texto?: string;
+  } | null;
+  onCloseOverrideDocument?: () => void;
 };
 
 export function ProcessSidebar({
@@ -22,6 +29,8 @@ export function ProcessSidebar({
   refetchProcess,
   selectedDocumentId,
   setActiveRightTab,
+  overrideDocument,
+  onCloseOverrideDocument,
 }: ProcessSidebarProps) {
   const documents = linkedDocuments.length > 0 ? linkedDocuments : process?.documents || [];
 
@@ -66,6 +75,8 @@ export function ProcessSidebar({
               processNumber={process?.number || ""}
               dealId={process?.dealId}
               onManagePrompts={onManagePrompts}
+              overrideDocument={overrideDocument}
+              onCloseOverrideDocument={onCloseOverrideDocument}
             />
           ) : (
             <div className="h-full overflow-hidden">

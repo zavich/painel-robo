@@ -1,6 +1,6 @@
 "use client";
 
-import { useMarkMovementsAsViewed } from "@/app/api/hooks/process/useMarkMovementsAsViewed";
+import { useLawsuit } from "@/app/api/hooks/lawsuit/useLawsuit";
 import { useProcessReopen } from "@/app/api/hooks/process/useProcessReopen";
 import { useUpdateProcessForm } from "@/app/api/hooks/process/useUpdateProcessForm";
 import { useInsertExecution } from "@/app/api/hooks/processes/useInsertExecution";
@@ -16,15 +16,13 @@ import {
 } from "@/app/interfaces/processes";
 import { UserRolesEnum } from "@/app/interfaces/user";
 import { logger } from "@/app/lib/logger";
+import { mapLawsuitMoviments, mapLawsuitPartes } from "@/app/utils/lawsuitMappers";
 import { getClaimant } from "@/app/utils/processPartsUtils";
 import { InstanceEnum } from "@/components/process/TimelineCard.types";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import {
-  getInitialPetitionData,
-  getNewMovements,
-} from "./processPageState.utils";
+import { getInitialPetitionData } from "./processPageState.utils";
 import { useProcessFormState } from "./useProcessFormState";
 import { useProcessTitleEditor } from "./useProcessTitleEditor";
 import { useProcessUpdateMonitor } from "./useProcessUpdateMonitor";
@@ -87,7 +85,6 @@ export function useProcessPageState() {
 
   const {
     process,
-    isLoading,
     error,
     refetch: refetchProcess,
     isRefetching,
@@ -96,6 +93,18 @@ export function useProcessPageState() {
     enabled: true,
     onStatusChange: handleStatusChange,
   });
+
+  // Número do processo, instâncias, movimentações e partes vêm do PJe via
+  // Athena (módulo lawsuits no robo-api) — substituem os dados equivalentes
+  // que vinham do Mongo. Busca pelo número da URL diretamente (não pelo
+  // process do Mongo): a existência do processo (achar/não achar) passa a
+  // depender só do Athena, independente do Mongo ter ou não o registro.
+  const { data: lawsuit, isLoading: isLawsuitLoading } = useLawsuit(id);
+  const lawsuitParts = useMemo(() => mapLawsuitPartes(lawsuit), [lawsuit]);
+  const lawsuitMoviments = useMemo(
+    () => mapLawsuitMoviments(lawsuit),
+    [lawsuit],
+  );
 
   const {
     formState,
@@ -137,7 +146,6 @@ export function useProcessPageState() {
   const updateProcessFormMutation = useUpdateProcessForm(process?.number);
   const processReopenMutation = useProcessReopen(process?._id);
   const removeProvisionalLawsuitMutation = useRemoveProvisionalLawsuit();
-  const markMovementsAsViewedMutation = useMarkMovementsAsViewed();
 
   const handlePersistTitle = useCallback(
     async (unifiedTitle: string) => {
@@ -186,28 +194,27 @@ export function useProcessPageState() {
   });
 
   const isAdmin = user?.role === UserRolesEnum.ADMIN;
-  const newMovements = useMemo(() => getNewMovements(process), [process]);
   const hasSecondDegreeMovements = useMemo(
     () =>
-      process?.moviments?.some(
+      lawsuitMoviments.some(
         (movement) => movement.instancia === InstanceEnum.SECOND_INSTANCE,
-      ) || false,
-    [process?.moviments],
+      ),
+    [lawsuitMoviments],
   );
   const claimant = useMemo(
-    () => getClaimant(process?.processParts || []),
-    [process?.processParts],
+    () => getClaimant(lawsuitParts),
+    [lawsuitParts],
   );
   const initialPetitionData = useMemo(
     () => getInitialPetitionData(process),
     [process],
   );
-  const isProcessLoaded = !!process && Object.keys(process).length > 0;
-  const hasRequiredData = process?.documents && Array.isArray(process.documents);
-  const isProcessError =
-    !!error ||
-    (!isLoading && !isProcessLoaded) ||
-    (!!process && !hasRequiredData);
+  // A existência do processo depende só do Athena (/lawsuits): a página
+  // renderiza assim que ele responder, sem esperar o Mongo. O processo do
+  // Mongo (documents, activities, etc) preenche as seções dependentes dele
+  // progressivamente, quando/se estiver disponível.
+  const isLoading = isLawsuitLoading;
+  const isProcessError = !isLawsuitLoading && !lawsuit;
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -237,28 +244,6 @@ export function useProcessPageState() {
     }
   }, [activeInstance, hasSecondDegreeMovements, process?.autosData]);
 
-  const handleMarkAsViewed = (instance: "PRIMEIRO_GRAU" | "SEGUNDO_GRAU") => {
-    if (!process?.number) {
-      return;
-    }
-
-    markMovementsAsViewedMutation.mutate(
-      {
-        processNumber: process.number,
-        instance,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Movimentações marcadas como visualizadas");
-          refetchProcess();
-        },
-        onError: () => {
-          toast.error("Erro ao marcar movimentações como visualizadas");
-        },
-      },
-    );
-  };
-
   const handleCompanyClick = (company: Company) => {
     setSelectedCompany(company);
     setIsCompanyModalOpen(true);
@@ -268,6 +253,8 @@ export function useProcessPageState() {
     if (!process?.number) {
       return;
     }
+
+    setMovementDocumentPreview(null);
 
     if (!document?._id) {
       setSelectedDocumentId(null);
@@ -279,6 +266,27 @@ export function useProcessPageState() {
     router.push(`/processes/${process.number}?tab=documents`, {
       scroll: false,
     });
+  };
+
+  const [movementDocumentPreview, setMovementDocumentPreview] = useState<{
+    title: string;
+    blob: Blob;
+    movementId: number;
+    texto: string;
+  } | null>(null);
+
+  const handleViewMovementDocument = (
+    title: string,
+    blob: Blob,
+    movementId: number,
+    texto: string,
+  ) => {
+    setMovementDocumentPreview({ title, blob, movementId, texto });
+    setActiveRightTab("documents");
+  };
+
+  const handleCloseMovementDocument = () => {
+    setMovementDocumentPreview(null);
   };
 
   const handleMovementClick = (movement: Movimentacoes) => {
@@ -316,6 +324,7 @@ export function useProcessPageState() {
       return;
     }
 
+    setMovementDocumentPreview(null);
     setLinkedDocuments(matchingDocs);
     setSelectedDocumentId(
       matchingDocs.length === 1 ? matchingDocs[0]._id : null,
@@ -428,12 +437,13 @@ export function useProcessPageState() {
     handleCompanyClick,
     handleConfirmLinkProvisionalExecution,
     handleConfirmRemoveProvisionalLink,
+    handleCloseMovementDocument,
     handleDefendantChange,
     handleDocumentClick,
     handleLinkProvisionalExecution,
-    handleMarkAsViewed,
     handleMovementClick,
     handleRejectUpdate,
+    handleViewMovementDocument,
     handleRemoveProvisionalLink,
     handleReopen,
     handleSaveTitle,
@@ -453,9 +463,13 @@ export function useProcessPageState() {
     isProcessError,
     isRefetching,
     isSyncing,
+    lawsuitCnjNumber: lawsuit?.cnjNumber,
+    lawsuitMotivoErro: lawsuit?.motivoErro,
+    lawsuitStatusColeta: lawsuit?.statusColeta,
+    lawsuitMoviments,
+    lawsuitParts,
     linkedDocuments,
-    markMovementsAsViewedMutation,
-    newMovements,
+    movementDocumentPreview,
     process,
     processReopenPending: processReopenMutation.isPending,
     refetchProcess,

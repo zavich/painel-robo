@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Process,
+  ProcessPart,
   Situation,
   Company,
 } from "@/app/interfaces/processes";
@@ -43,6 +44,10 @@ import { ProcessActionsDropdown } from "./ProcessActionsDropdown";
 
 interface ProcessHeaderProps {
   process: Process;
+  lawsuitCnjNumber?: string;
+  lawsuitParts?: ProcessPart[];
+  lawsuitStatusColeta?: string | null;
+  lawsuitMotivoErro?: string | null;
   onReopen: () => void;
   isPending: boolean;
   isRefetching?: boolean;
@@ -72,6 +77,10 @@ interface ProcessHeaderProps {
 
 export function ProcessHeader({
   process,
+  lawsuitCnjNumber,
+  lawsuitParts,
+  lawsuitStatusColeta,
+  lawsuitMotivoErro,
   onReopen,
   isPending,
   isRefetching = false,
@@ -115,8 +124,8 @@ export function ProcessHeader({
     }
   };
 
-  const claimant = getClaimant(process?.processParts || []);
-  const defendant = getDefendant(process?.processParts || []);
+  const claimant = getClaimant(lawsuitParts || []);
+  const defendant = getDefendant(lawsuitParts || []);
 
   // Priorizar dados da Petição Inicial sobre processParts
   const initialPetition = process?.documents?.find(
@@ -134,7 +143,7 @@ export function ProcessHeader({
   // Prioriza título editado, depois formPipedrive.title, depois gera automaticamente
   const savedTitle = process?.title || process?.formPipedrive?.title;
   const displayTitle = getProcessTitle(
-    process?.processParts || [],
+    lawsuitParts || [],
     process?.number,
     savedTitle,
     false, // Não usar número do processo como fallback - sempre gerar das partes se necessário
@@ -146,9 +155,9 @@ export function ProcessHeader({
   ];
 
   const activeParts =
-    process?.processParts?.filter((part) => part.polo === "ATIVO") || [];
+    lawsuitParts?.filter((part) => part.polo === "ATIVO") || [];
   const passiveParts =
-    process?.processParts?.filter((part) => part.polo === "PASSIVO") || [];
+    lawsuitParts?.filter((part) => part.polo === "PASSIVO") || [];
   const companies = process?.companies || [];
 
   // Verificar se é execução provisória
@@ -373,7 +382,7 @@ export function ProcessHeader({
                 >
                   <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-600 dark:text-amber-400" />
                   <span className="font-mono font-bold text-amber-700 dark:text-amber-300 text-[10px] sm:text-xs whitespace-nowrap">
-                    {process?.number}
+                    {lawsuitCnjNumber}
                   </span>
                   {copied ? (
                     <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -426,7 +435,7 @@ export function ProcessHeader({
                 >
                   <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary" />
                   <span className="font-mono font-bold text-primary dark:text-primary text-[10px] sm:text-xs whitespace-nowrap">
-                    {process?.number}
+                    {lawsuitCnjNumber}
                   </span>
                   {copied ? (
                     <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -504,7 +513,7 @@ export function ProcessHeader({
               >
                 <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary" />
                 <span className="font-mono font-bold text-primary dark:text-primary text-[10px] sm:text-xs whitespace-nowrap">
-                  {process?.number}
+                  {lawsuitCnjNumber}
                 </span>
                 {copied ? (
                   <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -545,6 +554,8 @@ export function ProcessHeader({
           process={process}
           isRefetching={isRefetching}
           isSyncing={isSyncing}
+          lawsuitStatusColeta={lawsuitStatusColeta}
+          lawsuitMotivoErro={lawsuitMotivoErro}
           onRemoveProvisionalLink={onRemoveProvisionalLink}
           onLinkProvisionalExecution={onLinkProvisionalExecution}
         />

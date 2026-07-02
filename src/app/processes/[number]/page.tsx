@@ -26,12 +26,15 @@ export default function ProcessDetailsEditPage() {
     isAdmin,
     process,
     isLoading,
-    error,
     refetchProcess,
     isRefetching,
     isProcessError,
-    newMovements,
     hasSecondDegreeMovements,
+    lawsuitCnjNumber,
+    lawsuitMoviments,
+    lawsuitParts,
+    lawsuitMotivoErro,
+    lawsuitStatusColeta,
     claimant,
     initialPetitionData,
     selectedCompany,
@@ -61,6 +64,7 @@ export default function ProcessDetailsEditPage() {
     showLinkProvisionalExecutionModal,
     setShowLinkProvisionalExecutionModal,
     linkedDocuments,
+    movementDocumentPreview,
     executionNumberInput,
     setExecutionNumberInput,
     isEditingTitle,
@@ -71,14 +75,14 @@ export default function ProcessDetailsEditPage() {
     updateProcessFormMutation,
     runLawsuitsMutation,
     removeProvisionalLawsuitMutation,
-    markMovementsAsViewedMutation,
     isInsertExecutionLoading,
     processReopenPending,
-    handleMarkAsViewed,
+    handleCloseMovementDocument,
     handleCompanyClick,
     handleDocumentClick,
     handleMovementClick,
     handleReopen,
+    handleViewMovementDocument,
     handleRemoveProvisionalLink,
     handleConfirmRemoveProvisionalLink,
     handleLinkProvisionalExecution,
@@ -139,12 +143,10 @@ export default function ProcessDetailsEditPage() {
                 Processo não encontrado
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                {error
-                  ? "Ocorreu um erro ao carregar os dados do processo."
-                  : "Os dados do processo estão incompletos ou corrompidos."}
+                Não encontramos nenhum processo com esse número no PJe.
                 <br />
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Tente novamente mais tarde ou verifique o número informado.
+                  Verifique se o número foi digitado corretamente.
                 </span>
               </p>
               <div className="flex flex-col gap-3">
@@ -174,6 +176,10 @@ export default function ProcessDetailsEditPage() {
       <div className="flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <ProcessHeader
           process={process as Process}
+          lawsuitCnjNumber={lawsuitCnjNumber}
+          lawsuitParts={lawsuitParts}
+          lawsuitStatusColeta={lawsuitStatusColeta}
+          lawsuitMotivoErro={lawsuitMotivoErro}
           onReopen={handleReopen}
           isPending={processReopenPending}
           isRefetching={isRefetching}
@@ -241,11 +247,10 @@ export default function ProcessDetailsEditPage() {
               activeInstance={activeInstance}
               documents={process?.documents || []}
               hasSecondDegreeMovements={hasSecondDegreeMovements}
-              isMarkingAsViewed={markMovementsAsViewedMutation.isPending}
-              newMovements={newMovements}
+              moviments={lawsuitMoviments}
               onDocumentClick={handleDocumentClick}
-              onMarkAsViewed={handleMarkAsViewed}
               onMovementClick={handleMovementClick}
+              onViewMovementDocument={handleViewMovementDocument}
               process={process}
               setActiveInstance={setActiveInstance}
             />
@@ -256,6 +261,8 @@ export default function ProcessDetailsEditPage() {
               onManagePrompts={() => {
                 window.open(`/dashboard?view=prompts`, "_blank");
               }}
+              overrideDocument={movementDocumentPreview}
+              onCloseOverrideDocument={handleCloseMovementDocument}
               process={process}
               refetchProcess={refetchProcess}
               selectedDocumentId={selectedDocumentId}

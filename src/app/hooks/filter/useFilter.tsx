@@ -3,6 +3,7 @@
 import {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -26,22 +27,7 @@ type FilterContextType = {
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
 const DEFAULT_FILTERS: FilterState = {
-  limit: 10,
-  status: "all",
-  type: "all",
   search: "",
-  startDate: undefined,
-  endDate: undefined,
-  stageDateFrom: undefined,
-  stageDateTo: undefined,
-  lossReason: "all",
-  contentFilter: "all",
-  emptyDocuments: false,
-  emptyInstances: false,
-  hasNewMovementsNow: false,
-  hasSecondInstance: false,
-  hasAutos: false,
-  hasAcordao: false,
 };
 
 function serializeFiltersToSearchParams(filters: FilterState) {
@@ -65,32 +51,6 @@ function serializeFiltersToSearchParams(filters: FilterState) {
 
 function parseValueFromParam(key: string, value: string | null) {
   if (value === null) return undefined;
-  // Known boolean keys
-  const booleanKeys = new Set([
-    "emptyDocuments",
-    "emptyInstances",
-    "hasNewMovementsNow",
-    "hasSecondInstance",
-    "hasAutos",
-    "hasAcordao",
-  ]);
-
-  const dateKeys = new Set([
-    "startDate",
-    "endDate",
-    "stageDateFrom",
-    "stageDateTo",
-  ]);
-
-  if (booleanKeys.has(key)) {
-    return value === "true";
-  }
-
-  if (dateKeys.has(key)) {
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? undefined : d.toISOString();
-  }
-
   return value;
 }
 
@@ -130,14 +90,9 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const [filters, setFilters] = useState<FilterState>(() => ({
-    limit: 10,
-    status: "all",
-    type: "all",
-    lossReason: "all",
-    contentFilter: "all",
-    ...computeInitialFilters(),
-  }));
+  const [filters, setFilters] = useState<FilterState>(() =>
+    computeInitialFilters(),
+  );
 
   // Função que sincroniza o estado atual de filtros para a URL sem criar histórico
   const syncFiltersToUrl = (nextFilters: FilterState) => {
@@ -165,20 +120,23 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
     syncFiltersToUrl(filters);
   }, [filters]);
 
-  const setFilter = (
-    key: string,
-    value: string | number | boolean | string[] | null | undefined,
-  ) => {
-    // Apenas atualiza o estado aqui; a sincronização com a URL
-    // será feita no useEffect acima para evitar atualizações de rota
-    // durante a renderização (evita o erro do React).
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  };
+  const setFilter = useCallback(
+    (
+      key: string,
+      value: string | number | boolean | string[] | null | undefined,
+    ) => {
+      // Apenas atualiza o estado aqui; a sincronização com a URL
+      // será feita no useEffect acima para evitar atualizações de rota
+      // durante a renderização (evita o erro do React).
+      setFilters((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     // Atualiza apenas o estado; o efeito cuidará de limpar a query string.
     setFilters({ ...DEFAULT_FILTERS });
-  };
+  }, []);
 
   return (
     <FilterContext.Provider value={{ filters, setFilter, resetFilters }}>

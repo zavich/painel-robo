@@ -1,19 +1,12 @@
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import {
-  Calendar,
-  X,
-  FileText,
-  Check,
-  Eye,
-  TrendingUp,
-  XCircle,
-} from "lucide-react";
+import { Calendar, X, FileText, Check, Eye } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { NewMovement } from "@/app/api/hooks/process/useNewMovements";
 import { Badge } from "../ui/badge";
-import { DocumentExtract, Movimentacoes, StatusExtractionInsight } from "@/app/interfaces/processes";
+import { DocumentExtract, Movimentacoes } from "@/app/interfaces/processes";
+import { generateTextPdf } from "@/app/utils/textToPdf";
 import { InstanceEnum } from "./TimelineCard.types";
 
 // Helper para normalizar datas
@@ -67,7 +60,7 @@ function DocumentItem({
       <div className="relative flex items-start gap-2 sm:gap-3 pb-2 sm:pb-3">
         {/* Timeline marker */}
         <div className="relative z-10 flex-shrink-0">
-          <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full shadow-md transition-all duration-200 bg-gradient-to-br from-secondary to-accent ring-2 ring-secondary/20 dark:ring-secondary-900/60">
+          <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full shadow-lg transition-all duration-200 bg-gradient-to-br from-secondary to-accent ring-4 ring-secondary/30 dark:ring-secondary-900/60">
             <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
           </div>
         </div>
@@ -76,21 +69,25 @@ function DocumentItem({
         <div className="flex-1 min-w-0">
           <div
             onClick={() => onClick?.(doc)}
-            className="rounded-lg p-2 sm:p-3 transition-all duration-200 cursor-pointer hover:shadow-md hover:scale-[1.01] bg-secondary/20 dark:bg-secondary-900/30 border border-border dark:border-border hover:bg-secondary/30 dark:hover:bg-secondary-900/40"
+            className="relative overflow-hidden rounded-lg pl-3 sm:pl-4 pr-2 sm:pr-3 py-2 sm:py-3 transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-[1.01] bg-secondary/10 dark:bg-secondary-900/30 border border-secondary/40 dark:border-secondary-700 shadow-sm hover:bg-secondary/20 dark:hover:bg-secondary-900/40"
           >
+            {/* Left accent bar to set documents apart from movements */}
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-secondary" />
+
             {/* Header with date and status */}
             <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 flex-wrap">
               <span className="font-semibold text-xs sm:text-sm text-secondary-foreground dark:text-secondary-foreground">
                 {doc.date}
               </span>
               {/* Document badge */}
-              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-secondary text-white">
+              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wide bg-secondary text-white shadow-sm">
+                <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                 Documento
               </span>
             </div>
 
             {/* Content */}
-            <p className="text-[11px] sm:text-xs leading-relaxed text-foreground dark:text-card-foreground break-words">
+            <p className="text-[11px] sm:text-xs leading-relaxed font-medium text-foreground dark:text-card-foreground break-words">
               {doc.title}
             </p>
           </div>
@@ -106,12 +103,39 @@ function MovementItem({
   idx,
   isNew,
   onClick,
+  onViewMovementDocument,
 }: {
   mov: Movimentacoes;
   idx: number;
   isNew: boolean;
   onClick?: (mov: Movimentacoes) => void;
+  onViewMovementDocument?: (
+    title: string,
+    blob: Blob,
+    movementId: number,
+    texto: string,
+  ) => void;
 }) {
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const handleViewDocument = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!mov.texto || isGeneratingPdf) {
+      return;
+    }
+
+    setIsGeneratingPdf(true);
+    try {
+      const blob = await generateTextPdf(mov.texto);
+      const title = mov.conteudo
+        ? `${mov.conteudo} - ${mov.data}`
+        : `Documento - ${mov.data}`;
+      onViewMovementDocument?.(title, blob, mov.id, mov.texto);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="relative">
       {/* Timeline line */}
@@ -169,6 +193,24 @@ function MovementItem({
                   Nova
                 </span>
               )}
+
+              {mov.texto && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleViewDocument}
+                  disabled={isGeneratingPdf}
+                  className="h-6 px-1.5 sm:px-2 text-[9px] sm:text-[10px] font-medium ml-auto flex items-center gap-1"
+                  title="Ver documento desta movimentação"
+                >
+                  {isGeneratingPdf ? (
+                    <div className="h-3 w-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileText className="h-3 w-3" />
+                  )}
+                  <span className="hidden sm:inline">Ver documento</span>
+                </Button>
+              )}
             </div>
 
             {/* Content */}
@@ -195,6 +237,12 @@ interface TimelineCardProps {
   newMovements?: NewMovement[];
   processNumber?: string;
   onMovementClick?: (mov: Movimentacoes) => void;
+  onViewMovementDocument?: (
+    title: string,
+    blob: Blob,
+    movementId: number,
+    texto: string,
+  ) => void;
   documents?: DocumentExtract[];
   onDocumentClick?: (doc: DocumentExtract) => void;
   onMarkAsViewed?: () => void;
@@ -208,18 +256,13 @@ export function TimelineCard({
   newMovements = [],
   processNumber,
   onMovementClick,
+  onViewMovementDocument,
   documents = [],
   onDocumentClick,
   onMarkAsViewed,
   isMarkingAsViewed = false,
 }: TimelineCardProps) {
   const [searchFirstInstance, setSearchFirstInstance] = useState("");
-  const [filterType, setFilterType] = useState<
-    "all" | "movements" | "documents"
-  >("all");
-  const [documentInsightsFilter, setDocumentInsightsFilter] = useState<
-    "all" | "with" | "without"
-  >("all");
 
   const movimentsFirstInstance = useMemo(() => {
     if (!searchFirstInstance) {
@@ -320,19 +363,6 @@ export function TimelineCard({
       }))
       // Filtrar apenas documentos da instância atual
       .filter((doc) => doc.instancia === instancia)
-      // Filtrar documentos por insights (com insights, sem insights, ou todos)
-      .filter((doc) => {
-        if (documentInsightsFilter === "all") return true;
-        const hasInsights =
-          doc.data.status === StatusExtractionInsight.COMPLETED &&
-          doc.data.data != null;
-        if (documentInsightsFilter === "with") {
-          return hasInsights;
-        } else if (documentInsightsFilter === "without") {
-          return !hasInsights;
-        }
-        return true;
-      })
       // Aplicar filtro de busca nos documentos
       .filter((doc) => {
         if (!searchFirstInstance) return true;
@@ -349,24 +379,13 @@ export function TimelineCard({
 
     // Combinar e ordenar por data (mais recente primeiro)
     const combined = [...movementsMapped, ...documentsMapped];
-    const sorted = combined.sort((a, b) => compareDates(a.date, b.date));
-
-    // Aplicar filtro de tipo
-    if (filterType === "movements") {
-      return sorted.filter((item) => item.type === "movement");
-    } else if (filterType === "documents") {
-      return sorted.filter((item) => item.type === "document");
-    }
-
-    return sorted;
+    return combined.sort((a, b) => compareDates(a.date, b.date));
   }, [
     movimentsFirstInstance,
     documents,
     classifyDocumentByInstance,
     instancia,
     searchFirstInstance,
-    filterType,
-    documentInsightsFilter,
   ]);
 
   // Verificar se há movimentações novas
@@ -437,108 +456,9 @@ export function TimelineCard({
             )}
           </div>
 
-          {/* Filtros de tipo */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <Button
-                variant={filterType === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setFilterType("all");
-                  setDocumentInsightsFilter("all");
-                }}
-                className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all ${
-                  filterType === "all"
-                    ? "bg-primary hover:bg-primary-light text-primary-foreground"
-                    : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                Todos
-              </Button>
-              <Button
-                variant={filterType === "movements" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setFilterType("movements");
-                  setDocumentInsightsFilter("all");
-                }}
-                className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
-                  filterType === "movements"
-                    ? "bg-primary hover:bg-primary-light text-primary-foreground"
-                    : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                <Calendar className="h-3 w-3" />
-                <span className="hidden sm:inline">Movimentos</span>
-                <span className="sm:hidden">Mov</span>
-              </Button>
-              <Button
-                variant={filterType === "documents" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilterType("documents")}
-                className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
-                  filterType === "documents"
-                    ? "bg-secondary hover:bg-secondary-foreground text-primary-foreground"
-                    : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                <FileText className="h-3 w-3" />
-                <span className="hidden sm:inline">Documentos</span>
-                <span className="sm:hidden">Docs</span>
-              </Button>
-              {/* Filtros de insights - só aparecem quando filtro de documentos está ativo */}
-              {filterType === "documents" && (
-                <>
-                  <Button
-                    variant={
-                      documentInsightsFilter === "with" ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() =>
-                      setDocumentInsightsFilter(
-                        documentInsightsFilter === "with" ? "all" : "with",
-                      )
-                    }
-                    className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
-                      documentInsightsFilter === "with"
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <TrendingUp className="h-3 w-3" />
-                    <span className="hidden sm:inline">Com Insights</span>
-                    <span className="sm:hidden">Com</span>
-                  </Button>
-                  <Button
-                    variant={
-                      documentInsightsFilter === "without"
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    onClick={() =>
-                      setDocumentInsightsFilter(
-                        documentInsightsFilter === "without"
-                          ? "all"
-                          : "without",
-                      )
-                    }
-                    className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
-                      documentInsightsFilter === "without"
-                        ? "bg-amber-600 hover:bg-amber-700 text-white"
-                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    <span className="hidden sm:inline">Sem Insights</span>
-                    <span className="sm:hidden">Sem</span>
-                  </Button>
-                </>
-              )}
-            </div>
-
-            {/* Contador de resultados */}
-            {combinedItems.length > 0 && (
+          {/* Contador de resultados */}
+          {combinedItems.length > 0 && (
+            <div className="flex items-center justify-end">
               <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
                 <span className="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300">
                   {combinedItems.length}
@@ -547,44 +467,31 @@ export function TimelineCard({
                   {combinedItems.length === 1 ? "item" : "itens"}
                 </span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <div className="flex-1 flex flex-col min-h-0">
           {combinedItems?.length === 0 ? (
             <div className="text-center py-8">
               <div className="mx-auto w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
-                {filterType === "documents" ? (
-                  <FileText className="h-6 w-6 text-purple-400 dark:text-purple-500" />
-                ) : filterType === "movements" ? (
-                  <Calendar className="h-6 w-6 text-blue-400 dark:text-blue-500" />
-                ) : (
-                  <Calendar className="h-6 w-6 text-gray-400 dark:text-gray-500" />
-                )}
+                <Calendar className="h-6 w-6 text-gray-400 dark:text-gray-500" />
               </div>
               <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1.5">
-                {filterType === "documents"
-                  ? "Nenhum documento encontrado"
-                  : filterType === "movements"
-                    ? "Nenhuma movimentação encontrada"
-                    : "Nenhum item encontrado"}
+                Nenhum item encontrado
               </h3>
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 {searchFirstInstance
-                  ? `Nenhum ${filterType === "documents" ? "documento" : filterType === "movements" ? "movimentação" : "item"} corresponde ao filtro aplicado.`
-                  : `Nenhum ${filterType === "documents" ? "documento" : filterType === "movements" ? "movimentação" : "item"} registrado para esta instância.`}
+                  ? "Nenhum item corresponde ao filtro aplicado."
+                  : "Nenhum item registrado para esta instância."}
               </p>
-              {(searchFirstInstance || filterType !== "all") && (
+              {searchFirstInstance && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setSearchFirstInstance("");
-                    setFilterType("all");
-                  }}
+                  onClick={() => setSearchFirstInstance("")}
                   className="mt-3 h-7 px-2.5 text-xs"
                 >
-                  Limpar filtros
+                  Limpar filtro
                 </Button>
               )}
             </div>
@@ -601,6 +508,7 @@ export function TimelineCard({
                         idx={idx}
                         isNew={isNew}
                         onClick={onMovementClick}
+                        onViewMovementDocument={onViewMovementDocument}
                       />
                     );
                   } else {

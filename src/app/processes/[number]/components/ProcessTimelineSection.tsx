@@ -12,15 +12,15 @@ type ProcessTimelineSectionProps = {
   activeInstance: "1grau" | "2grau" | "tst";
   documents: DocumentExtract[];
   hasSecondDegreeMovements: boolean;
-  isMarkingAsViewed: boolean;
-  newMovements: {
-    PRIMEIRO_GRAU: Movimentacoes[];
-    SEGUNDO_GRAU: Movimentacoes[];
-    TST: Movimentacoes[];
-  };
+  moviments: Movimentacoes[];
   onDocumentClick: (document: DocumentExtract) => void;
-  onMarkAsViewed: (instance: "PRIMEIRO_GRAU" | "SEGUNDO_GRAU") => void;
   onMovementClick: (movement: Movimentacoes) => void;
+  onViewMovementDocument?: (
+    title: string,
+    blob: Blob,
+    movementId: number,
+    texto: string,
+  ) => void;
   process: Process | null | undefined;
   setActiveInstance: (instance: "1grau" | "2grau" | "tst") => void;
 };
@@ -29,11 +29,10 @@ export function ProcessTimelineSection({
   activeInstance,
   documents,
   hasSecondDegreeMovements,
-  isMarkingAsViewed,
-  newMovements,
+  moviments,
   onDocumentClick,
-  onMarkAsViewed,
   onMovementClick,
+  onViewMovementDocument,
   process,
   setActiveInstance,
 }: ProcessTimelineSectionProps) {
@@ -71,36 +70,26 @@ export function ProcessTimelineSection({
         {activeInstance === "1grau" && (
           <TimelineCard
             title="Timeline da 1º Instância"
-            moviments={process?.moviments || []}
+            moviments={moviments}
             instancia={InstanceEnum.FIRST_INSTANCE}
             processNumber={process?.number}
-            newMovements={newMovements.PRIMEIRO_GRAU.map((movement) => ({
-              ...movement,
-              instancia: InstanceEnum.FIRST_INSTANCE,
-            }))}
             onMovementClick={onMovementClick}
+            onViewMovementDocument={onViewMovementDocument}
             documents={documents}
             onDocumentClick={onDocumentClick}
-            onMarkAsViewed={() => onMarkAsViewed("PRIMEIRO_GRAU")}
-            isMarkingAsViewed={isMarkingAsViewed}
           />
         )}
 
         {activeInstance === "2grau" && (
           <TimelineCard
             title="Timeline da 2º Instância"
-            moviments={process?.moviments || []}
+            moviments={moviments}
             instancia={InstanceEnum.SECOND_INSTANCE}
             processNumber={process?.number}
-            newMovements={newMovements.SEGUNDO_GRAU.map((movement) => ({
-              ...movement,
-              instancia: InstanceEnum.SECOND_INSTANCE,
-            }))}
             onMovementClick={onMovementClick}
+            onViewMovementDocument={onViewMovementDocument}
             documents={documents}
             onDocumentClick={onDocumentClick}
-            onMarkAsViewed={() => onMarkAsViewed("SEGUNDO_GRAU")}
-            isMarkingAsViewed={isMarkingAsViewed}
           />
         )}
 
