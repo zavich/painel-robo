@@ -19,7 +19,7 @@ import { logger } from "@/app/lib/logger";
 import { mapLawsuitMoviments, mapLawsuitPartes } from "@/app/utils/lawsuitMappers";
 import { getClaimant } from "@/app/utils/processPartsUtils";
 import { InstanceEnum } from "@/components/process/TimelineCard.types";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { getInitialPetitionData } from "./processPageState.utils";
@@ -32,14 +32,10 @@ export function useProcessPageState() {
   const router = useRouter();
   const params = useParams();
   const id = params?.number as string;
-  const searchParams = useSearchParams();
 
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-  const [showChangeStageDialog, setShowChangeStageDialog] = useState(false);
-  const [showProcessInfoModal, setShowProcessInfoModal] = useState(false);
-  const [showAssignMemberModal, setShowAssignMemberModal] = useState(false);
   const [
     showRemoveProvisionalLinkConfirm,
     setShowRemoveProvisionalLinkConfirm,
@@ -59,13 +55,6 @@ export function useProcessPageState() {
     name: string;
     updatedAt: string;
   } | null>(null);
-  const initialRightTab = useMemo<"documents" | "activities">(() => {
-    const tab = searchParams.get("tab");
-    return tab === "activities" ? "activities" : "documents";
-  }, [searchParams]);
-  const [activeRightTab, setActiveRightTab] = useState<
-    "documents" | "activities"
-  >(initialRightTab);
   const [activeInstance, setActiveInstance] = useState<
     "1grau" | "2grau" | "tst"
   >("1grau");
@@ -201,6 +190,15 @@ export function useProcessPageState() {
       ),
     [lawsuitMoviments],
   );
+  // TERCEIRO_GRAU no Athena corresponde ao TST — substitui o antigo painel
+  // baseado em process.autosData (Mongo) pela timeline vinda do Athena.
+  const hasThirdInstanceMovements = useMemo(
+    () =>
+      lawsuitMoviments.some(
+        (movement) => movement.instancia === InstanceEnum.THIRD_INSTANCE,
+      ),
+    [lawsuitMoviments],
+  );
   const claimant = useMemo(
     () => getClaimant(lawsuitParts),
     [lawsuitParts],
@@ -215,13 +213,6 @@ export function useProcessPageState() {
   // progressivamente, quando/se estiver disponível.
   const isLoading = isLawsuitLoading;
   const isProcessError = !isLawsuitLoading && !lawsuit;
-
-  useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab === "activities" || tab === "documents") {
-      setActiveRightTab(tab);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     if (process?.documents && !selectedDocumentId) {
@@ -239,10 +230,10 @@ export function useProcessPageState() {
     if (activeInstance === "2grau" && !hasSecondDegreeMovements) {
       setActiveInstance("1grau");
     }
-    if (activeInstance === "tst" && !process?.autosData) {
+    if (activeInstance === "tst" && !hasThirdInstanceMovements) {
       setActiveInstance("1grau");
     }
-  }, [activeInstance, hasSecondDegreeMovements, process?.autosData]);
+  }, [activeInstance, hasSecondDegreeMovements, hasThirdInstanceMovements]);
 
   const handleCompanyClick = (company: Company) => {
     setSelectedCompany(company);
@@ -262,8 +253,7 @@ export function useProcessPageState() {
     }
 
     setSelectedDocumentId(document._id);
-    setActiveRightTab("documents");
-    router.push(`/processes/${process.number}?tab=documents`, {
+    router.push(`/processes/${process.number}`, {
       scroll: false,
     });
   };
@@ -282,7 +272,6 @@ export function useProcessPageState() {
     texto: string,
   ) => {
     setMovementDocumentPreview({ title, blob, movementId, texto });
-    setActiveRightTab("documents");
   };
 
   const handleCloseMovementDocument = () => {
@@ -421,7 +410,6 @@ export function useProcessPageState() {
 
   return {
     activeInstance,
-    activeRightTab,
     claimant,
     claimantInputRef,
     currentStatusInfo: monitoredStatusInfo,
@@ -451,6 +439,7 @@ export function useProcessPageState() {
     handleSyncConfirm,
     hasChanges,
     hasSecondDegreeMovements,
+    hasThirdInstanceMovements,
     hasUnsavedChanges,
     id,
     initialPetitionData,
@@ -479,23 +468,16 @@ export function useProcessPageState() {
     selectedCompany,
     selectedDocumentId,
     setActiveInstance,
-    setActiveRightTab,
     setExecutionNumberInput,
     setFormState,
     setIsCompanyModalOpen,
     setIsEditing,
     setSelectedCompany,
-    setShowAssignMemberModal,
-    setShowChangeStageDialog,
     setShowLinkProvisionalExecutionModal,
-    setShowProcessInfoModal,
     setShowRemoveProvisionalLinkConfirm,
     setShowSyncCompleteDialog,
     setShowUpdateConfirmation,
-    showAssignMemberModal,
-    showChangeStageDialog,
     showLinkProvisionalExecutionModal,
-    showProcessInfoModal,
     showRemoveProvisionalLinkConfirm,
     showSyncCompleteDialog,
     showUpdateConfirmation,

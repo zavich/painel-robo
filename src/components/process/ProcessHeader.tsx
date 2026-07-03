@@ -26,7 +26,6 @@ import {
   User2,
   Users,
   XCircle,
-  FileSearch,
   FileText,
   Copy,
   Link2,
@@ -53,15 +52,10 @@ interface ProcessHeaderProps {
   isRefetching?: boolean;
   isSyncing?: boolean;
   onCompanyClick?: (company: Company) => void;
-  onViewPreAnalysis?: () => void;
   onViewAnalysis?: () => void;
   onSync?: () => void;
-  onViewProcessInfo?: () => void;
-  onAssignMember?: () => void;
-  onChangeStage?: () => void;
   onRemoveProvisionalLink?: () => void;
   onLinkProvisionalExecution?: () => void;
-  isAdmin?: boolean;
   isEditingTitle?: boolean;
   editedClaimant?: string;
   editedDefendant?: string;
@@ -86,15 +80,10 @@ export function ProcessHeader({
   isRefetching = false,
   isSyncing = false,
   onCompanyClick,
-  onViewPreAnalysis,
   onViewAnalysis,
   onSync,
-  onViewProcessInfo,
-  onAssignMember,
-  onChangeStage,
   onRemoveProvisionalLink,
   onLinkProvisionalExecution,
-  isAdmin = false,
   isEditingTitle = false,
   editedClaimant = "",
   editedDefendant = "",
@@ -563,21 +552,9 @@ export function ProcessHeader({
     </div>
   );
 
-  // Botões de ação do processo (Pré-Análise, Análise, etc)
+  // Botões de ação do processo (Análise, etc)
   const processActionButtons = (
     <>
-      {onViewPreAnalysis && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 hover:bg-yellow-100 hover:text-yellow-800 hover:border-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300 font-medium transition-all"
-          onClick={onViewPreAnalysis}
-          aria-label="Ver Formulário de Pré-Análise"
-        >
-          <FileSearch className="h-4 w-4" />
-          <span className="hidden xl:inline ml-2">Pré-Análise</span>
-        </Button>
-      )}
       {onViewAnalysis && (
         <Button
           variant="outline"
@@ -643,14 +620,9 @@ export function ProcessHeader({
               {/* Process Actions Menu */}
               <ProcessActionsDropdown
                 theme={theme}
-                isAdmin={isAdmin}
                 open={processMenuOpen}
                 onOpenChange={setProcessMenuOpen}
-                onViewPreAnalysis={onViewPreAnalysis}
                 onViewAnalysis={onViewAnalysis}
-                onViewProcessInfo={onViewProcessInfo}
-                onAssignMember={onAssignMember}
-                onChangeStage={onChangeStage}
                 onSync={onSync}
               />
             </div>

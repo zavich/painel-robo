@@ -203,6 +203,66 @@ function splitClosingBlock(bodyLines: string[]): {
   };
 }
 
+// As fontes padrão do pdf-lib (Helvetica) usam a codificação WinAnsi
+// (cp1252), que não cobre ligaduras tipográficas ("ﬁ", "ﬂ", ...) — comuns em
+// texto extraído de PDF — e travava a geração inteira do documento. Expande
+// as ligaduras conhecidas pro equivalente em ASCII antes de qualquer medição
+// ou desenho de texto.
+const LIGATURE_REPLACEMENTS: Record<string, string> = {
+  "ﬀ": "ff",
+  "ﬁ": "fi",
+  "ﬂ": "fl",
+  "ﬃ": "ffi",
+  "ﬄ": "ffl",
+  "ﬅ": "st",
+  "ﬆ": "st",
+};
+
+// Além de todo o intervalo Latin-1 (0x00–0xFF, cobre acentuação do
+// português), o WinAnsi também suporta esse conjunto de pontuação
+// "tipográfica" fora desse intervalo (aspas curvas, travessões, reticências
+// etc.) — comum em texto de PDF. Qualquer outro caractere é tratado como
+// potencialmente não suportado.
+const WINANSI_EXTRA_CODEPOINTS = new Set([
+  0x20ac, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021, 0x02c6, 0x2030,
+  0x0160, 0x2039, 0x0152, 0x017d, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022,
+  0x2013, 0x2014, 0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0x017e, 0x0178,
+]);
+
+function isLikelyWinAnsiEncodable(codePoint: number): boolean {
+  return codePoint <= 0xff || WINANSI_EXTRA_CODEPOINTS.has(codePoint);
+}
+
+// Rede de segurança pra qualquer outro caractere fora do WinAnsi (emojis,
+// símbolos raros, outras ligaduras não mapeadas): tenta decompor e remover
+// acentos combinantes; se mesmo assim não couber, descarta o caractere em
+// vez de derrubar a geração inteira do PDF por causa de um glifo isolado.
+const LIGATURE_RANGE_PATTERN = /[ﬀ-ﬆ]/g;
+const COMBINING_MARKS_PATTERN = /[̀-ͯ]/g;
+
+function sanitizeForPdf(text: string): string {
+  const withLigaturesExpanded = text.replace(
+    LIGATURE_RANGE_PATTERN,
+    (char) => LIGATURE_REPLACEMENTS[char] ?? char,
+  );
+
+  return Array.from(withLigaturesExpanded)
+    .map((char) => {
+      const codePoint = char.codePointAt(0) ?? 0;
+      if (isLikelyWinAnsiEncodable(codePoint)) return char;
+
+      // Remove acentos combinantes que a decomposição NFKD deixar pra trás
+      // (ex.: um caractere acentuado exótico vira letra base + acento).
+      const decomposed = char.normalize("NFKD").replace(COMBINING_MARKS_PATTERN, "");
+      return Array.from(decomposed).every((c) =>
+        isLikelyWinAnsiEncodable(c.codePointAt(0) ?? 0),
+      )
+        ? decomposed
+        : "";
+    })
+    .join("");
+}
+
 function wrapText(
   text: string,
   font: PDFFont,
@@ -350,7 +410,7 @@ class PdfWriter {
  * ainda não temos a imagem pra embutir no PDF.
  */
 export async function generateTextPdf(text: string): Promise<Blob> {
-  const { cleanedText, footer } = extractFooterAndCleanText(text);
+  const { cleanedText, footer } = extractFooterAndCleanText(sanitizeForPdf(text));
   const { header, body } = classifyLines(cleanedText);
   const { main, closing } = splitClosingBlock(body);
   const paragraphs = bodyToParagraphs(main);

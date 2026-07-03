@@ -1,14 +1,6 @@
 import { PeticaoInicialData, Process } from "@/app/interfaces/processes";
 
 export interface ProcessActionDialogsProps {
-  assignMemberModal: {
-    open: boolean;
-    setOpen: (open: boolean) => void;
-  };
-  changeStageDialog: {
-    open: boolean;
-    setOpen: (open: boolean) => void;
-  };
   companyModal: {
     open: boolean;
     selectedCompanyCnpj: string;
@@ -31,10 +23,6 @@ export interface ProcessActionDialogsProps {
     isSyncing: boolean;
     process: Process | undefined | null;
     refetchProcess: () => void;
-  };
-  processInfoModal: {
-    open: boolean;
-    setOpen: (open: boolean) => void;
   };
   removeProvisionalLinkDialog: {
     isPending: boolean;
@@ -61,7 +49,6 @@ export interface ProcessActionDialogsProps {
 }
 
 export type ProcessDataProps = ProcessActionDialogsProps["processData"];
-export type AssignMemberModalProps = ProcessActionDialogsProps["assignMemberModal"];
 export type LinkProvisionalExecutionModalProps =
   ProcessActionDialogsProps["linkProvisionalExecutionModal"];
 export type RemoveProvisionalLinkDialogProps =
@@ -70,4 +57,3 @@ export type SyncCompleteDialogProps = ProcessActionDialogsProps["syncCompleteDia
 export type SyncOptionsModalProps = ProcessActionDialogsProps["syncOptionsModal"];
 export type UpdateConfirmationDialogProps =
   ProcessActionDialogsProps["updateConfirmationDialog"];
-export type ProcessInfoModalProps = ProcessActionDialogsProps["processInfoModal"];

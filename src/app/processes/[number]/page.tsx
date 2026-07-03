@@ -30,6 +30,7 @@ export default function ProcessDetailsEditPage() {
     isRefetching,
     isProcessError,
     hasSecondDegreeMovements,
+    hasThirdInstanceMovements,
     lawsuitCnjNumber,
     lawsuitMoviments,
     lawsuitParts,
@@ -41,8 +42,6 @@ export default function ProcessDetailsEditPage() {
     isCompanyModalOpen,
     setIsCompanyModalOpen,
     setSelectedCompany,
-    showChangeStageDialog,
-    setShowChangeStageDialog,
     showUpdateConfirmation,
     setShowUpdateConfirmation,
     isSyncing,
@@ -51,14 +50,8 @@ export default function ProcessDetailsEditPage() {
     syncModalOpen,
     setSyncModalOpen,
     selectedDocumentId,
-    activeRightTab,
-    setActiveRightTab,
     activeInstance,
     setActiveInstance,
-    showProcessInfoModal,
-    setShowProcessInfoModal,
-    showAssignMemberModal,
-    setShowAssignMemberModal,
     showRemoveProvisionalLinkConfirm,
     setShowRemoveProvisionalLinkConfirm,
     showLinkProvisionalExecutionModal,
@@ -185,9 +178,6 @@ export default function ProcessDetailsEditPage() {
           isRefetching={isRefetching}
           isSyncing={isSyncing}
           onCompanyClick={handleCompanyClick}
-          onViewPreAnalysis={() => {
-            window.open(`/processes/${process?.number}/pre-analysis`, "_blank");
-          }}
           onViewAnalysis={() => {
             window.open(`/processes/${process?.number}/analysis`, "_blank");
           }}
@@ -234,12 +224,8 @@ export default function ProcessDetailsEditPage() {
 
             setSyncModalOpen(true);
           }}
-          onViewProcessInfo={() => setShowProcessInfoModal(true)}
-          onAssignMember={() => setShowAssignMemberModal(true)}
-          onChangeStage={() => setShowChangeStageDialog(true)}
           onRemoveProvisionalLink={handleRemoveProvisionalLink}
           onLinkProvisionalExecution={handleLinkProvisionalExecution}
-          isAdmin={isAdmin}
         />
         <main className="flex-1 max-w-[1920px] w-full mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 overflow-y-auto flex flex-col min-h-0">
           <div className="grid grid-cols-1 gap-3 sm:gap-4 transition-all duration-300 min-w-0 lg:grid-cols-6 flex-1 items-start">
@@ -247,6 +233,7 @@ export default function ProcessDetailsEditPage() {
               activeInstance={activeInstance}
               documents={process?.documents || []}
               hasSecondDegreeMovements={hasSecondDegreeMovements}
+              hasThirdInstanceMovements={hasThirdInstanceMovements}
               moviments={lawsuitMoviments}
               onDocumentClick={handleDocumentClick}
               onMovementClick={handleMovementClick}
@@ -256,30 +243,16 @@ export default function ProcessDetailsEditPage() {
             />
 
             <ProcessSidebar
-              activeRightTab={activeRightTab}
               linkedDocuments={linkedDocuments}
-              onManagePrompts={() => {
-                window.open(`/dashboard?view=prompts`, "_blank");
-              }}
               overrideDocument={movementDocumentPreview}
               onCloseOverrideDocument={handleCloseMovementDocument}
               process={process}
-              refetchProcess={refetchProcess}
               selectedDocumentId={selectedDocumentId}
-              setActiveRightTab={setActiveRightTab}
             />
           </div>
         </main>
 
         <ProcessActionDialogs
-          assignMemberModal={{
-            open: showAssignMemberModal,
-            setOpen: setShowAssignMemberModal,
-          }}
-          changeStageDialog={{
-            open: showChangeStageDialog,
-            setOpen: setShowChangeStageDialog,
-          }}
           companyModal={{
             open: isCompanyModalOpen,
             selectedCompanyCnpj: selectedCompany?.cnpj || "",
@@ -302,10 +275,6 @@ export default function ProcessDetailsEditPage() {
             isSyncing,
             process,
             refetchProcess,
-          }}
-          processInfoModal={{
-            open: showProcessInfoModal,
-            setOpen: setShowProcessInfoModal,
           }}
           removeProvisionalLinkDialog={{
             isPending: removeProvisionalLawsuitMutation.isPending,
