@@ -5,7 +5,7 @@ import { useProcessReopen } from "@/app/api/hooks/process/useProcessReopen";
 import { useUpdateProcessForm } from "@/app/api/hooks/process/useUpdateProcessForm";
 import { useInsertExecution } from "@/app/api/hooks/processes/useInsertExecution";
 import { useRemoveProvisionalLawsuit } from "@/app/api/hooks/processes/useRemoveProvisionalLawsuit";
-import { useRunLawsuits } from "@/app/api/hooks/run-lawsuit/useRunLawsuits";
+import { useSyncLawsuit } from "@/app/api/hooks/lawsuit/useSyncLawsuit";
 import { useProcessAutoRefresh } from "@/app/hooks/useProcessAutoRefresh";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import {
@@ -127,7 +127,7 @@ export function useProcessPageState() {
     setCurrentStatusInfo,
   });
 
-  const runLawsuitsMutation = useRunLawsuits();
+  const syncLawsuitMutation = useSyncLawsuit();
   const {
     insertExecution,
     isLoading: isInsertExecutionLoading,
@@ -183,6 +183,16 @@ export function useProcessPageState() {
   });
 
   const isAdmin = user?.role === UserRolesEnum.ADMIN;
+  // Processos que começam direto na 2ª instância (ex: Ação Rescisória) não
+  // têm movimentações de 1º grau — sem esse check, a aba "1° Grau" ficava
+  // selecionada por padrão mesmo vazia, escondendo a única instância real.
+  const hasFirstDegreeMovements = useMemo(
+    () =>
+      lawsuitMoviments.some(
+        (movement) => movement.instancia === InstanceEnum.FIRST_INSTANCE,
+      ),
+    [lawsuitMoviments],
+  );
   const hasSecondDegreeMovements = useMemo(
     () =>
       lawsuitMoviments.some(
@@ -227,13 +237,33 @@ export function useProcessPageState() {
   }, [process?.documents, selectedDocumentId]);
 
   useEffect(() => {
+    // Corrige a aba ativa pra uma que realmente tenha movimentações — o
+    // estado inicial sempre parte de "1grau" antes do lawsuit carregar, mas
+    // processos sem 1º grau (ex: Ação Rescisória, que começa direto na 2ª
+    // instância) precisam cair pra "2grau"/"tst" assim que os dados chegam.
+    const fallbackInstance = hasFirstDegreeMovements
+      ? "1grau"
+      : hasSecondDegreeMovements
+        ? "2grau"
+        : hasThirdInstanceMovements
+          ? "tst"
+          : "1grau";
+
+    if (activeInstance === "1grau" && !hasFirstDegreeMovements) {
+      setActiveInstance(fallbackInstance);
+    }
     if (activeInstance === "2grau" && !hasSecondDegreeMovements) {
-      setActiveInstance("1grau");
+      setActiveInstance(fallbackInstance);
     }
     if (activeInstance === "tst" && !hasThirdInstanceMovements) {
-      setActiveInstance("1grau");
+      setActiveInstance(fallbackInstance);
     }
-  }, [activeInstance, hasSecondDegreeMovements, hasThirdInstanceMovements]);
+  }, [
+    activeInstance,
+    hasFirstDegreeMovements,
+    hasSecondDegreeMovements,
+    hasThirdInstanceMovements,
+  ]);
 
   const handleCompanyClick = (company: Company) => {
     setSelectedCompany(company);
@@ -382,21 +412,14 @@ export function useProcessPageState() {
     }
   };
 
-  const handleSyncConfirm = async (options: {
-    documents: boolean;
-    movements: boolean;
-  }) => {
+  const handleSyncConfirm = async () => {
     try {
-      if (!process?.number) {
+      if (!lawsuit?.cnjNumber) {
         toast.error("Número do processo não encontrado.");
         return;
       }
 
-      await runLawsuitsMutation.mutateAsync({
-        lawsuits: [process.number],
-        movements: options.movements,
-        documents: options.documents,
-      });
+      await syncLawsuitMutation.mutateAsync(lawsuit.cnjNumber);
 
       setSyncModalOpen(false);
       setLinkedDocuments([]);
@@ -438,6 +461,7 @@ export function useProcessPageState() {
     handleStartEditTitle,
     handleSyncConfirm,
     hasChanges,
+    hasFirstDegreeMovements,
     hasSecondDegreeMovements,
     hasThirdInstanceMovements,
     hasUnsavedChanges,
@@ -464,7 +488,7 @@ export function useProcessPageState() {
     refetchProcess,
     removeProvisionalLawsuitMutation,
     router,
-    runLawsuitsMutation,
+    syncLawsuitMutation,
     selectedCompany,
     selectedDocumentId,
     setActiveInstance,

@@ -29,6 +29,7 @@ export default function ProcessDetailsEditPage() {
     refetchProcess,
     isRefetching,
     isProcessError,
+    hasFirstDegreeMovements,
     hasSecondDegreeMovements,
     hasThirdInstanceMovements,
     lawsuitCnjNumber,
@@ -66,7 +67,7 @@ export default function ProcessDetailsEditPage() {
     claimantInputRef,
     defendantInputRef,
     updateProcessFormMutation,
-    runLawsuitsMutation,
+    syncLawsuitMutation,
     removeProvisionalLawsuitMutation,
     isInsertExecutionLoading,
     processReopenPending,
@@ -193,7 +194,7 @@ export default function ProcessDetailsEditPage() {
           claimantInputRef={claimantInputRef}
           defendantInputRef={defendantInputRef}
           onSync={async () => {
-            if (!process?.number) {
+            if (!lawsuitCnjNumber) {
               toast.error("Número do processo não encontrado.");
               return;
             }
@@ -232,6 +233,7 @@ export default function ProcessDetailsEditPage() {
             <ProcessTimelineSection
               activeInstance={activeInstance}
               documents={process?.documents || []}
+              hasFirstDegreeMovements={hasFirstDegreeMovements}
               hasSecondDegreeMovements={hasSecondDegreeMovements}
               hasThirdInstanceMovements={hasThirdInstanceMovements}
               moviments={lawsuitMoviments}
@@ -287,7 +289,7 @@ export default function ProcessDetailsEditPage() {
             setOpen: setShowSyncCompleteDialog,
           }}
           syncOptionsModal={{
-            isPending: runLawsuitsMutation.isPending,
+            isPending: syncLawsuitMutation.isPending,
             onConfirm: handleSyncConfirm,
             open: syncModalOpen,
             setOpen: setSyncModalOpen,

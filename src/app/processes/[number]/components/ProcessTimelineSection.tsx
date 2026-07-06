@@ -8,6 +8,7 @@ import { InstanceEnum } from "@/components/process/TimelineCard.types";
 type ProcessTimelineSectionProps = {
   activeInstance: "1grau" | "2grau" | "tst";
   documents: DocumentExtract[];
+  hasFirstDegreeMovements: boolean;
   hasSecondDegreeMovements: boolean;
   hasThirdInstanceMovements: boolean;
   moviments: Movimentacoes[];
@@ -26,6 +27,7 @@ type ProcessTimelineSectionProps = {
 export function ProcessTimelineSection({
   activeInstance,
   documents,
+  hasFirstDegreeMovements,
   hasSecondDegreeMovements,
   hasThirdInstanceMovements,
   moviments,
@@ -38,13 +40,15 @@ export function ProcessTimelineSection({
   return (
     <div className="flex flex-col gap-3 transition-all duration-300 min-w-0 lg:col-span-2 order-1">
       <div className="grid grid-cols-3 gap-2 flex-shrink-0">
-        <ProcessInstanceCard
-          instance="1grau"
-          title="1° Grau"
-          processNumber={process?.number}
-          onClick={() => setActiveInstance("1grau")}
-          isActive={activeInstance === "1grau"}
-        />
+        {hasFirstDegreeMovements && (
+          <ProcessInstanceCard
+            instance="1grau"
+            title="1° Grau"
+            processNumber={process?.number}
+            onClick={() => setActiveInstance("1grau")}
+            isActive={activeInstance === "1grau"}
+          />
+        )}
         {hasSecondDegreeMovements && (
           <ProcessInstanceCard
             instance="2grau"
