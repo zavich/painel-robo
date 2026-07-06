@@ -15,6 +15,7 @@ interface ProcessActionsDropdownProps {
   onOpenChange: (open: boolean) => void;
   onViewAnalysis?: () => void;
   onSync?: () => void;
+  lawsuitStatusColeta?: string | null;
 }
 
 export const ProcessActionsDropdown = memo(function ProcessActionsDropdown({
@@ -23,8 +24,12 @@ export const ProcessActionsDropdown = memo(function ProcessActionsDropdown({
   onOpenChange,
   onViewAnalysis,
   onSync,
+  lawsuitStatusColeta,
 }: ProcessActionsDropdownProps) {
   const hasMenuItems = onViewAnalysis || onSync;
+  // Sincronizar só é liberado enquanto o Athena não encontrou o processo —
+  // uma vez encontrado, esse botão manual deixa de fazer sentido.
+  const canSync = lawsuitStatusColeta === "NAO_ENCONTRADO";
 
   if (!hasMenuItems) return null;
 
@@ -70,7 +75,9 @@ export const ProcessActionsDropdown = memo(function ProcessActionsDropdown({
         )}
         {onSync && (
           <DropdownMenuItem
+            disabled={!canSync}
             onClick={() => {
+              if (!canSync) return;
               onSync();
               onOpenChange(false);
             }}

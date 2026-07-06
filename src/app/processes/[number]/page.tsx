@@ -1,9 +1,6 @@
 "use client";
 
 import { Process } from "@/app/interfaces/processes";
-import {
-  canSync,
-} from "@/app/utils/processSyncStatus";
 import { MainShell } from "@/components/layout/MainShell";
 import {
   DocumentsCardSkeleton,
@@ -199,27 +196,17 @@ export default function ProcessDetailsEditPage() {
               return;
             }
 
-            if (!canSync(process?.processStatus, process?.synchronizedAt)) {
-              if (process?.synchronizedAt) {
-                const lastSync = new Date(process.synchronizedAt);
-                const now = new Date();
-                const diffInMinutes = Math.floor(
-                  (now.getTime() - lastSync.getTime()) / (1000 * 60),
-                );
-                const remainingMinutes = 30 - diffInMinutes;
-
-                toast.warning(
-                  `Aguarde mais ${remainingMinutes} minuto${remainingMinutes > 1 ? "s" : ""} para sincronizar novamente.`,
-                  {
-                    position: "top-right",
-                    autoClose: 4000,
-                  },
-                );
-              } else {
-                toast.error(
-                  "Só é permitido sincronizar caso synchronizedAt já tenha passado 30 minutos.",
-                );
-              }
+            // Sincronizar só é liberado quando o Athena ainda não tem o
+            // processo (status_coleta NAO_ENCONTRADO) — substitui o antigo
+            // cooldown de 30min baseado em process.synchronizedAt (Mongo).
+            if (lawsuitStatusColeta !== "NAO_ENCONTRADO") {
+              toast.warning(
+                "Sincronizar só é permitido enquanto o processo não é encontrado.",
+                {
+                  position: "top-right",
+                  autoClose: 4000,
+                },
+              );
               return;
             }
 

@@ -629,6 +629,7 @@ export function ProcessHeader({
                 onOpenChange={setProcessMenuOpen}
                 onViewAnalysis={onViewAnalysis}
                 onSync={onSync}
+                lawsuitStatusColeta={lawsuitStatusColeta}
               />
             </div>
           </div>
