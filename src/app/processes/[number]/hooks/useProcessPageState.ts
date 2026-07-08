@@ -18,6 +18,7 @@ import { UserRolesEnum } from "@/app/interfaces/user";
 import { logger } from "@/app/lib/logger";
 import { mapLawsuitMoviments, mapLawsuitPartes } from "@/app/utils/lawsuitMappers";
 import { getClaimant } from "@/app/utils/processPartsUtils";
+import { generateTextPdf } from "@/app/utils/textToPdf";
 import { InstanceEnum } from "@/components/process/TimelineCard.types";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -270,6 +271,13 @@ export function useProcessPageState() {
     setIsCompanyModalOpen(true);
   };
 
+  const [movementDocumentPreview, setMovementDocumentPreview] = useState<{
+    title: string;
+    blob: Blob;
+    movementId: number;
+    texto: string;
+  } | null>(null);
+
   const handleDocumentClick = (document: DocumentExtract) => {
     if (!process?.number) {
       return;
@@ -288,28 +296,35 @@ export function useProcessPageState() {
     });
   };
 
-  const [movementDocumentPreview, setMovementDocumentPreview] = useState<{
-    title: string;
-    blob: Blob;
-    movementId: number;
-    texto: string;
-  } | null>(null);
-
-  const handleViewMovementDocument = (
-    title: string,
-    blob: Blob,
-    movementId: number,
-    texto: string,
-  ) => {
-    setMovementDocumentPreview({ title, blob, movementId, texto });
-  };
-
   const handleCloseMovementDocument = () => {
     setMovementDocumentPreview(null);
   };
 
-  const handleMovementClick = (movement: Movimentacoes) => {
+  const handleMovementClick = async (movement: Movimentacoes) => {
+    // Pós-migração pro Athena, o documento já vem embutido na própria
+    // movimentação via `texto` — não precisa mais cruzar com
+    // `process.documents` (array do Mongo, que não é mais preenchido desde
+    // que o handler de webhook que gravava lá foi removido). Gera o PDF a
+    // partir desse texto e mostra no painel ao lado, sem sair da timeline.
+    if (movement.texto) {
+      setLinkedDocuments([]);
+      const blob = await generateTextPdf(movement.texto);
+      const title = movement.conteudo
+        ? `${movement.conteudo} - ${movement.data}`
+        : `Documento - ${movement.data}`;
+      setMovementDocumentPreview({
+        title,
+        blob,
+        movementId: movement.id,
+        texto: movement.texto,
+      });
+      return;
+    }
+
+    setMovementDocumentPreview(null);
+
     if (!process?.documents) {
+      setLinkedDocuments([]);
       return;
     }
 
@@ -343,11 +358,8 @@ export function useProcessPageState() {
       return;
     }
 
-    setMovementDocumentPreview(null);
     setLinkedDocuments(matchingDocs);
-    setSelectedDocumentId(
-      matchingDocs.length === 1 ? matchingDocs[0]._id : null,
-    );
+    setSelectedDocumentId(matchingDocs[0]._id);
   };
 
   function handleReopen() {
@@ -454,7 +466,6 @@ export function useProcessPageState() {
     handleLinkProvisionalExecution,
     handleMovementClick,
     handleRejectUpdate,
-    handleViewMovementDocument,
     handleRemoveProvisionalLink,
     handleReopen,
     handleSaveTitle,

@@ -73,7 +73,6 @@ export default function ProcessDetailsEditPage() {
     handleDocumentClick,
     handleMovementClick,
     handleReopen,
-    handleViewMovementDocument,
     handleRemoveProvisionalLink,
     handleConfirmRemoveProvisionalLink,
     handleLinkProvisionalExecution,
@@ -196,20 +195,6 @@ export default function ProcessDetailsEditPage() {
               return;
             }
 
-            // Sincronizar só é liberado quando o Athena ainda não tem o
-            // processo (status_coleta NAO_ENCONTRADO) — substitui o antigo
-            // cooldown de 30min baseado em process.synchronizedAt (Mongo).
-            if (lawsuitStatusColeta !== "NAO_ENCONTRADO") {
-              toast.warning(
-                "Sincronizar só é permitido enquanto o processo não é encontrado.",
-                {
-                  position: "top-right",
-                  autoClose: 4000,
-                },
-              );
-              return;
-            }
-
             setSyncModalOpen(true);
           }}
           onRemoveProvisionalLink={handleRemoveProvisionalLink}
@@ -226,7 +211,6 @@ export default function ProcessDetailsEditPage() {
               moviments={lawsuitMoviments}
               onDocumentClick={handleDocumentClick}
               onMovementClick={handleMovementClick}
-              onViewMovementDocument={handleViewMovementDocument}
               process={process}
               setActiveInstance={setActiveInstance}
             />

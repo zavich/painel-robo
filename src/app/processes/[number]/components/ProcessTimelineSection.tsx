@@ -14,12 +14,6 @@ type ProcessTimelineSectionProps = {
   moviments: Movimentacoes[];
   onDocumentClick: (document: DocumentExtract) => void;
   onMovementClick: (movement: Movimentacoes) => void;
-  onViewMovementDocument?: (
-    title: string,
-    blob: Blob,
-    movementId: number,
-    texto: string,
-  ) => void;
   process: Process | null | undefined;
   setActiveInstance: (instance: "1grau" | "2grau" | "tst") => void;
 };
@@ -33,7 +27,6 @@ export function ProcessTimelineSection({
   moviments,
   onDocumentClick,
   onMovementClick,
-  onViewMovementDocument,
   process,
   setActiveInstance,
 }: ProcessTimelineSectionProps) {
@@ -77,7 +70,6 @@ export function ProcessTimelineSection({
             instancia={InstanceEnum.FIRST_INSTANCE}
             processNumber={process?.number}
             onMovementClick={onMovementClick}
-            onViewMovementDocument={onViewMovementDocument}
             documents={documents}
             onDocumentClick={onDocumentClick}
           />
@@ -90,7 +82,6 @@ export function ProcessTimelineSection({
             instancia={InstanceEnum.SECOND_INSTANCE}
             processNumber={process?.number}
             onMovementClick={onMovementClick}
-            onViewMovementDocument={onViewMovementDocument}
             documents={documents}
             onDocumentClick={onDocumentClick}
           />
@@ -103,7 +94,6 @@ export function ProcessTimelineSection({
             instancia={InstanceEnum.THIRD_INSTANCE}
             processNumber={process?.number}
             onMovementClick={onMovementClick}
-            onViewMovementDocument={onViewMovementDocument}
             documents={documents}
             onDocumentClick={onDocumentClick}
           />
