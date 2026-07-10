@@ -396,7 +396,11 @@ class PdfWriter {
 
   async finish(): Promise<Blob> {
     const pdfBytes = await this.doc.save();
-    return new Blob([pdfBytes.buffer as ArrayBuffer], {
+    // Copia pra um Uint8Array com ArrayBuffer próprio — usar `.buffer` direto
+    // ignora byteOffset/byteLength e pode incluir bytes fora do slice real,
+    // gerando um PDF corrompido ou maior que o necessário; o tipo de
+    // `pdfBytes.buffer` (ArrayBufferLike) também não bate com BlobPart.
+    return new Blob([new Uint8Array(pdfBytes)], {
       type: "application/pdf",
     });
   }

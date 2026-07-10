@@ -79,12 +79,6 @@ function MovementCard({
     }
   };
 
-  // Clicar no ícone abre o documento em nova aba; clicar em qualquer outra
-  // parte do card continua abrindo o preview no painel ao lado, igual antes.
-  const handleButtonClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    void abrirDocumentoEmNovaAba();
-  };
 
   return (
     <div
@@ -109,7 +103,13 @@ function MovementCard({
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleButtonClick}
+          onClick={(e) => {
+            // Clicar no ícone abre o documento em nova aba; clicar em
+            // qualquer outra parte do card continua abrindo o preview no
+            // painel ao lado, igual antes.
+            e.stopPropagation();
+            void abrirDocumentoEmNovaAba();
+          }}
           disabled={isGeneratingPdf}
           className="absolute top-1.5 right-1.5 h-6 w-6 p-0 flex items-center justify-center"
           title="Abrir documento em nova aba"

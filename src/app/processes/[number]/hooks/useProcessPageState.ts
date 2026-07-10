@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import { useLawsuit } from "@/app/api/hooks/lawsuit/useLawsuit";
 import { useProcessReopen } from "@/app/api/hooks/process/useProcessReopen";
 import { useUpdateProcessForm } from "@/app/api/hooks/process/useUpdateProcessForm";
@@ -85,6 +86,7 @@ export function useProcessPageState() {
   const {
     data: lawsuit,
     isLoading: isLawsuitLoading,
+    error: lawsuitError,
     refetch: refetchLawsuit,
   } = useLawsuit(id, {
     // Enquanto o status ficar "SINCRONIZANDO" (marcado no Redis assim que o
@@ -231,6 +233,15 @@ export function useProcessPageState() {
   // progressivamente, quando/se estiver disponível.
   const isLoading = isLawsuitLoading;
   const isProcessError = !isLawsuitLoading && !lawsuit;
+  // Só dispara o fluxo de "processo não encontrado" (busca automática em
+  // comunicacao-spot) quando o Athena de fato respondeu 404 — outros erros
+  // (500, timeout, rede) também caem em `isProcessError` (pra não deixar a
+  // tela em branco), mas sem isso qualquer falha transitória acionava a
+  // mesma checagem/insert automática de um processo que pode existir.
+  const isLawsuitNotFound =
+    isProcessError &&
+    axios.isAxiosError(lawsuitError) &&
+    lawsuitError.response?.status === 404;
 
   // Lembra pra qual CNJ já disparamos a checagem automática, pra não repetir
   // a cada re-render.
@@ -245,7 +256,7 @@ export function useProcessPageState() {
   // estado de "não encontrado". Se não existir, só grava o marcador
   // BUSCANDO (sem custo de captcha) e a tela mostra "não encontrado" de fato.
   useEffect(() => {
-    if (!isProcessError || !id || insertAttemptedFor === id) {
+    if (!isLawsuitNotFound || !id || insertAttemptedFor === id) {
       return;
     }
 
@@ -265,13 +276,13 @@ export function useProcessPageState() {
         toast.error("Erro ao verificar/inserir o processo em comunicacao-spot.");
       },
     });
-  }, [isProcessError, id, insertAttemptedFor, insertLawsuitMutation, refetchLawsuit]);
+  }, [isLawsuitNotFound, id, insertAttemptedFor, insertLawsuitMutation, refetchLawsuit]);
 
   // Enquanto isso for true, ainda estamos checando o comunicacao-spot pra
   // esse CNJ — só depois é que dá pra afirmar "não encontrado" de fato (nem
   // no Athena, nem em comunicacao-spot), sem nenhuma ação do usuário.
   const isCheckingNewLawsuit =
-    isProcessError &&
+    isLawsuitNotFound &&
     (insertAttemptedFor !== id || insertLawsuitMutation.isPending);
 
   useEffect(() => {
