@@ -498,6 +498,7 @@ export function useProcessPageState() {
     isEditingTitle,
     isInsertExecutionLoading,
     isLoading,
+    isLawsuitNotFound,
     isProcessError,
     isRefetching,
     isSyncing,

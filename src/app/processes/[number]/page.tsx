@@ -26,6 +26,7 @@ export default function ProcessDetailsEditPage() {
     refetchProcess,
     isRefetching,
     isProcessError,
+    isLawsuitNotFound,
     isCheckingNewLawsuit,
     hasFirstDegreeMovements,
     hasSecondDegreeMovements,
@@ -145,30 +146,47 @@ export default function ProcessDetailsEditPage() {
                 <XCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-                Processo não encontrado
+                {isLawsuitNotFound
+                  ? "Processo não encontrado"
+                  : "Erro ao carregar o processo"}
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                Não encontramos nenhum processo com esse número no PJe.
-                <br />
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Verifique se o número foi digitado corretamente.
-                </span>
+                {isLawsuitNotFound ? (
+                  <>
+                    Não encontramos nenhum processo com esse número no PJe.
+                    <br />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Verifique se o número foi digitado corretamente.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Ocorreu um erro ao carregar os dados do processo.
+                    <br />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Isso pode ser uma falha transitória — tente novamente em
+                      instantes.
+                    </span>
+                  </>
+                )}
               </p>
               <div className="flex flex-col gap-3">
-                <Button
-                  onClick={handleSearchNewLawsuit}
-                  disabled={searchLawsuitMutation.isPending}
-                  className="bg-secondary hover:bg-secondary/90 text-white rounded-xl px-6 py-3 font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  {searchLawsuitMutation.isPending ? (
-                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Search className="h-4 w-4" />
-                  )}
-                  {searchLawsuitMutation.isPending
-                    ? "Iniciando busca..."
-                    : "Buscar processo"}
-                </Button>
+                {isLawsuitNotFound && (
+                  <Button
+                    onClick={handleSearchNewLawsuit}
+                    disabled={searchLawsuitMutation.isPending}
+                    className="bg-secondary hover:bg-secondary/90 text-white rounded-xl px-6 py-3 font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    {searchLawsuitMutation.isPending ? (
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    {searchLawsuitMutation.isPending
+                      ? "Iniciando busca..."
+                      : "Buscar processo"}
+                  </Button>
+                )}
                 <Button
                   onClick={() => router.push("/dashboard")}
                   className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-xl px-6 py-3 font-medium transition-colors"

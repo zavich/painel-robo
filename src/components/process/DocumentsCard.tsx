@@ -157,7 +157,10 @@ export function DocumentsCard({
                   window.document.body.appendChild(a);
                   a.click();
                   a.remove();
-                  window.URL.revokeObjectURL(url);
+                  // Revoga só depois de dar tempo do navegador iniciar o
+                  // download — revogar logo após o click() pode invalidar o
+                  // blob antes da transferência começar em alguns browsers.
+                  setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
                 }}
                 className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"
                 aria-label="Download"
