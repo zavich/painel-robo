@@ -1,11 +1,8 @@
 import { useLawsuit } from "@/app/api/hooks/lawsuit/useLawsuit";
 import { useInsertLawsuit } from "@/app/api/hooks/lawsuit/useInsertLawsuit";
-import { useProcessFetch } from "@/app/api/hooks/process/useInsertProcess";
 import { useFilter } from "@/app/hooks/filter/useFilter";
 import { useToast } from "@/app/hooks/use-toast";
 import { FiltersBar } from "@/components/FiltersBar";
-import InsertProcessModal from "@/components/process/InsertProcessModal";
-import { Button } from "@/components/ui/button";
 import { Search, SearchX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -13,9 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 export default function KanbanDashboard() {
   const { filters, setFilter, resetFilters } = useFilter();
   const router = useRouter();
-  const { fetchData } = useProcessFetch();
   const [showScrollTopButton, setShowScrollTopButton] = useState(false);
-  const [isInsertModalOpen, setIsInsertModalOpen] = useState(false);
   const { toast } = useToast();
 
   const search = useMemo(
@@ -120,55 +115,9 @@ export default function KanbanDashboard() {
     insertCheckSettled && insertLawsuitMutation.data?.cached;
   const genuinelyNotFound = insertCheckSettled && !willRedirectFromCache;
 
-  const handleOpenInsertModal = () => {
-    setIsInsertModalOpen(true);
-  };
-
-  const handleCloseInsertModal = () => {
-    setIsInsertModalOpen(false);
-  };
-
-  const handleInsertProcess = async (
-    processNumber: string,
-    file: File | null,
-  ) => {
-    try {
-      if (processNumber) {
-        await fetchData({
-          type: "number",
-          value: [processNumber],
-        });
-      } else {
-        await fetchData({
-          type: "upload",
-          file: file as File,
-        });
-      }
-      toast({
-        title: "Processo inserido com sucesso!",
-        description: `O processo ${processNumber} foi inserido e está sendo processado. Ele aparecerá na lista em breve.`,
-      });
-      handleCloseInsertModal();
-    } catch (error) {
-      toast({
-        title: "Erro ao inserir processo",
-        description: "Ocorreu um erro ao inserir o processo. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div>
       <main className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-8 bg-gradient-to-b from-background via-background to-muted/30">
-        <div className="mb-4 flex items-center justify-end">
-          <Button
-            onClick={handleOpenInsertModal}
-            className="ml-4 bg-gradient-to-r from-secondary to-accent text-white shadow-md focus:ring-2 focus:ring-secondary/30 hover:from-secondary hover:to-accent"
-          >
-            Inserir Processo
-          </Button>
-        </div>
         <div className="mb-8">
           <FiltersBar
             filters={{ search }}
@@ -257,13 +206,6 @@ export default function KanbanDashboard() {
           </svg>
         </button>
       )}
-
-      {/* Modal para inserir processo */}
-      <InsertProcessModal
-        isOpen={isInsertModalOpen}
-        onClose={handleCloseInsertModal}
-        onSubmit={handleInsertProcess}
-      />
     </div>
   );
 }

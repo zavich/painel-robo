@@ -222,7 +222,6 @@ interface TimelineCardProps {
   moviments: Movimentacoes[];
   instancia?: InstanceEnum;
   newMovements?: NewMovement[];
-  processNumber?: string;
   onMovementClick?: (mov: Movimentacoes) => void;
   onMarkAsViewed?: () => void;
   isMarkingAsViewed?: boolean;
@@ -233,7 +232,6 @@ export function TimelineCard({
   moviments,
   instancia,
   newMovements = [],
-  processNumber,
   onMovementClick,
   onMarkAsViewed,
   isMarkingAsViewed = false,
