@@ -419,7 +419,12 @@ export function useProcessPageState() {
     }
   };
 
-  const handleSyncConfirm = async () => {
+  // `options` (movements/documents) vem do SyncOptionsModal, mas o endpoint
+  // /sync ainda não aceita esses filtros — aceita o parâmetro só pra bater
+  // com a assinatura exigida por SyncOptionsModalProps.onConfirm.
+  const handleSyncConfirm = async (
+    _options?: { movements: boolean; documents: boolean },
+  ) => {
     try {
       if (!lawsuit?.cnjNumber) {
         toast.error("Número do processo não encontrado.");

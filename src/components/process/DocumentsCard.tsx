@@ -142,7 +142,7 @@ export function DocumentsCard({
             </div>
           </div>
           {/* Botões de ação no canto inferior direito - fixos em relação ao CardContent */}
-          <div className="absolute bottom-2 sm:bottom-4 right-2 sm:right-13 z-50 flex gap-1 sm:gap-2 pointer-events-none">
+          <div className="absolute bottom-2 sm:bottom-4 right-2 sm:right-4 z-50 flex gap-1 sm:gap-2 pointer-events-none">
             <div className="flex gap-1 sm:gap-2 pointer-events-auto">
               <Button
                 variant="default"
