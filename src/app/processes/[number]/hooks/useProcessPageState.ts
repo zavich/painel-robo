@@ -233,13 +233,12 @@ export function useProcessPageState() {
   const handleSyncConfirm = async (
     _options?: { movements: boolean; documents: boolean },
   ) => {
+    // Só chega aqui com o modal já aberto, e o modal só abre depois do
+    // mesmo check em `onSync` (page.tsx) — guarda silenciosa (sem toast
+    // duplicado) só pra satisfazer o narrowing de tipo do TS abaixo.
     if (!lawsuit?.cnjNumber) {
-      toast.error("Número do processo não encontrado.");
       return;
     }
-
-    // Feedback instantâneo, no clique — não espera a resposta da rede.
-    toast.success("Sincronização iniciada! Aguarde a confirmação.");
 
     try {
       await syncLawsuitMutation.mutateAsync(lawsuit.cnjNumber);
@@ -249,7 +248,14 @@ export function useProcessPageState() {
       await refetchLawsuit();
     } catch (error) {
       logger.error("Erro ao sincronizar processo:", error as object);
-      toast.error("Erro ao sincronizar processo.");
+      const detalhe = axios.isAxiosError(error)
+        ? (error.response?.data as { message?: string })?.message
+        : undefined;
+      toast.error(
+        detalhe
+          ? `Erro ao sincronizar processo: ${detalhe}`
+          : "Erro ao sincronizar processo. Tente novamente em instantes.",
+      );
     }
   };
 
