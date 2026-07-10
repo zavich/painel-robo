@@ -70,7 +70,10 @@ function MovementCard({
     try {
       const blob = await generateTextPdf(mov.texto);
       const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
+      window.open(url, "_blank", "noopener,noreferrer");
+      // Revoga depois de dar tempo do browser abrir a aba e carregar o
+      // blob — revogar cedo demais faz a aba nova falhar ao carregar.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -406,9 +409,9 @@ export function TimelineCard({
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0">
               <div className="relative pl-1">
-                {groupedItems.map((group) => (
+                {groupedItems.map((group, index) => (
                   <TimelineDateGroup
-                    key={`group-${normalizeDate(group.date)}`}
+                    key={`group-${normalizeDate(group.date) || group.date || index}`}
                     date={group.date}
                     items={group.items}
                     newMovementIds={newMovementIds}

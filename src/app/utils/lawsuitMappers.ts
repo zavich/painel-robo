@@ -30,11 +30,20 @@ export function mapLawsuitMoviments(
     return [];
   }
 
-  return lawsuit.movimentacoes.map((mov) => ({
-    id: Number(mov.movimentacaoId) || 0,
-    data: mov.data ?? "",
-    conteudo: mov.conteudo ?? "",
-    instancia: mov.grau ?? "",
-    texto: mov.texto ?? undefined,
-  }));
+  return lawsuit.movimentacoes.map((mov, index) => {
+    const movimentacaoId = Number(mov.movimentacaoId);
+    return {
+      // Fallback pra 0 colidia entre todos os itens sem movimentacaoId
+      // válido, quebrando key do React e a lógica de newMovementIds/seleção
+      // — usa um id negativo estável por posição, que nunca colide com um
+      // movimentacaoId real (sempre positivo).
+      id: Number.isFinite(movimentacaoId) && movimentacaoId !== 0
+        ? movimentacaoId
+        : -(index + 1),
+      data: mov.data ?? "",
+      conteudo: mov.conteudo ?? "",
+      instancia: mov.grau ?? "",
+      texto: mov.texto ?? undefined,
+    };
+  });
 }
