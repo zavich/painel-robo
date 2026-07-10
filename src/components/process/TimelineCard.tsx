@@ -1,11 +1,11 @@
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Calendar, X, FileText, Check, Eye } from "lucide-react";
+import { Calendar, X, FileText, Check } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { NewMovement } from "@/app/api/hooks/process/useNewMovements";
 import { Badge } from "../ui/badge";
-import { DocumentExtract, Movimentacoes } from "@/app/interfaces/processes";
+import { Movimentacoes } from "@/app/interfaces/processes";
 import { generateTextPdf } from "@/app/utils/textToPdf";
 import { InstanceEnum } from "./TimelineCard.types";
 
@@ -42,38 +42,10 @@ function normalizeSearchText(text: string): string {
     .trim();
 }
 
-// Card de um documento — sem marcador próprio, usado dentro de um grupo por
-// data (o marcador com a data é único por grupo, compartilhado pelos itens).
-function DocumentCard({
-  doc,
-  onClick,
-}: {
-  doc: DocumentExtract;
-  onClick?: (doc: DocumentExtract) => void;
-}) {
-  return (
-    <div
-      onClick={() => onClick?.(doc)}
-      className="relative overflow-hidden rounded-lg pl-3 sm:pl-4 pr-2 sm:pr-3 py-2 sm:py-3 transition-all duration-200 cursor-pointer hover:shadow-lg hover:scale-[1.01] bg-secondary/10 dark:bg-secondary-900/30 border border-secondary/40 dark:border-secondary-700 shadow-sm hover:bg-secondary/20 dark:hover:bg-secondary-900/40"
-    >
-      {/* Left accent bar to set documents apart from movements */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-secondary" />
-
-      <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 flex-wrap">
-        <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wide bg-secondary text-white shadow-sm">
-          <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-          Documento
-        </span>
-      </div>
-
-      <p className="text-[11px] sm:text-xs leading-relaxed font-medium text-foreground dark:text-card-foreground break-words">
-        {doc.title}
-      </p>
-    </div>
-  );
-}
-
-// Card de uma movimentação — sem marcador próprio, mesma lógica de antes.
+// Card de uma movimentação — sem marcador próprio. Toda movimentação com
+// documento (`mov.texto`) usa a mesma UI "documento" (fundo/borda dourados +
+// badge "DOCUMENTO"), em vez de um card genérico — antes só os documentos
+// vindos do Mongo (`DocumentExtract`, removido) tinham esse destaque.
 function MovementCard({
   mov,
   isNew,
@@ -105,8 +77,7 @@ function MovementCard({
   };
 
   // Clicar no ícone abre o documento em nova aba; clicar em qualquer outra
-  // parte do card continua abrindo os documentos vinculados no painel ao
-  // lado, igual antes.
+  // parte do card continua abrindo o preview no painel ao lado, igual antes.
   const handleButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     void abrirDocumentoEmNovaAba();
@@ -117,14 +88,19 @@ function MovementCard({
       // Só é clicável quando a movimentação tem documento — sem
       // documento não tem o que abrir no painel ao lado.
       onClick={temDocumento ? () => onClick?.(mov) : undefined}
-      className={`relative rounded-lg p-2 sm:p-3 transition-all duration-200 ${
-        temDocumento ? "cursor-pointer hover:shadow-md hover:scale-[1.01]" : ""
-      } ${
-        isNew
-          ? "bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary/20 dark:border-primary-800/50"
-          : "bg-card dark:bg-card border border-border dark:border-border/50"
-      } ${temDocumento ? "pr-8 sm:pr-9" : ""}`}
+      className={`relative rounded-lg transition-all duration-200 ${
+        temDocumento
+          ? "cursor-pointer hover:shadow-lg hover:scale-[1.01] overflow-hidden pl-4 sm:pl-5 pr-8 sm:pr-9 py-2 sm:py-3 bg-secondary/10 dark:bg-secondary-900/30 border border-secondary/40 dark:border-secondary-700 shadow-sm hover:bg-secondary/20 dark:hover:bg-secondary-900/40"
+          : isNew
+            ? "p-2 sm:p-3 bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary/20 dark:border-primary-800/50"
+            : "p-2 sm:p-3 bg-card dark:bg-card border border-border dark:border-border/50"
+      }`}
     >
+      {/* Barra de destaque à esquerda, só pra movimentações com documento */}
+      {temDocumento && (
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-secondary" />
+      )}
+
       {/* Botão de abrir documento — canto superior direito, só ícone */}
       {temDocumento && (
         <Button
@@ -143,21 +119,30 @@ function MovementCard({
         </Button>
       )}
 
-      {/* Status badge apenas para movimentos novos — data já aparece no marcador do grupo */}
-      {isNew && (
+      {(temDocumento || isNew) && (
         <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 flex-wrap">
-          <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-primary text-primary-foreground">
-            <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full mr-1 sm:mr-1.5 animate-pulse"></div>
-            Nova
-          </span>
+          {temDocumento && (
+            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wide bg-secondary text-white shadow-sm">
+              <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+              Documento
+            </span>
+          )}
+          {isNew && (
+            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-primary text-primary-foreground">
+              <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full mr-1 sm:mr-1.5 animate-pulse"></div>
+              Nova
+            </span>
+          )}
         </div>
       )}
 
       <p
         className={`text-[11px] sm:text-xs leading-relaxed break-words ${
-          isNew
-            ? "text-primary dark:text-primary-foreground"
-            : "text-foreground dark:text-card-foreground"
+          temDocumento
+            ? "font-medium text-foreground dark:text-card-foreground"
+            : isNew
+              ? "text-primary dark:text-primary-foreground"
+              : "text-foreground dark:text-card-foreground"
         }`}
       >
         {mov.conteudo}
@@ -166,9 +151,7 @@ function MovementCard({
   );
 }
 
-type CombinedItem =
-  | { type: "movement"; id: number; date: string; data: Movimentacoes }
-  | { type: "document"; id: string; date: string; data: DocumentExtract };
+type CombinedItem = { id: number; date: string; data: Movimentacoes };
 
 // Agrupa por data (mesmo dia = mesmo marcador) — um único marcador/linha por
 // data, com todos os itens daquele dia empilhados ao lado dele.
@@ -177,17 +160,13 @@ function TimelineDateGroup({
   items,
   newMovementIds,
   onMovementClick,
-  onDocumentClick,
 }: {
   date: string;
   items: CombinedItem[];
   newMovementIds: Set<number>;
   onMovementClick?: (mov: Movimentacoes) => void;
-  onDocumentClick?: (doc: DocumentExtract) => void;
 }) {
-  const hasNew = items.some(
-    (item) => item.type === "movement" && newMovementIds.has(item.id),
-  );
+  const hasNew = items.some((item) => newMovementIds.has(item.id));
 
   return (
     <div className="relative flex items-start pb-2 sm:pb-3">
@@ -222,22 +201,14 @@ function TimelineDateGroup({
 
       {/* Itens do dia, empilhados */}
       <div className="flex-1 min-w-0 space-y-2">
-        {items.map((item) =>
-          item.type === "movement" ? (
-            <MovementCard
-              key={`movement-${item.id}`}
-              mov={item.data}
-              isNew={newMovementIds.has(item.id)}
-              onClick={onMovementClick}
-            />
-          ) : (
-            <DocumentCard
-              key={`document-${item.id}`}
-              doc={item.data}
-              onClick={onDocumentClick}
-            />
-          ),
-        )}
+        {items.map((item) => (
+          <MovementCard
+            key={`movement-${item.id}`}
+            mov={item.data}
+            isNew={newMovementIds.has(item.id)}
+            onClick={onMovementClick}
+          />
+        ))}
       </div>
     </div>
   );
@@ -250,8 +221,6 @@ interface TimelineCardProps {
   newMovements?: NewMovement[];
   processNumber?: string;
   onMovementClick?: (mov: Movimentacoes) => void;
-  documents?: DocumentExtract[];
-  onDocumentClick?: (doc: DocumentExtract) => void;
   onMarkAsViewed?: () => void;
   isMarkingAsViewed?: boolean;
 }
@@ -263,8 +232,6 @@ export function TimelineCard({
   newMovements = [],
   processNumber,
   onMovementClick,
-  documents = [],
-  onDocumentClick,
   onMarkAsViewed,
   isMarkingAsViewed = false,
 }: TimelineCardProps) {
@@ -296,103 +263,19 @@ export function TimelineCard({
     return new Set(filteredNewMovements.map((mov) => mov.id));
   }, [newMovements, instancia]);
 
-  // Classificar documentos por instância baseado nas datas das movimentações
-  const classifyDocumentByInstance = useMemo(() => {
-    // Obter datas de cada instância
-    const firstInstanceDates = moviments
-      .filter((mov) => mov.instancia === InstanceEnum.FIRST_INSTANCE)
-      .map((mov) => normalizeDate(mov.data))
-      .filter((d) => d);
-
-    const secondInstanceDates = moviments
-      .filter((mov) => mov.instancia === InstanceEnum.SECOND_INSTANCE)
-      .map((mov) => normalizeDate(mov.data))
-      .filter((d) => d);
-
-    return (docDate: string) => {
-      const normalizedDocDate = normalizeDate(docDate);
-      if (!normalizedDocDate) return null;
-
-      // Se não há movimentações de segunda instância, assume primeira
-      if (secondInstanceDates.length === 0) {
-        return InstanceEnum.FIRST_INSTANCE;
-      }
-
-      // Se não há movimentações de primeira instância, assume segunda
-      if (firstInstanceDates.length === 0) {
-        return InstanceEnum.SECOND_INSTANCE;
-      }
-
-      // Calcular a distância mínima para cada instância
-      const distanceToFirst = Math.min(
-        ...firstInstanceDates.map((movDate) =>
-          Math.abs(
-            new Date(normalizedDocDate).getTime() - new Date(movDate).getTime(),
-          ),
-        ),
-      );
-
-      const distanceToSecond = Math.min(
-        ...secondInstanceDates.map((movDate) =>
-          Math.abs(
-            new Date(normalizedDocDate).getTime() - new Date(movDate).getTime(),
-          ),
-        ),
-      );
-
-      // Retorna a instância mais próxima
-      return distanceToFirst <= distanceToSecond
-        ? InstanceEnum.FIRST_INSTANCE
-        : InstanceEnum.SECOND_INSTANCE;
-    };
-  }, [moviments]);
-
-  // Combinar movimentações e documentos ordenados por data
+  // Mapeia movimentações pro formato unificado e ordena por data (mais
+  // recente primeiro) — documentos não são mais uma fonte separada (vinham
+  // do Mongo, `process.documents`), o texto/documento já está embutido em
+  // cada movimentação via `mov.texto` (fonte 100% Athena).
   const combinedItems = useMemo(() => {
-    // Mapear movimentações para o formato unificado
     const movementsMapped = movimentsFirstInstance.map((mov) => ({
-      type: "movement" as const,
       id: mov.id,
       date: mov.data,
       data: mov,
-      instancia: mov.instancia,
     }));
 
-    // Mapear documentos para o formato unificado e classificar por instância
-    const documentsMapped = documents
-      .map((doc) => ({
-        type: "document" as const,
-        id: doc._id,
-        date: doc.date,
-        data: doc,
-        instancia: classifyDocumentByInstance(doc.date),
-      }))
-      // Filtrar apenas documentos da instância atual
-      .filter((doc) => doc.instancia === instancia)
-      // Aplicar filtro de busca nos documentos
-      .filter((doc) => {
-        if (!searchFirstInstance) return true;
-
-        const normalizedSearch = normalizeSearchText(searchFirstInstance);
-        const normalizedTitle = normalizeSearchText(doc.data.title || "");
-        const normalizedDate = normalizeSearchText(doc.data.date || "");
-
-        const titleMatch = normalizedTitle.includes(normalizedSearch);
-        const dateMatch = normalizedDate.includes(normalizedSearch);
-
-        return titleMatch || dateMatch;
-      });
-
-    // Combinar e ordenar por data (mais recente primeiro)
-    const combined = [...movementsMapped, ...documentsMapped];
-    return combined.sort((a, b) => compareDates(a.date, b.date));
-  }, [
-    movimentsFirstInstance,
-    documents,
-    classifyDocumentByInstance,
-    instancia,
-    searchFirstInstance,
-  ]);
+    return movementsMapped.sort((a, b) => compareDates(a.date, b.date));
+  }, [movimentsFirstInstance]);
 
   // Agrupa itens com a mesma data (já vêm ordenados por data em
   // `combinedItems`, então basta comparar com o grupo anterior).
@@ -530,7 +413,6 @@ export function TimelineCard({
                     items={group.items}
                     newMovementIds={newMovementIds}
                     onMovementClick={onMovementClick}
-                    onDocumentClick={onDocumentClick}
                   />
                 ))}
               </div>

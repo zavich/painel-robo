@@ -10,7 +10,7 @@ import {
 import { ProcessHeader } from "@/components/process/ProcessHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { XCircle } from "lucide-react";
+import { Search, XCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { ProcessActionDialogs } from "./components/ProcessActionDialogs";
 import { ProcessSidebar } from "./components/ProcessSidebar";
@@ -26,6 +26,7 @@ export default function ProcessDetailsEditPage() {
     refetchProcess,
     isRefetching,
     isProcessError,
+    isCheckingNewLawsuit,
     hasFirstDegreeMovements,
     hasSecondDegreeMovements,
     hasThirdInstanceMovements,
@@ -47,14 +48,12 @@ export default function ProcessDetailsEditPage() {
     setShowSyncCompleteDialog,
     syncModalOpen,
     setSyncModalOpen,
-    selectedDocumentId,
     activeInstance,
     setActiveInstance,
     showRemoveProvisionalLinkConfirm,
     setShowRemoveProvisionalLinkConfirm,
     showLinkProvisionalExecutionModal,
     setShowLinkProvisionalExecutionModal,
-    linkedDocuments,
     movementDocumentPreview,
     executionNumberInput,
     setExecutionNumberInput,
@@ -65,12 +64,12 @@ export default function ProcessDetailsEditPage() {
     defendantInputRef,
     updateProcessFormMutation,
     syncLawsuitMutation,
+    searchLawsuitMutation,
     removeProvisionalLawsuitMutation,
     isInsertExecutionLoading,
     processReopenPending,
     handleCloseMovementDocument,
     handleCompanyClick,
-    handleDocumentClick,
     handleMovementClick,
     handleReopen,
     handleRemoveProvisionalLink,
@@ -82,6 +81,7 @@ export default function ProcessDetailsEditPage() {
     handleClaimantChange,
     handleDefendantChange,
     handleSaveTitle,
+    handleSearchNewLawsuit,
     handleSyncConfirm,
     handleAcceptUpdate,
     handleRejectUpdate,
@@ -120,6 +120,21 @@ export default function ProcessDetailsEditPage() {
     );
   }
 
+  if (isCheckingNewLawsuit) {
+    return (
+      <MainShell>
+        <div className="h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-6 w-6 border-2 border-yellow-200 border-t-yellow-500 rounded-full animate-spin" />
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Verificando comunicacao-spot...
+            </p>
+          </div>
+        </div>
+      </MainShell>
+    );
+  }
+
   if (isProcessError) {
     return (
       <MainShell>
@@ -140,6 +155,20 @@ export default function ProcessDetailsEditPage() {
                 </span>
               </p>
               <div className="flex flex-col gap-3">
+                <Button
+                  onClick={handleSearchNewLawsuit}
+                  disabled={searchLawsuitMutation.isPending}
+                  className="bg-secondary hover:bg-secondary/90 text-white rounded-xl px-6 py-3 font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  {searchLawsuitMutation.isPending ? (
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                  {searchLawsuitMutation.isPending
+                    ? "Iniciando busca..."
+                    : "Buscar processo"}
+                </Button>
                 <Button
                   onClick={() => router.push("/dashboard")}
                   className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-xl px-6 py-3 font-medium transition-colors"
@@ -204,23 +233,18 @@ export default function ProcessDetailsEditPage() {
           <div className="grid grid-cols-1 gap-3 sm:gap-4 transition-all duration-300 min-w-0 lg:grid-cols-6 flex-1 items-start">
             <ProcessTimelineSection
               activeInstance={activeInstance}
-              documents={process?.documents || []}
               hasFirstDegreeMovements={hasFirstDegreeMovements}
               hasSecondDegreeMovements={hasSecondDegreeMovements}
               hasThirdInstanceMovements={hasThirdInstanceMovements}
               moviments={lawsuitMoviments}
-              onDocumentClick={handleDocumentClick}
               onMovementClick={handleMovementClick}
               process={process}
               setActiveInstance={setActiveInstance}
             />
 
             <ProcessSidebar
-              linkedDocuments={linkedDocuments}
               overrideDocument={movementDocumentPreview}
               onCloseOverrideDocument={handleCloseMovementDocument}
-              process={process}
-              selectedDocumentId={selectedDocumentId}
             />
           </div>
         </main>

@@ -4,7 +4,7 @@ import api from "../..";
 
 export const useLawsuit = (
   numeroCnj?: string,
-  config?: UseQueryOptions<Lawsuit, Error, Lawsuit, QueryKey>,
+  config?: Partial<UseQueryOptions<Lawsuit, Error, Lawsuit, QueryKey>>,
 ) => {
   return useQuery<Lawsuit, Error, Lawsuit, QueryKey>({
     queryKey: ["lawsuit", numeroCnj],

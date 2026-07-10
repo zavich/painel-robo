@@ -6,14 +6,11 @@ import { useUpdateProcessForm } from "@/app/api/hooks/process/useUpdateProcessFo
 import { useInsertExecution } from "@/app/api/hooks/processes/useInsertExecution";
 import { useRemoveProvisionalLawsuit } from "@/app/api/hooks/processes/useRemoveProvisionalLawsuit";
 import { useSyncLawsuit } from "@/app/api/hooks/lawsuit/useSyncLawsuit";
+import { useSearchLawsuit } from "@/app/api/hooks/lawsuit/useSearchLawsuit";
+import { useInsertLawsuit } from "@/app/api/hooks/lawsuit/useInsertLawsuit";
 import { useProcessAutoRefresh } from "@/app/hooks/useProcessAutoRefresh";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
-import {
-  Company,
-  DocumentExtract,
-  Movimentacoes,
-  ProcessStatus,
-} from "@/app/interfaces/processes";
+import { Company, Movimentacoes, ProcessStatus } from "@/app/interfaces/processes";
 import { UserRolesEnum } from "@/app/interfaces/user";
 import { logger } from "@/app/lib/logger";
 import { mapLawsuitMoviments, mapLawsuitPartes } from "@/app/utils/lawsuitMappers";
@@ -45,11 +42,7 @@ export function useProcessPageState() {
     showLinkProvisionalExecutionModal,
     setShowLinkProvisionalExecutionModal,
   ] = useState(false);
-  const [linkedDocuments, setLinkedDocuments] = useState<DocumentExtract[]>([]);
   const [executionNumberInput, setExecutionNumberInput] = useState("");
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
-    null,
-  );
   const [currentStatusInfo, setCurrentStatusInfo] = useState<{
     errorReason?: string;
     log?: string;
@@ -89,7 +82,19 @@ export function useProcessPageState() {
   // que vinham do Mongo. Busca pelo número da URL diretamente (não pelo
   // process do Mongo): a existência do processo (achar/não achar) passa a
   // depender só do Athena, independente do Mongo ter ou não o registro.
-  const { data: lawsuit, isLoading: isLawsuitLoading } = useLawsuit(id);
+  const {
+    data: lawsuit,
+    isLoading: isLawsuitLoading,
+    refetch: refetchLawsuit,
+  } = useLawsuit(id, {
+    // Enquanto o status ficar "SINCRONIZANDO" (marcado no Redis assim que o
+    // sync é disparado, antes do webhook real voltar), continua consultando
+    // de tempos em tempos — sem isso, a tela ficava travada em
+    // "Sincronizando" até um F5 manual, mesmo depois do backend já ter
+    // atualizado o Redis/Athena com o resultado real.
+    refetchInterval: (query) =>
+      query.state.data?.statusColeta === "SINCRONIZANDO" ? 4000 : false,
+  });
   const lawsuitParts = useMemo(() => mapLawsuitPartes(lawsuit), [lawsuit]);
   const lawsuitMoviments = useMemo(
     () => mapLawsuitMoviments(lawsuit),
@@ -129,6 +134,8 @@ export function useProcessPageState() {
   });
 
   const syncLawsuitMutation = useSyncLawsuit();
+  const searchLawsuitMutation = useSearchLawsuit();
+  const insertLawsuitMutation = useInsertLawsuit();
   const {
     insertExecution,
     isLoading: isInsertExecutionLoading,
@@ -225,17 +232,47 @@ export function useProcessPageState() {
   const isLoading = isLawsuitLoading;
   const isProcessError = !isLawsuitLoading && !lawsuit;
 
-  useEffect(() => {
-    if (process?.documents && !selectedDocumentId) {
-      const peticaoDoc = process.documents.find(
-        (document) => document.title === "Petição Inicial" && document.data,
-      );
+  // Lembra pra qual CNJ já disparamos a checagem automática, pra não repetir
+  // a cada re-render.
+  const [insertAttemptedFor, setInsertAttemptedFor] = useState<string | null>(
+    null,
+  );
 
-      if (peticaoDoc) {
-        setSelectedDocumentId(peticaoDoc._id);
-      }
+  // Assim que o Athena confirma "não encontrado", verifica sozinho (sem
+  // clique do usuário) se já existe dado real em comunicacao-spot (de outro
+  // coletor, nunca migrado pro Athena). Se existir, o backend já joga esse
+  // JSON pro cache no Redis — só precisa refazer a consulta pra sair do
+  // estado de "não encontrado". Se não existir, só grava o marcador
+  // BUSCANDO (sem custo de captcha) e a tela mostra "não encontrado" de fato.
+  useEffect(() => {
+    if (!isProcessError || !id || insertAttemptedFor === id) {
+      return;
     }
-  }, [process?.documents, selectedDocumentId]);
+
+    setInsertAttemptedFor(id);
+
+    insertLawsuitMutation.mutate(id, {
+      onSuccess: async (result) => {
+        if (result.cached) {
+          toast.success(
+            "Processo encontrado em comunicacao-spot — carregando o detalhe.",
+          );
+          await refetchLawsuit();
+        }
+      },
+      onError: (error) => {
+        logger.error("Erro ao verificar comunicacao-spot:", error as object);
+        toast.error("Erro ao verificar/inserir o processo em comunicacao-spot.");
+      },
+    });
+  }, [isProcessError, id, insertAttemptedFor, insertLawsuitMutation, refetchLawsuit]);
+
+  // Enquanto isso for true, ainda estamos checando o comunicacao-spot pra
+  // esse CNJ — só depois é que dá pra afirmar "não encontrado" de fato (nem
+  // no Athena, nem em comunicacao-spot), sem nenhuma ação do usuário.
+  const isCheckingNewLawsuit =
+    isProcessError &&
+    (insertAttemptedFor !== id || insertLawsuitMutation.isPending);
 
   useEffect(() => {
     // Corrige a aba ativa pra uma que realmente tenha movimentações — o
@@ -278,88 +315,31 @@ export function useProcessPageState() {
     texto: string;
   } | null>(null);
 
-  const handleDocumentClick = (document: DocumentExtract) => {
-    if (!process?.number) {
-      return;
-    }
-
-    setMovementDocumentPreview(null);
-
-    if (!document?._id) {
-      setSelectedDocumentId(null);
-      return;
-    }
-
-    setSelectedDocumentId(document._id);
-    router.push(`/processes/${process.number}`, {
-      scroll: false,
-    });
-  };
-
   const handleCloseMovementDocument = () => {
     setMovementDocumentPreview(null);
   };
 
+  // Documentos vêm 100% do Athena agora — o texto já está embutido na
+  // própria movimentação via `mov.texto` (não cruza mais com
+  // `process.documents`, array do Mongo que não é mais preenchido desde que
+  // o handler de webhook que gravava lá foi removido). O card só é clicável
+  // quando `mov.texto` existe (ver `MovementCard`), então esse handler só é
+  // chamado nesse caso.
   const handleMovementClick = async (movement: Movimentacoes) => {
-    // Pós-migração pro Athena, o documento já vem embutido na própria
-    // movimentação via `texto` — não precisa mais cruzar com
-    // `process.documents` (array do Mongo, que não é mais preenchido desde
-    // que o handler de webhook que gravava lá foi removido). Gera o PDF a
-    // partir desse texto e mostra no painel ao lado, sem sair da timeline.
-    if (movement.texto) {
-      setLinkedDocuments([]);
-      const blob = await generateTextPdf(movement.texto);
-      const title = movement.conteudo
-        ? `${movement.conteudo} - ${movement.data}`
-        : `Documento - ${movement.data}`;
-      setMovementDocumentPreview({
-        title,
-        blob,
-        movementId: movement.id,
-        texto: movement.texto,
-      });
+    if (!movement.texto) {
       return;
     }
 
-    setMovementDocumentPreview(null);
-
-    if (!process?.documents) {
-      setLinkedDocuments([]);
-      return;
-    }
-
-    const normalizeDate = (dateString: string) => {
-      if (!dateString) {
-        return "";
-      }
-
-      const [dateOnly] = dateString.split(" ");
-      if (dateOnly.includes("/")) {
-        const [day, month, year] = dateOnly.split("/");
-        return `${year}-${month}-${day}`;
-      }
-
-      return dateOnly.substring(0, 10);
-    };
-
-    const normalizedMovementDate = normalizeDate(movement.data);
-    const matchingDocs = process.documents.filter((document) => {
-      const normalizedDocDate = normalizeDate(document.date);
-
-      return (
-        normalizedMovementDate &&
-        normalizedDocDate &&
-        normalizedMovementDate === normalizedDocDate
-      );
+    const blob = await generateTextPdf(movement.texto);
+    const title = movement.conteudo
+      ? `${movement.conteudo} - ${movement.data}`
+      : `Documento - ${movement.data}`;
+    setMovementDocumentPreview({
+      title,
+      blob,
+      movementId: movement.id,
+      texto: movement.texto,
     });
-
-    if (matchingDocs.length === 0) {
-      setLinkedDocuments([]);
-      return;
-    }
-
-    setLinkedDocuments(matchingDocs);
-    setSelectedDocumentId(matchingDocs[0]._id);
   };
 
   function handleReopen() {
@@ -424,6 +404,21 @@ export function useProcessPageState() {
     }
   };
 
+  // Processo ainda não encontrado no Athena (`isProcessError`) — dispara uma
+  // primeira busca (sem documentos restritos) em vez do `/sync`, que é pra
+  // re-sincronizar um processo já existente.
+  const handleSearchNewLawsuit = async () => {
+    try {
+      await searchLawsuitMutation.mutateAsync(id);
+      toast.success(
+        "Busca iniciada! Isso pode levar alguns minutos — atualize a página em instantes.",
+      );
+    } catch (error) {
+      logger.error("Erro ao buscar processo:", error as object);
+      toast.error("Erro ao iniciar a busca do processo.");
+    }
+  };
+
   const handleSyncConfirm = async () => {
     try {
       if (!lawsuit?.cnjNumber) {
@@ -434,9 +429,11 @@ export function useProcessPageState() {
       await syncLawsuitMutation.mutateAsync(lawsuit.cnjNumber);
 
       setSyncModalOpen(false);
-      setLinkedDocuments([]);
-      setSelectedDocumentId(null);
-      await refetchProcess();
+      setMovementDocumentPreview(null);
+      // O backend já marca o processo como SINCRONIZANDO no Redis assim que
+      // a extração é disparada — refaz a consulta pro Athena/Redis (não só
+      // o Mongo) pra esse status aparecer no header sem precisar recarregar.
+      await Promise.all([refetchProcess(), refetchLawsuit()]);
     } catch (error) {
       logger.error("Erro ao sincronizar processo:", error as object);
       toast.error("Erro ao sincronizar processo.");
@@ -462,13 +459,13 @@ export function useProcessPageState() {
     handleConfirmRemoveProvisionalLink,
     handleCloseMovementDocument,
     handleDefendantChange,
-    handleDocumentClick,
     handleLinkProvisionalExecution,
     handleMovementClick,
     handleRejectUpdate,
     handleRemoveProvisionalLink,
     handleReopen,
     handleSaveTitle,
+    handleSearchNewLawsuit,
     handleStartEditTitle,
     handleSyncConfirm,
     hasChanges,
@@ -479,6 +476,7 @@ export function useProcessPageState() {
     id,
     initialPetitionData,
     isAdmin,
+    isCheckingNewLawsuit,
     isCompanyModalOpen,
     isEditing,
     isEditingTitle,
@@ -492,16 +490,15 @@ export function useProcessPageState() {
     lawsuitStatusColeta: lawsuit?.statusColeta,
     lawsuitMoviments,
     lawsuitParts,
-    linkedDocuments,
     movementDocumentPreview,
     process,
     processReopenPending: processReopenMutation.isPending,
     refetchProcess,
     removeProvisionalLawsuitMutation,
     router,
+    searchLawsuitMutation,
     syncLawsuitMutation,
     selectedCompany,
-    selectedDocumentId,
     setActiveInstance,
     setExecutionNumberInput,
     setFormState,

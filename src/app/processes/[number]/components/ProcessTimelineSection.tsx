@@ -1,18 +1,16 @@
 "use client";
 
-import { DocumentExtract, Movimentacoes, Process } from "@/app/interfaces/processes";
+import { Movimentacoes, Process } from "@/app/interfaces/processes";
 import { ProcessInstanceCard } from "@/components/process/ProcessInstanceCard";
 import { TimelineCard } from "@/components/process/TimelineCard";
 import { InstanceEnum } from "@/components/process/TimelineCard.types";
 
 type ProcessTimelineSectionProps = {
   activeInstance: "1grau" | "2grau" | "tst";
-  documents: DocumentExtract[];
   hasFirstDegreeMovements: boolean;
   hasSecondDegreeMovements: boolean;
   hasThirdInstanceMovements: boolean;
   moviments: Movimentacoes[];
-  onDocumentClick: (document: DocumentExtract) => void;
   onMovementClick: (movement: Movimentacoes) => void;
   process: Process | null | undefined;
   setActiveInstance: (instance: "1grau" | "2grau" | "tst") => void;
@@ -20,12 +18,10 @@ type ProcessTimelineSectionProps = {
 
 export function ProcessTimelineSection({
   activeInstance,
-  documents,
   hasFirstDegreeMovements,
   hasSecondDegreeMovements,
   hasThirdInstanceMovements,
   moviments,
-  onDocumentClick,
   onMovementClick,
   process,
   setActiveInstance,
@@ -70,8 +66,6 @@ export function ProcessTimelineSection({
             instancia={InstanceEnum.FIRST_INSTANCE}
             processNumber={process?.number}
             onMovementClick={onMovementClick}
-            documents={documents}
-            onDocumentClick={onDocumentClick}
           />
         )}
 
@@ -82,8 +76,6 @@ export function ProcessTimelineSection({
             instancia={InstanceEnum.SECOND_INSTANCE}
             processNumber={process?.number}
             onMovementClick={onMovementClick}
-            documents={documents}
-            onDocumentClick={onDocumentClick}
           />
         )}
 
@@ -94,8 +86,6 @@ export function ProcessTimelineSection({
             instancia={InstanceEnum.THIRD_INSTANCE}
             processNumber={process?.number}
             onMovementClick={onMovementClick}
-            documents={documents}
-            onDocumentClick={onDocumentClick}
           />
         )}
       </div>

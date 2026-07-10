@@ -1,4 +1,5 @@
 import { useLawsuit } from "@/app/api/hooks/lawsuit/useLawsuit";
+import { useInsertLawsuit } from "@/app/api/hooks/lawsuit/useInsertLawsuit";
 import { useProcessFetch } from "@/app/api/hooks/process/useInsertProcess";
 import { useFilter } from "@/app/hooks/filter/useFilter";
 import { useToast } from "@/app/hooks/use-toast";
@@ -40,6 +41,49 @@ export default function KanbanDashboard() {
 
   const notFound = hasSearch && !isLoading && !lawsuit;
 
+  const insertLawsuitMutation = useInsertLawsuit();
+
+  // Lembra pra qual busca já disparamos o insert automático, pra não repetir
+  // a cada re-render (e pra permitir disparar de novo se o usuário buscar um
+  // número diferente).
+  const [insertAttemptedFor, setInsertAttemptedFor] = useState<string | null>(
+    null,
+  );
+
+  // Assim que a busca no Athena confirma "não encontrado", verifica sozinho
+  // (sem clique do usuário) se já existe dado real em comunicacao-spot (de
+  // outro coletor, nunca migrado pro Athena). Se existir, o backend já joga
+  // esse JSON pro cache no Redis e aqui a gente só redireciona — igual à
+  // busca normal quando o processo já existe. Se não existir, só grava o
+  // marcador BUSCANDO (sem custo de captcha) e mostra "não encontrado".
+  useEffect(() => {
+    if (!notFound || insertAttemptedFor === debouncedSearch) {
+      return;
+    }
+
+    setInsertAttemptedFor(debouncedSearch);
+
+    insertLawsuitMutation.mutate(debouncedSearch, {
+      onSuccess: (result) => {
+        if (result.cached) {
+          toast({
+            title: "Processo encontrado em comunicacao-spot",
+            description: `O processo ${debouncedSearch} já tinha dado salvo — abrindo o detalhe.`,
+          });
+          router.push(`/processes/${debouncedSearch}`);
+        }
+      },
+      onError: () => {
+        toast({
+          title: "Erro ao verificar comunicacao-spot",
+          description:
+            "Ocorreu um erro ao verificar/inserir o processo em comunicacao-spot.",
+          variant: "destructive",
+        });
+      },
+    });
+  }, [notFound, debouncedSearch, insertAttemptedFor, insertLawsuitMutation, router, toast]);
+
   // Nova abordagem: a busca vai direto para o detalhe do processo quando encontrado
   useEffect(() => {
     if (hasSearch && !isLoading && lawsuit) {
@@ -63,6 +107,18 @@ export default function KanbanDashboard() {
       resetFilters();
     };
   }, [resetFilters]);
+
+  // Enquanto isso for falso, ainda estamos checando o Athena e/ou o
+  // comunicacao-spot pra essa busca — mostra loading. Só depois disso é que
+  // dá pra afirmar "não encontrado" de fato (nem no Athena, nem em
+  // comunicacao-spot) sem nenhuma ação do usuário.
+  const insertCheckSettled =
+    notFound &&
+    insertAttemptedFor === debouncedSearch &&
+    !insertLawsuitMutation.isPending;
+  const willRedirectFromCache =
+    insertCheckSettled && insertLawsuitMutation.data?.cached;
+  const genuinelyNotFound = insertCheckSettled && !willRedirectFromCache;
 
   const handleOpenInsertModal = () => {
     setIsInsertModalOpen(true);
@@ -149,7 +205,7 @@ export default function KanbanDashboard() {
                 detalhe do processo encontrado.
               </p>
             </div>
-          ) : notFound ? (
+          ) : genuinelyNotFound ? (
             <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
               <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
                 <SearchX className="h-6 w-6 text-red-500" />
@@ -166,7 +222,11 @@ export default function KanbanDashboard() {
             <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
               <div className="h-6 w-6 border-2 border-yellow-200 border-t-yellow-500 rounded-full animate-spin"></div>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {isLoading ? "Buscando processo..." : "Redirecionando..."}
+                {isLoading
+                  ? "Buscando processo..."
+                  : notFound
+                    ? "Verificando comunicacao-spot..."
+                    : "Redirecionando..."}
               </p>
             </div>
           )}

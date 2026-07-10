@@ -1,24 +1,17 @@
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
 import { useState } from "react";
-import { DocumentExtract } from "@/app/interfaces/processes";
 import dynamic from "next/dynamic";
 import PDFViewerHeader from "@/components/shared/PdfViewerHeader";
 const PDFViewer = dynamic(() => import("@/components/shared/PDFViewer"), {
   ssr: false,
 });
-import { useDocumentDetails } from "@/app/api/hooks/process/useDocumentDetails";
-import { logger } from "@/app/lib/logger";
-import { useFetchPDF } from "@/app/api/hooks/process/useFetchPDF";
 
 interface DocumentsCardProps {
-  documents: DocumentExtract[];
   isLoading?: boolean;
-  selectedDocumentId?: string | null;
-  processNumber?: string;
-  // PDF gerado no cliente (ex: texto de movimentação do PJe) — quando
-  // presente, exibe direto nesse mesmo painel, sem buscar documento no Mongo.
+  // PDF gerado no cliente a partir do texto da movimentação (Athena) — é a
+  // única fonte de documento desse painel agora, sem busca por id no Mongo.
   overrideDocument?: {
     title: string;
     blob: Blob;
@@ -30,25 +23,15 @@ interface DocumentsCardProps {
 
 export function DocumentsCard({
   isLoading = false,
-  selectedDocumentId,
-  processNumber,
   overrideDocument,
   onCloseOverrideDocument,
 }: DocumentsCardProps) {
-  const { fetchPDF } = useFetchPDF();
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1);
   const [pdfSearchValue, setPdfSearchValue] = useState("");
   const [searchMatches, setSearchMatches] = useState<Element[]>([]);
   const [searchIndex, setSearchIndex] = useState(0);
-
-  const { document } = useDocumentDetails({
-    processNumber: processNumber || "",
-    documentId: selectedDocumentId || "",
-    enabled: !!selectedDocumentId && !!processNumber && !overrideDocument,
-    interval: 0,
-  });
 
   const handleSearchNext = () => {
     setSearchIndex((idx) =>
@@ -108,27 +91,25 @@ export function DocumentsCard({
 
   return (
     <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50 flex flex-col h-full">
-      {(selectedDocumentId && document) || overrideDocument ? (
+      {overrideDocument ? (
         <CardContent className="pt-0 flex-1 flex flex-col min-h-0 relative">
           {/* Renderizar visualizador de documento */}
           <div className="flex-1 flex flex-col min-h-0 bg-muted/20 rounded-lg border border-border">
-            {overrideDocument && (
-              <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/40">
-                <p className="text-sm font-medium truncate">
-                  {overrideDocument.title}
-                </p>
-                {onCloseOverrideDocument && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onCloseOverrideDocument}
-                    className="h-7 px-2 text-xs"
-                  >
-                    Fechar
-                  </Button>
-                )}
-              </div>
-            )}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/40">
+              <p className="text-sm font-medium truncate">
+                {overrideDocument.title}
+              </p>
+              {onCloseOverrideDocument && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onCloseOverrideDocument}
+                  className="h-7 px-2 text-xs"
+                >
+                  Fechar
+                </Button>
+              )}
+            </div>
             <PDFViewerHeader
               pageNumber={pageNumber}
               numPages={numPages}
@@ -146,98 +127,43 @@ export function DocumentsCard({
               searchIndex={searchIndex}
             />
             <div className="flex-1 min-h-0">
-              {overrideDocument || document?.temp_link?.toLowerCase().endsWith(".pdf") ? (
-                <PDFViewer
-                  pdfUrl={document?.temp_link || ""}
-                  blobOverride={overrideDocument?.blob}
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  numPages={numPages}
-                  setNumPages={setNumPages}
-                  hidePagination
-                  searchValue={pdfSearchValue}
-                  searchIndex={searchIndex}
-                  setSearchMatches={setSearchMatches}
-                />
-              ) : (
-                <div className="text-center p-8 w-full h-full flex items-center justify-center">
-                  <div>
-                    <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      Visualizador de PDF
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      O documento PDF seria exibido aqui usando um componente de
-                      visualização de PDF.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Documento: <strong>{document?.title}</strong>
-                    </p>
-                  </div>
-                </div>
-              )}
+              <PDFViewer
+                pdfUrl=""
+                blobOverride={overrideDocument.blob}
+                pageNumber={pageNumber}
+                scale={scale}
+                numPages={numPages}
+                setNumPages={setNumPages}
+                hidePagination
+                searchValue={pdfSearchValue}
+                searchIndex={searchIndex}
+                setSearchMatches={setSearchMatches}
+              />
             </div>
           </div>
           {/* Botões de ação no canto inferior direito - fixos em relação ao CardContent */}
           <div className="absolute bottom-2 sm:bottom-4 right-2 sm:right-13 z-50 flex gap-1 sm:gap-2 pointer-events-none">
             <div className="flex gap-1 sm:gap-2 pointer-events-auto">
-              {overrideDocument && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => {
-                    const url = window.URL.createObjectURL(overrideDocument.blob);
-                    const a = window.document.createElement("a");
-                    a.href = url;
-                    a.download = overrideDocument.title.endsWith(".pdf")
-                      ? overrideDocument.title
-                      : `${overrideDocument.title}.pdf`;
-                    window.document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                  }}
-                  className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"
-                  aria-label="Download"
-                >
-                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                </Button>
-              )}
-              {document?.temp_link && !overrideDocument && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={async () => {
-                    if (!document?.temp_link) return;
-
-                    try {
-                      const blob = await fetchPDF(document.temp_link);
-
-                      if (!blob) throw new Error("Erro ao baixar");
-
-                      const url = window.URL.createObjectURL(blob);
-
-                      const a = window.document.createElement("a");
-                      a.href = url;
-                      a.download = document.title?.endsWith(".pdf")
-                        ? document.title
-                        : `${document.title}.pdf`;
-
-                      window.document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-
-                      window.URL.revokeObjectURL(url);
-                    } catch (err) {
-                      logger.error("Erro ao baixar documento:", err as object);
-                    }
-                  }}
-                  className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"
-                  aria-label="Download"
-                >
-                  <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                </Button>
-              )}
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  const url = window.URL.createObjectURL(overrideDocument.blob);
+                  const a = window.document.createElement("a");
+                  a.href = url;
+                  a.download = overrideDocument.title.endsWith(".pdf")
+                    ? overrideDocument.title
+                    : `${overrideDocument.title}.pdf`;
+                  window.document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+                }}
+                className="flex items-center gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow h-8 sm:h-9 w-8 sm:w-auto px-2 sm:px-3"
+                aria-label="Download"
+              >
+                <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
             </div>
           </div>
         </CardContent>

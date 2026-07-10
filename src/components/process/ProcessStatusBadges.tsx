@@ -43,7 +43,9 @@ export const ProcessStatusBadges = memo(function ProcessStatusBadges({
           </span>
         </div>
       )}
-      {(isSyncing || process?.processStatus?.name === "Processando") && (
+      {(isSyncing ||
+        process?.processStatus?.name === "Processando" ||
+        lawsuitStatusColeta === "SINCRONIZANDO") && (
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-cyan-500 dark:bg-cyan-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help animate-pulse">
@@ -217,7 +219,9 @@ export const ProcessStatusBadges = memo(function ProcessStatusBadges({
           </TooltipContent>
         </Tooltip>
       )}
-      {lawsuitStatusColeta && lawsuitStatusColeta !== "SUCESSO" && (
+      {lawsuitStatusColeta &&
+        lawsuitStatusColeta !== "SUCESSO" &&
+        lawsuitStatusColeta !== "SINCRONIZANDO" && (
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 dark:bg-red-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help">
