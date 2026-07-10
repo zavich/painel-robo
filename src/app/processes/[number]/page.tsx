@@ -1,6 +1,5 @@
 "use client";
 
-import { Process } from "@/app/interfaces/processes";
 import { MainShell } from "@/components/layout/MainShell";
 import {
   DocumentsCardSkeleton,
@@ -20,11 +19,7 @@ import { useProcessPageState } from "./hooks/useProcessPageState";
 export default function ProcessDetailsEditPage() {
   const {
     router,
-    isAdmin,
-    process,
     isLoading,
-    refetchProcess,
-    isRefetching,
     isProcessError,
     isLawsuitNotFound,
     isCheckingNewLawsuit,
@@ -36,56 +31,18 @@ export default function ProcessDetailsEditPage() {
     lawsuitParts,
     lawsuitMotivoErro,
     lawsuitStatusColeta,
-    claimant,
-    initialPetitionData,
-    selectedCompany,
-    isCompanyModalOpen,
-    setIsCompanyModalOpen,
-    setSelectedCompany,
-    showUpdateConfirmation,
-    setShowUpdateConfirmation,
-    isSyncing,
-    showSyncCompleteDialog,
-    setShowSyncCompleteDialog,
+    isSyncLocked,
     syncModalOpen,
     setSyncModalOpen,
     activeInstance,
     setActiveInstance,
-    showRemoveProvisionalLinkConfirm,
-    setShowRemoveProvisionalLinkConfirm,
-    showLinkProvisionalExecutionModal,
-    setShowLinkProvisionalExecutionModal,
     movementDocumentPreview,
-    executionNumberInput,
-    setExecutionNumberInput,
-    isEditingTitle,
-    editedClaimant,
-    editedDefendant,
-    claimantInputRef,
-    defendantInputRef,
-    updateProcessFormMutation,
     syncLawsuitMutation,
     searchLawsuitMutation,
-    removeProvisionalLawsuitMutation,
-    isInsertExecutionLoading,
-    processReopenPending,
     handleCloseMovementDocument,
-    handleCompanyClick,
     handleMovementClick,
-    handleReopen,
-    handleRemoveProvisionalLink,
-    handleConfirmRemoveProvisionalLink,
-    handleLinkProvisionalExecution,
-    handleConfirmLinkProvisionalExecution,
-    handleStartEditTitle,
-    handleCancelEditTitle,
-    handleClaimantChange,
-    handleDefendantChange,
-    handleSaveTitle,
     handleSearchNewLawsuit,
     handleSyncConfirm,
-    handleAcceptUpdate,
-    handleRejectUpdate,
   } = useProcessPageState();
 
   if (isLoading) {
@@ -212,30 +169,14 @@ export default function ProcessDetailsEditPage() {
     <MainShell>
       <div className="flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <ProcessHeader
-          process={process as Process}
           lawsuitCnjNumber={lawsuitCnjNumber}
           lawsuitParts={lawsuitParts}
           lawsuitStatusColeta={lawsuitStatusColeta}
           lawsuitMotivoErro={lawsuitMotivoErro}
-          onReopen={handleReopen}
-          isPending={processReopenPending}
-          isRefetching={isRefetching}
-          isSyncing={isSyncing}
-          onCompanyClick={handleCompanyClick}
+          isSyncLocked={isSyncLocked}
           onViewAnalysis={() => {
-            window.open(`/processes/${process?.number}/analysis`, "_blank");
+            window.open(`/processes/${lawsuitCnjNumber}/analysis`, "_blank");
           }}
-          isEditingTitle={isEditingTitle}
-          editedClaimant={editedClaimant}
-          editedDefendant={editedDefendant}
-          onStartEditTitle={handleStartEditTitle}
-          onCancelEditTitle={handleCancelEditTitle}
-          onSaveTitle={handleSaveTitle}
-          onClaimantChange={handleClaimantChange}
-          onDefendantChange={handleDefendantChange}
-          isSavingTitle={updateProcessFormMutation.isPending}
-          claimantInputRef={claimantInputRef}
-          defendantInputRef={defendantInputRef}
           onSync={async () => {
             if (!lawsuitCnjNumber) {
               toast.error("Número do processo não encontrado.");
@@ -244,8 +185,6 @@ export default function ProcessDetailsEditPage() {
 
             setSyncModalOpen(true);
           }}
-          onRemoveProvisionalLink={handleRemoveProvisionalLink}
-          onLinkProvisionalExecution={handleLinkProvisionalExecution}
         />
         <main className="flex-1 max-w-[1920px] w-full mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 overflow-y-auto flex flex-col min-h-0">
           <div className="grid grid-cols-1 gap-3 sm:gap-4 transition-all duration-300 min-w-0 lg:grid-cols-6 flex-1 items-start">
@@ -256,7 +195,6 @@ export default function ProcessDetailsEditPage() {
               hasThirdInstanceMovements={hasThirdInstanceMovements}
               moviments={lawsuitMoviments}
               onMovementClick={handleMovementClick}
-              process={process}
               setActiveInstance={setActiveInstance}
             />
 
@@ -268,50 +206,11 @@ export default function ProcessDetailsEditPage() {
         </main>
 
         <ProcessActionDialogs
-          companyModal={{
-            open: isCompanyModalOpen,
-            selectedCompanyCnpj: selectedCompany?.cnpj || "",
-            setOpen: setIsCompanyModalOpen,
-            setSelectedCompany,
-          }}
-          linkProvisionalExecutionModal={{
-            executionNumberInput,
-            isLoading: isInsertExecutionLoading,
-            onConfirm: handleConfirmLinkProvisionalExecution,
-            open: showLinkProvisionalExecutionModal,
-            setExecutionNumberInput,
-            setOpen: setShowLinkProvisionalExecutionModal,
-          }}
-          processData={{
-            claimant,
-            initialPetitionData,
-            isAdmin,
-            isRefetching,
-            isSyncing,
-            process,
-            refetchProcess,
-          }}
-          removeProvisionalLinkDialog={{
-            isPending: removeProvisionalLawsuitMutation.isPending,
-            onConfirm: handleConfirmRemoveProvisionalLink,
-            open: showRemoveProvisionalLinkConfirm,
-            setOpen: setShowRemoveProvisionalLinkConfirm,
-          }}
-          syncCompleteDialog={{
-            open: showSyncCompleteDialog,
-            setOpen: setShowSyncCompleteDialog,
-          }}
           syncOptionsModal={{
             isPending: syncLawsuitMutation.isPending,
             onConfirm: handleSyncConfirm,
             open: syncModalOpen,
             setOpen: setSyncModalOpen,
-          }}
-          updateConfirmationDialog={{
-            onAccept: handleAcceptUpdate,
-            onReject: handleRejectUpdate,
-            open: showUpdateConfirmation,
-            setOpen: setShowUpdateConfirmation,
           }}
         />
       </div>

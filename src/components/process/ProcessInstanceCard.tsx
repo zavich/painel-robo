@@ -5,7 +5,6 @@ import { FileText, TrendingUp, Calendar } from "lucide-react";
 
 interface ProcessInstanceCardProps {
   title: string;
-  processNumber?: string;
   instance?: "1grau" | "2grau" | "tst";
   onClick?: () => void;
   isActive?: boolean;
@@ -13,7 +12,6 @@ interface ProcessInstanceCardProps {
 
 export function ProcessInstanceCard({
   title,
-  processNumber,
   instance,
   onClick,
   isActive = false,
