@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   Process,
+  ProcessPart,
   Situation,
   Company,
 } from "@/app/interfaces/processes";
@@ -25,7 +26,6 @@ import {
   User2,
   Users,
   XCircle,
-  FileSearch,
   FileText,
   Copy,
   Link2,
@@ -34,6 +34,7 @@ import {
   Save,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/app/hooks/use-theme-client";
 import { logger } from "@/app/lib/logger";
@@ -43,20 +44,19 @@ import { ProcessActionsDropdown } from "./ProcessActionsDropdown";
 
 interface ProcessHeaderProps {
   process: Process;
+  lawsuitCnjNumber?: string;
+  lawsuitParts?: ProcessPart[];
+  lawsuitStatusColeta?: string | null;
+  lawsuitMotivoErro?: string | null;
   onReopen: () => void;
   isPending: boolean;
   isRefetching?: boolean;
   isSyncing?: boolean;
   onCompanyClick?: (company: Company) => void;
-  onViewPreAnalysis?: () => void;
   onViewAnalysis?: () => void;
   onSync?: () => void;
-  onViewProcessInfo?: () => void;
-  onAssignMember?: () => void;
-  onChangeStage?: () => void;
   onRemoveProvisionalLink?: () => void;
   onLinkProvisionalExecution?: () => void;
-  isAdmin?: boolean;
   isEditingTitle?: boolean;
   editedClaimant?: string;
   editedDefendant?: string;
@@ -72,20 +72,19 @@ interface ProcessHeaderProps {
 
 export function ProcessHeader({
   process,
+  lawsuitCnjNumber,
+  lawsuitParts,
+  lawsuitStatusColeta,
+  lawsuitMotivoErro,
   onReopen,
   isPending,
   isRefetching = false,
   isSyncing = false,
   onCompanyClick,
-  onViewPreAnalysis,
   onViewAnalysis,
   onSync,
-  onViewProcessInfo,
-  onAssignMember,
-  onChangeStage,
   onRemoveProvisionalLink,
   onLinkProvisionalExecution,
-  isAdmin = false,
   isEditingTitle = false,
   editedClaimant = "",
   editedDefendant = "",
@@ -104,19 +103,23 @@ export function ProcessHeader({
   const [processMenuOpen, setProcessMenuOpen] = useState(false);
 
   const handleCopyProcessNumber = async () => {
-    if (process?.number) {
-      try {
-        await navigator.clipboard.writeText(process.number);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        logger.error("Erro ao copiar número do processo:", err as object);
-      }
+    // Copia o mesmo valor exibido na tela (lawsuitCnjNumber, vindo do Athena)
+    // — antes copiava process.number (Mongo), que pode divergir ou estar
+    // indefinido, fazendo o botão "não funcionar" sem indicação nenhuma.
+    if (!lawsuitCnjNumber) return;
+
+    try {
+      await navigator.clipboard.writeText(lawsuitCnjNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      logger.error("Erro ao copiar número do processo:", err as object);
+      toast.error("Não foi possível copiar o número do processo");
     }
   };
 
-  const claimant = getClaimant(process?.processParts || []);
-  const defendant = getDefendant(process?.processParts || []);
+  const claimant = getClaimant(lawsuitParts || []);
+  const defendant = getDefendant(lawsuitParts || []);
 
   // Priorizar dados da Petição Inicial sobre processParts
   const initialPetition = process?.documents?.find(
@@ -134,7 +137,7 @@ export function ProcessHeader({
   // Prioriza título editado, depois formPipedrive.title, depois gera automaticamente
   const savedTitle = process?.title || process?.formPipedrive?.title;
   const displayTitle = getProcessTitle(
-    process?.processParts || [],
+    lawsuitParts || [],
     process?.number,
     savedTitle,
     false, // Não usar número do processo como fallback - sempre gerar das partes se necessário
@@ -146,9 +149,9 @@ export function ProcessHeader({
   ];
 
   const activeParts =
-    process?.processParts?.filter((part) => part.polo === "ATIVO") || [];
+    lawsuitParts?.filter((part) => part.polo === "ATIVO") || [];
   const passiveParts =
-    process?.processParts?.filter((part) => part.polo === "PASSIVO") || [];
+    lawsuitParts?.filter((part) => part.polo === "PASSIVO") || [];
   const companies = process?.companies || [];
 
   // Verificar se é execução provisória
@@ -373,7 +376,7 @@ export function ProcessHeader({
                 >
                   <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-600 dark:text-amber-400" />
                   <span className="font-mono font-bold text-amber-700 dark:text-amber-300 text-[10px] sm:text-xs whitespace-nowrap">
-                    {process?.number}
+                    {lawsuitCnjNumber}
                   </span>
                   {copied ? (
                     <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -403,11 +406,11 @@ export function ProcessHeader({
                   }}
                   className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-primary/10 dark:bg-primary-foreground/10 border border-primary rounded-md cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors group"
                 >
-                  <Link2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary" />
-                  <span className="font-mono font-bold text-primary dark:text-primary text-[10px] sm:text-xs whitespace-nowrap">
+                  <Link2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary-foreground" />
+                  <span className="font-mono font-bold text-primary dark:text-primary-foreground text-[10px] sm:text-xs whitespace-nowrap">
                     {process?.processMain?.number}
                   </span>
-                  <ExternalLink className="h-3 w-3 text-primary dark:text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ExternalLink className="h-3 w-3 text-primary dark:text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -424,14 +427,14 @@ export function ProcessHeader({
                   onClick={handleCopyProcessNumber}
                   className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-primary/10 dark:bg-primary-foreground/10 border border-primary rounded-md cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors group"
                 >
-                  <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary" />
-                  <span className="font-mono font-bold text-primary dark:text-primary text-[10px] sm:text-xs whitespace-nowrap">
-                    {process?.number}
+                  <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary-foreground" />
+                  <span className="font-mono font-bold text-primary dark:text-primary-foreground text-[10px] sm:text-xs whitespace-nowrap">
+                    {lawsuitCnjNumber}
                   </span>
                   {copied ? (
                     <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
                   ) : (
-                    <Copy className="h-3 w-3 text-primary dark:text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Copy className="h-3 w-3 text-primary dark:text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
               </TooltipTrigger>
@@ -502,14 +505,14 @@ export function ProcessHeader({
                 onClick={handleCopyProcessNumber}
                 className="flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-primary/10 dark:bg-primary-foreground/10 border border-primary rounded-md cursor-pointer hover:bg-primary/20 dark:hover:bg-primary-foreground/20 transition-colors group"
               >
-                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary" />
-                <span className="font-mono font-bold text-primary dark:text-primary text-[10px] sm:text-xs whitespace-nowrap">
-                  {process?.number}
+                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary dark:text-primary-foreground" />
+                <span className="font-mono font-bold text-primary dark:text-primary-foreground text-[10px] sm:text-xs whitespace-nowrap">
+                  {lawsuitCnjNumber}
                 </span>
                 {copied ? (
                   <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
                 ) : (
-                  <Copy className="h-3 w-3 text-primary dark:text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Copy className="h-3 w-3 text-primary dark:text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </div>
             </TooltipTrigger>
@@ -545,6 +548,8 @@ export function ProcessHeader({
           process={process}
           isRefetching={isRefetching}
           isSyncing={isSyncing}
+          lawsuitStatusColeta={lawsuitStatusColeta}
+          lawsuitMotivoErro={lawsuitMotivoErro}
           onRemoveProvisionalLink={onRemoveProvisionalLink}
           onLinkProvisionalExecution={onLinkProvisionalExecution}
         />
@@ -552,21 +557,9 @@ export function ProcessHeader({
     </div>
   );
 
-  // Botões de ação do processo (Pré-Análise, Análise, etc)
+  // Botões de ação do processo (Análise, etc)
   const processActionButtons = (
     <>
-      {onViewPreAnalysis && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 hover:bg-yellow-100 hover:text-yellow-800 hover:border-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300 font-medium transition-all"
-          onClick={onViewPreAnalysis}
-          aria-label="Ver Formulário de Pré-Análise"
-        >
-          <FileSearch className="h-4 w-4" />
-          <span className="hidden xl:inline ml-2">Pré-Análise</span>
-        </Button>
-      )}
       {onViewAnalysis && (
         <Button
           variant="outline"
@@ -632,14 +625,9 @@ export function ProcessHeader({
               {/* Process Actions Menu */}
               <ProcessActionsDropdown
                 theme={theme}
-                isAdmin={isAdmin}
                 open={processMenuOpen}
                 onOpenChange={setProcessMenuOpen}
-                onViewPreAnalysis={onViewPreAnalysis}
                 onViewAnalysis={onViewAnalysis}
-                onViewProcessInfo={onViewProcessInfo}
-                onAssignMember={onAssignMember}
-                onChangeStage={onChangeStage}
                 onSync={onSync}
               />
             </div>

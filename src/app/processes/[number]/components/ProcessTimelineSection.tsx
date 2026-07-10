@@ -1,25 +1,16 @@
 "use client";
 
-import { DocumentExtract, Movimentacoes, Process } from "@/app/interfaces/processes";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Movimentacoes, Process } from "@/app/interfaces/processes";
 import { ProcessInstanceCard } from "@/components/process/ProcessInstanceCard";
 import { TimelineCard } from "@/components/process/TimelineCard";
 import { InstanceEnum } from "@/components/process/TimelineCard.types";
-import { Calendar, TrendingUp } from "lucide-react";
 
 type ProcessTimelineSectionProps = {
   activeInstance: "1grau" | "2grau" | "tst";
-  documents: DocumentExtract[];
+  hasFirstDegreeMovements: boolean;
   hasSecondDegreeMovements: boolean;
-  isMarkingAsViewed: boolean;
-  newMovements: {
-    PRIMEIRO_GRAU: Movimentacoes[];
-    SEGUNDO_GRAU: Movimentacoes[];
-    TST: Movimentacoes[];
-  };
-  onDocumentClick: (document: DocumentExtract) => void;
-  onMarkAsViewed: (instance: "PRIMEIRO_GRAU" | "SEGUNDO_GRAU") => void;
+  hasThirdInstanceMovements: boolean;
+  moviments: Movimentacoes[];
   onMovementClick: (movement: Movimentacoes) => void;
   process: Process | null | undefined;
   setActiveInstance: (instance: "1grau" | "2grau" | "tst") => void;
@@ -27,12 +18,10 @@ type ProcessTimelineSectionProps = {
 
 export function ProcessTimelineSection({
   activeInstance,
-  documents,
+  hasFirstDegreeMovements,
   hasSecondDegreeMovements,
-  isMarkingAsViewed,
-  newMovements,
-  onDocumentClick,
-  onMarkAsViewed,
+  hasThirdInstanceMovements,
+  moviments,
   onMovementClick,
   process,
   setActiveInstance,
@@ -40,13 +29,15 @@ export function ProcessTimelineSection({
   return (
     <div className="flex flex-col gap-3 transition-all duration-300 min-w-0 lg:col-span-2 order-1">
       <div className="grid grid-cols-3 gap-2 flex-shrink-0">
-        <ProcessInstanceCard
-          instance="1grau"
-          title="1° Grau"
-          processNumber={process?.number}
-          onClick={() => setActiveInstance("1grau")}
-          isActive={activeInstance === "1grau"}
-        />
+        {hasFirstDegreeMovements && (
+          <ProcessInstanceCard
+            instance="1grau"
+            title="1° Grau"
+            processNumber={process?.number}
+            onClick={() => setActiveInstance("1grau")}
+            isActive={activeInstance === "1grau"}
+          />
+        )}
         {hasSecondDegreeMovements && (
           <ProcessInstanceCard
             instance="2grau"
@@ -56,11 +47,11 @@ export function ProcessTimelineSection({
             isActive={activeInstance === "2grau"}
           />
         )}
-        {process?.autosData && (
+        {hasThirdInstanceMovements && (
           <ProcessInstanceCard
             instance="tst"
             title="TST"
-            processNumber={process.autosData.number}
+            processNumber={process?.number}
             onClick={() => setActiveInstance("tst")}
             isActive={activeInstance === "tst"}
           />
@@ -71,106 +62,31 @@ export function ProcessTimelineSection({
         {activeInstance === "1grau" && (
           <TimelineCard
             title="Timeline da 1º Instância"
-            moviments={process?.moviments || []}
+            moviments={moviments}
             instancia={InstanceEnum.FIRST_INSTANCE}
             processNumber={process?.number}
-            newMovements={newMovements.PRIMEIRO_GRAU.map((movement) => ({
-              ...movement,
-              instancia: InstanceEnum.FIRST_INSTANCE,
-            }))}
             onMovementClick={onMovementClick}
-            documents={documents}
-            onDocumentClick={onDocumentClick}
-            onMarkAsViewed={() => onMarkAsViewed("PRIMEIRO_GRAU")}
-            isMarkingAsViewed={isMarkingAsViewed}
           />
         )}
 
         {activeInstance === "2grau" && (
           <TimelineCard
             title="Timeline da 2º Instância"
-            moviments={process?.moviments || []}
+            moviments={moviments}
             instancia={InstanceEnum.SECOND_INSTANCE}
             processNumber={process?.number}
-            newMovements={newMovements.SEGUNDO_GRAU.map((movement) => ({
-              ...movement,
-              instancia: InstanceEnum.SECOND_INSTANCE,
-            }))}
             onMovementClick={onMovementClick}
-            documents={documents}
-            onDocumentClick={onDocumentClick}
-            onMarkAsViewed={() => onMarkAsViewed("SEGUNDO_GRAU")}
-            isMarkingAsViewed={isMarkingAsViewed}
           />
         )}
 
-        {activeInstance === "tst" && process?.autosData && (
-          <Card className="h-full flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <CardTitle className="text-primary">Dados do TST</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4 flex-shrink-0">
-                <div>
-                  <Label className="font-semibold mb-1">Turma</Label>
-                  <p>{process.autosData.class ?? "-"}</p>
-                </div>
-                <div>
-                  <Label className="font-semibold mb-1">Relator</Label>
-                  <p>{process.autosData.relator ?? "-"}</p>
-                </div>
-                <div>
-                  <Label className="font-semibold mb-1">Ativo</Label>
-                  <p>{process.autosData.ativo ?? "-"}</p>
-                </div>
-                <div>
-                  <Label className="font-semibold mb-1">Passivo</Label>
-                  <p>{process.autosData.passivo ?? "-"}</p>
-                </div>
-                <div>
-                  <Label className="font-semibold mb-1">
-                    Data Distribuição
-                  </Label>
-                  <p>{process.autosData.dateOfDistribution ?? "-"}</p>
-                </div>
-                <div>
-                  <Label className="font-semibold mb-1">Data Trânsito</Label>
-                  <p>{process.autosData.dateOfTransit ?? "-"}</p>
-                </div>
-              </div>
-              <div className="mt-4 flex-1 flex flex-col min-h-0">
-                <Label className="font-semibold mb-2">Movimentações TST</Label>
-                {process.autosData.movements?.length ? (
-                  <div className="flex-1 overflow-y-auto pr-2 space-y-3">
-                    {process.autosData.movements.map((movement) => (
-                      <div
-                        key={movement.id}
-                        className="border border-border rounded-lg p-3"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium text-sm text-muted-foreground">
-                            {movement.data}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {movement.conteudo}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground py-8">
-                    <Calendar className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                    <p>Nenhuma movimentação registrada no TST.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {activeInstance === "tst" && (
+          <TimelineCard
+            title="Timeline do TST"
+            moviments={moviments}
+            instancia={InstanceEnum.THIRD_INSTANCE}
+            processNumber={process?.number}
+            onMovementClick={onMovementClick}
+          />
         )}
       </div>
     </div>

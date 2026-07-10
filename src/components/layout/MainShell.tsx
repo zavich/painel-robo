@@ -6,7 +6,6 @@ import { UserRolesEnum } from "@/app/interfaces/user";
 import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import { Button } from "@/components/ui/button";
 import {
-  Building2,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -33,7 +32,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Processos", href: "/dashboard", icon: LayoutDashboard },
   // { label: "Métricas", href: "/dashboard/metrics", icon: BarChart3 },
-  { label: "Empresas", href: "/dashboard/companies", icon: Building2 },
   {
     label: "Prompts",
     href: "/dashboard/prompts",

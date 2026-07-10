@@ -1,673 +1,124 @@
-import { Activity } from "@/app/api/hooks/process/useCreateActivity";
+import { useLawsuit } from "@/app/api/hooks/lawsuit/useLawsuit";
+import { useInsertLawsuit } from "@/app/api/hooks/lawsuit/useInsertLawsuit";
 import { useProcessFetch } from "@/app/api/hooks/process/useInsertProcess";
-import { useRejectionReasons } from "@/app/api/hooks/process/useRejectionReasons";
-import { useProcesses } from "@/app/api/hooks/processes/useProcesses";
-import { useAssignableUsers } from "@/app/api/hooks/users/useAssignableUsers";
 import { useFilter } from "@/app/hooks/filter/useFilter";
 import { useToast } from "@/app/hooks/use-toast";
-import { useAuth } from "@/app/hooks/user/auth/useAuth";
-import { Process } from "@/app/interfaces/processes";
-import { UserRolesEnum } from "@/app/interfaces/user";
-import { logger } from "@/app/lib/logger";
-import { exportToExcel } from "@/app/utils/excelExport";
-import { ExportColumnsDialog } from "@/components/ExportColumnsDialog";
 import { FiltersBar } from "@/components/FiltersBar";
 import InsertProcessModal from "@/components/process/InsertProcessModal";
-import { MassEditPanel } from "@/components/process/MassEditPanel";
 import { Button } from "@/components/ui/button";
-import { Pagination } from "@/components/ui/pagination";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { isWithinInterval, parseISO } from "date-fns";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ProcessTableHeader } from "./ProcessTableHeader";
-import { ProcessTableRow } from "./ProcessTableRow";
-import { ProcessTableToolbar } from "./ProcessTableToolbar";
+import { Search, SearchX } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 export default function KanbanDashboard() {
-  const { user } = useAuth();
   const { filters, setFilter, resetFilters } = useFilter();
-  const searchParams = useSearchParams();
+  const router = useRouter();
   const { fetchData } = useProcessFetch();
-  const [page, setPage] = useState<number>(1);
-  const [, setBreadcrumbFixed] = useState(false);
   const [showScrollTopButton, setShowScrollTopButton] = useState(false);
-  const [selectedProcessIds, setSelectedProcessIds] = useState<Set<string>>(
-    new Set(),
+  const [isInsertModalOpen, setIsInsertModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  const search = useMemo(
+    () =>
+      typeof filters.search === "string"
+        ? filters.search
+        : String(filters.search || ""),
+    [filters.search],
   );
-  const [selectAllMode, setSelectAllMode] = useState<"page" | "all" | null>(
+
+  // A busca agora consulta o Athena (/lawsuits), que é bem mais lento e
+  // custa por query — diferente do Mongo. Debounce evita disparar uma
+  // consulta a cada tecla digitada.
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  const hasSearch = Boolean(debouncedSearch);
+
+  const { data: lawsuit, isLoading } = useLawsuit(debouncedSearch);
+
+  const notFound = hasSearch && !isLoading && !lawsuit;
+
+  const insertLawsuitMutation = useInsertLawsuit();
+
+  // Lembra pra qual busca já disparamos o insert automático, pra não repetir
+  // a cada re-render (e pra permitir disparar de novo se o usuário buscar um
+  // número diferente).
+  const [insertAttemptedFor, setInsertAttemptedFor] = useState<string | null>(
     null,
   );
-  const [showMassEditPanel, setShowMassEditPanel] = useState(false);
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const [isInsertModalOpen, setIsInsertModalOpen] = useState(false);
-  const breadcrumbRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-  const { data: usersData } = useAssignableUsers();
-  const { data: rejectionReasons } = useRejectionReasons();
 
-  type ApiFilterParams = {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-    classProcess?: string;
-    startDate?: string;
-    endDate?: string;
-    lossReason?: string;
-    emptyDocuments?: boolean;
-    emptyInstances?: boolean;
-    hasNewMovementsNow?: boolean;
-    hasSecondInstance?: boolean;
-    hasAutos?: boolean;
-    hasAcordao?: boolean;
-    type?: string;
-    assignedTo?: string;
-    stage?: string;
-  };
-
-  const apiFilters = useMemo(() => {
-    const baseFilters: ApiFilterParams = {
-      page,
-      limit: 25,
-    };
-
-    if (filters.search && String(filters.search) !== "") {
-      baseFilters.search = String(filters.search);
-    }
-
-    if (filters.status && String(filters.status) !== "all") {
-      baseFilters.status = String(filters.status);
-    }
-
-    if (filters.classProcess && String(filters.classProcess) !== "all") {
-      baseFilters.classProcess = String(filters.classProcess);
-    }
-
-    if (filters.startDate) {
-      baseFilters.startDate = String(filters.startDate);
-    }
-
-    if (filters.endDate) {
-      baseFilters.endDate = String(filters.endDate);
-    }
-
-    // Motivo de perda - converter key para label
-    if (filters.lossReason && String(filters.lossReason) !== "all") {
-      const reasonKey = String(filters.lossReason);
-      // Buscar a label correspondente à key
-      const reason = rejectionReasons?.find((r) => r.key === reasonKey);
-      // Usar a label se encontrada, senão usar a key como fallback
-      baseFilters.lossReason = reason?.label || reasonKey;
-    }
-
-    // Filtros de conteúdo
-    if (filters.emptyDocuments !== undefined && filters.emptyDocuments) {
-      baseFilters.emptyDocuments = true;
-    }
-
-    if (filters.emptyInstances !== undefined && filters.emptyInstances) {
-      baseFilters.emptyInstances = true;
-    }
-
-    if (
-      filters.hasNewMovementsNow !== undefined &&
-      filters.hasNewMovementsNow
-    ) {
-      baseFilters.hasNewMovementsNow = true;
-    }
-    if (filters.hasSecondInstance !== undefined && filters.hasSecondInstance) {
-      baseFilters.hasSecondInstance = true;
-    }
-
-    if (filters.hasAutos !== undefined && filters.hasAutos) {
-      baseFilters.hasAutos = true;
-    }
-
-    if (filters.hasAcordao !== undefined && filters.hasAcordao) {
-      baseFilters.hasAcordao = true;
-    }
-
-    return baseFilters;
-  }, [filters, page, rejectionReasons]);
-
-  // Separate API filters params (without page and limit) - used for MassEditPanel when selecting all
-  const apiFiltersParams = useMemo(() => {
-    const params: ApiFilterParams = {};
-
-    if (filters.search && String(filters.search) !== "") {
-      params.search = String(filters.search);
-    }
-
-    if (filters.status && String(filters.status) !== "all") {
-      params.status = String(filters.status);
-    }
-
-    if (filters.type && String(filters.type) !== "all") {
-      params.type = String(filters.type);
-    }
-
-    if (filters.startDate) {
-      params.startDate = String(filters.startDate);
-    }
-
-    if (filters.endDate) {
-      params.endDate = String(filters.endDate);
-    }
-
-    // Motivo de perda - converter key para label
-    if (filters.lossReason && String(filters.lossReason) !== "all") {
-      const reasonKey = String(filters.lossReason);
-      // Buscar a label correspondente à key
-      const reason = rejectionReasons?.find((r) => r.key === reasonKey);
-      // Usar a label se encontrada, senão usar a key como fallback
-      params.lossReason = reason?.label || reasonKey;
-    }
-
-    // Filtros de conteúdo
-    if (filters.emptyDocuments !== undefined && filters.emptyDocuments) {
-      params.emptyDocuments = true;
-    }
-
-    if (filters.emptyInstances !== undefined && filters.emptyInstances) {
-      params.emptyInstances = true;
-    }
-
-    if (
-      filters.hasNewMovementsNow !== undefined &&
-      filters.hasNewMovementsNow
-    ) {
-      params.hasNewMovementsNow = true;
-    }
-
-    if (filters.hasSecondInstance !== undefined && filters.hasSecondInstance) {
-      params.hasSecondInstance = true;
-    }
-
-    if (filters.hasAutos !== undefined && filters.hasAutos) {
-      params.hasAutos = true;
-    }
-
-    if (filters.hasAcordao !== undefined && filters.hasAcordao) {
-      params.hasAcordao = true;
-    }
-
-    return params;
-  }, [filters, rejectionReasons]);
-  const { data, isLoading } = useProcesses(apiFilters);
-
-  const [, setReturnTo] = useState<string>("");
-
+  // Assim que a busca no Athena confirma "não encontrado", verifica sozinho
+  // (sem clique do usuário) se já existe dado real em comunicacao-spot (de
+  // outro coletor, nunca migrado pro Athena). Se existir, o backend já joga
+  // esse JSON pro cache no Redis e aqui a gente só redireciona — igual à
+  // busca normal quando o processo já existe. Se não existir, só grava o
+  // marcador BUSCANDO (sem custo de captcha) e mostra "não encontrado".
   useEffect(() => {
-    const returnToParam = searchParams.get("returnTo");
-
-    if (returnToParam) {
-      setReturnTo(returnToParam);
-    } else {
-      setReturnTo("");
+    if (!notFound || insertAttemptedFor === debouncedSearch) {
+      return;
     }
-  }, [searchParams]);
 
-  // Store pagination info
-  const [paginationInfo, setPaginationInfo] = useState<{
-    total: number;
-    totalPages: number;
-    page: number;
-    limit: number;
-  }>({
-    total: 0,
-    totalPages: 0,
-    page: 1,
-    limit: 10,
-  });
+    setInsertAttemptedFor(debouncedSearch);
 
-  useEffect(() => {
-    setPage(1);
-    setPaginationInfo({
-      total: 0,
-      totalPages: 0,
-      page: 1,
-      limit: 10,
-    });
-  }, [filters]);
-
-  useEffect(() => {
-    if (data) {
-      // Update pagination info
-      setPaginationInfo({
-        total: data.total || 0,
-        totalPages: data.totalPages || 0,
-        page: data.page || page,
-        limit: data.limit || 10,
-      });
-    }
-  }, [data, page]);
-
-  const allProcesses: Process[] = useMemo(() => {
-    // Use current page processes only
-    return data?.processes || [];
-  }, [data]);
-
-  const hasActiveFilters =
-    Boolean(filters.search) ||
-    filters.status !== "all" ||
-    Boolean(filters.type && filters.type !== "all") ||
-    Boolean(filters.lossReason && filters.lossReason !== "all") ||
-    Boolean(filters.startDate) ||
-    Boolean(filters.endDate) ||
-    Boolean(filters.emptyDocuments) ||
-    Boolean(filters.emptyInstances) ||
-    Boolean(filters.hasNewMovementsNow) ||
-    Boolean(filters.hasSecondInstance) ||
-    Boolean(filters.hasAutos) ||
-    Boolean(filters.hasAcordao) ||
-    Boolean(filters.contentFilter);
-
-  const selectedProcesses = useMemo(() => {
-    return allProcesses.filter((p) => selectedProcessIds.has(p._id));
-  }, [allProcesses, selectedProcessIds]);
-
-  // Open mass edit panel when processes are selected
-  useEffect(() => {
-    if (selectedProcessIds.size > 0) {
-      setShowMassEditPanel(true);
-    } else {
-      setShowMassEditPanel(false);
-    }
-  }, [selectedProcessIds.size]);
-
-  const handleCloseMassEdit = () => {
-    setShowMassEditPanel(false);
-    setSelectedProcessIds(new Set());
-    setSelectAllMode(null);
-  };
-
-  // Handle export to Excel - opens dialog
-  const handleOpenExportDialog = () => {
-    setShowExportDialog(true);
-  };
-
-  // Handle export with selected columns
-  const handleExportWithColumns = async (
-    selectedColumns: string[],
-    exportAll: boolean,
-  ) => {
-    try {
-      let processesToExport: Process[] = [];
-
-      if (exportAll) {
-        // Export all processes from database using very small batches
-        // MongoDB has memory limit on sort operations - use smaller batches
-        const SAFE_LIMIT = 25; // Very small limit to avoid MongoDB sort memory error
-        const MAX_RETRIES = 2; // Retry failed pages
-
-        toast({
-          title: "Iniciando exportação...",
-          description: `Preparando para carregar ${totalProcessesInDB} processos em lotes pequenos e seguros...`,
-        });
-
-        const { getProcesses } =
-          await import("@/app/api/hooks/processes/useProcesses");
-
-        // Calculate how many pages we need
-        // Use paginationInfo total
-        const totalProcesses = paginationInfo.total || 0;
-        const maxPages = Math.ceil(totalProcesses / SAFE_LIMIT);
-        // Fetch all pages with progress feedback
-        // IMPORTANTE: Se qualquer página falhar, PARA IMEDIATAMENTE
-        for (let page = 1; page <= maxPages; page++) {
-          const progress = Math.round((page / maxPages) * 100);
-
+    insertLawsuitMutation.mutate(debouncedSearch, {
+      onSuccess: (result) => {
+        if (result.cached) {
           toast({
-            title: `Carregando página ${page} de ${maxPages}`,
-            description: `Progresso: ${progress}% - ${processesToExport.length} processos carregados`,
+            title: "Processo encontrado em comunicacao-spot",
+            description: `O processo ${debouncedSearch} já tinha dado salvo — abrindo o detalhe.`,
           });
-
-          let retries = 0;
-          let pageSuccess = false;
-          let lastError: object | null = null;
-
-          // Tenta a página atual até MAX_RETRIES vezes
-          while (retries <= MAX_RETRIES && !pageSuccess) {
-            try {
-              if (retries > 0) {
-                toast({
-                  title: `Tentando novamente página ${page}...`,
-                  description: `Tentativa ${retries + 1} de ${MAX_RETRIES + 1}`,
-                });
-                // Wait before retry
-                await new Promise((resolve) =>
-                  setTimeout(resolve, 1000 * retries),
-                );
-              }
-
-              const pageData = await getProcesses({
-                ...apiFilters,
-                page,
-                limit: SAFE_LIMIT,
-              });
-
-              const newProcesses = pageData.processes || [];
-
-              processesToExport = [...processesToExport, ...newProcesses];
-              pageSuccess = true;
-
-              // Small delay to avoid overwhelming the server
-              if (page < maxPages) {
-                await new Promise((resolve) => setTimeout(resolve, 300));
-              }
-            } catch (pageError: unknown) {
-              retries++;
-              lastError = pageError as object;
-
-              const err = pageError as {
-                response?: {
-                  data?: { message?: string };
-                  status?: number | string;
-                };
-                message?: string;
-              };
-              const errorMessage =
-                err?.response?.data?.message ||
-                err?.message ||
-                "Erro desconhecido";
-              const statusCode = err?.response?.status || "desconhecido";
-
-              logger.error(
-                `❌ Erro ${statusCode} na página ${page} (tentativa ${retries}/${MAX_RETRIES + 1}):`,
-                errorMessage,
-              );
-
-              // Se esgotou todas as tentativas, PARA COMPLETAMENTE
-              if (retries > MAX_RETRIES) {
-                logger.error(
-                  `💥 PARANDO EXPORTAÇÃO - Todas as tentativas falharam na página ${page}`,
-                );
-
-                // Check for MongoDB memory error
-                const isMemoryError =
-                  errorMessage.includes("memory limit") ||
-                  errorMessage.includes("allowDiskUse");
-
-                const detailedError = isMemoryError
-                  ? `Erro do servidor (MongoDB): Memória insuficiente para ordenação.\n\n` +
-                    `🔴 Página que falhou: ${page}\n` +
-                    `✅ Processos carregados: ${processesToExport.length} de ${totalProcessesInDB}\n` +
-                    `📄 Páginas completadas: ${page - 1} de ${maxPages}\n\n` +
-                    `Solução: O backend precisa ativar 'allowDiskUse:true' nas queries do MongoDB.`
-                  : `Erro ao carregar página ${page} após ${MAX_RETRIES + 1} tentativas.\n\n` +
-                    `🔴 Status HTTP: ${statusCode}\n` +
-                    `✅ Processos carregados: ${processesToExport.length} de ${totalProcessesInDB}\n` +
-                    `📄 Páginas completadas: ${page - 1} de ${maxPages}\n` +
-                    `❌ Erro: ${errorMessage}\n\n` +
-                    `A exportação foi INTERROMPIDA para evitar dados incompletos.`;
-
-                throw new Error(detailedError);
-              }
-
-              // Aguarda antes da próxima tentativa
-              await new Promise((resolve) => setTimeout(resolve, 500));
-            }
-          }
-
-          // Se chegou aqui e não teve sucesso, algo deu muito errado
-          if (!pageSuccess) {
-            logger.error(
-              `💥 ERRO CRÍTICO: Página ${page} não foi carregada após todas as tentativas`,
-            );
-            throw new Error(
-              `Falha crítica ao carregar página ${page}.\n\n` +
-                `✅ Processos salvos: ${processesToExport.length}\n` +
-                `🔴 Exportação INTERROMPIDA na página ${page}`,
-            );
-          }
+          router.push(`/processes/${debouncedSearch}`);
         }
-
-        if (processesToExport.length === 0) {
-          throw new Error(
-            "Nenhum processo foi carregado. Verifique a conexão com o servidor.",
-          );
-        }
-      } else {
-        // Export only filtered processes
-        processesToExport = filteredProcesses;
-      }
-
-      toast({
-        title: "Gerando arquivo Excel...",
-        description: `Processando ${processesToExport.length} ${processesToExport.length === 1 ? "processo" : "processos"}...`,
-      });
-
-      await exportToExcel(
-        processesToExport,
-        "processos-lista",
-        selectedColumns,
-      );
-
-      toast({
-        title: "✅ Exportação concluída!",
-        description: `${processesToExport.length} ${processesToExport.length === 1 ? "processo exportado" : "processos exportados"} com sucesso.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao exportar",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível exportar os processos. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Calculate total processes from pagination info
-  const totalProcessesInDB = useMemo(() => {
-    return paginationInfo.total || 0;
-  }, [paginationInfo]);
-
-  // Helper function to filter activities based on user role
-  const getFilteredActivities = useCallback(
-    (process: Process): Activity[] => {
-      const activities: Activity[] = process?.activities || [];
-
-      if (user?.role === UserRolesEnum.ADMIN) {
-        // Admin vê todas as atividades
-        return activities;
-      } else {
-        // Outros usuários veem apenas atividades em que estão envolvidos
-        const userId = user?._id;
-        if (!userId) return [];
-
-        return activities.filter((activity) => {
-          // Verificar se o usuário está atribuído à atividade
-          const assignedToId =
-            typeof activity.assignedTo === "string"
-              ? activity.assignedTo
-              : activity.assignedTo?._id;
-
-          // Verificar se o usuário completou a atividade
-          const completedById =
-            typeof activity.completedBy === "string"
-              ? activity.completedBy
-              : activity.completedBy?._id;
-
-          // Verificar se o usuário atribuiu a atividade
-          const assignedById =
-            typeof activity.assignedBy === "string"
-              ? activity.assignedBy
-              : activity.assignedBy?._id;
-
-          return (
-            assignedToId === userId ||
-            completedById === userId ||
-            assignedById === userId
-          );
+      },
+      onError: () => {
+        toast({
+          title: "Erro ao verificar comunicacao-spot",
+          description:
+            "Ocorreu um erro ao verificar/inserir o processo em comunicacao-spot.",
+          variant: "destructive",
         });
-      }
-    },
-    [user?._id, user?.role],
-  );
-
-  // Get selected count based on mode
-  const selectedCount = useMemo(() => {
-    if (selectAllMode === "all") {
-      return totalProcessesInDB;
-    }
-    return selectedProcessIds.size;
-  }, [selectAllMode, selectedProcessIds.size, totalProcessesInDB]);
-
-  const filteredProcesses: Process[] = useMemo(() => {
-    return allProcesses.filter((process) => {
-      if (filters.stageDateFrom || filters.stageDateTo) {
-        const processDate = process.createdAt
-          ? parseISO(process.createdAt)
-          : undefined;
-        if (processDate) {
-          if (filters.stageDateFrom && filters.stageDateTo) {
-            if (
-              !isWithinInterval(processDate, {
-                start:
-                  typeof filters.stageDateFrom === "string"
-                    ? new Date(filters.stageDateFrom)
-                    : new Date(),
-                end:
-                  typeof filters.stageDateTo === "string"
-                    ? new Date(filters.stageDateTo)
-                    : new Date(),
-              })
-            )
-              return false;
-          } else if (filters.stageDateFrom) {
-            if (
-              filters.stageDateFrom &&
-              processDate <
-                (typeof filters.stageDateFrom === "string"
-                  ? new Date(filters.stageDateFrom)
-                  : filters.stageDateFrom)
-            )
-              return false;
-          } else if (filters.stageDateTo) {
-            if (
-              processDate >
-              (typeof filters.stageDateTo === "string"
-                ? new Date(filters.stageDateTo)
-                : filters.stageDateTo)
-            )
-              return false;
-          }
-        }
-      }
-      return true;
+      },
     });
-  }, [allProcesses, filters]);
+  }, [notFound, debouncedSearch, insertAttemptedFor, insertLawsuitMutation, router, toast]);
 
-  const visibleProcessIds = useMemo(
-    () => filteredProcesses.map((process) => process._id),
-    [filteredProcesses],
-  );
-
-  // Check if all visible processes are selected
-  const allVisibleSelected = useMemo(() => {
-    if (filteredProcesses.length === 0) return false;
-    return filteredProcesses.every((p) => selectedProcessIds.has(p._id));
-  }, [filteredProcesses, selectedProcessIds]);
-
-  // Check if some (but not all) visible processes are selected
-  const someVisibleSelected = useMemo(() => {
-    if (selectedProcessIds.size === 0 || filteredProcesses.length === 0)
-      return false;
-    return (
-      filteredProcesses.some((p) => selectedProcessIds.has(p._id)) &&
-      !allVisibleSelected
-    );
-  }, [filteredProcesses, selectedProcessIds, allVisibleSelected]);
-
-  // Auto-detect when all visible are selected and update mode
+  // Nova abordagem: a busca vai direto para o detalhe do processo quando encontrado
   useEffect(() => {
-    if (
-      allVisibleSelected &&
-      filteredProcesses.length > 0 &&
-      selectedProcessIds.size === filteredProcesses.length &&
-      selectAllMode !== "all"
-    ) {
-      setSelectAllMode("page");
-    } else if (selectedProcessIds.size === 0) {
-      setSelectAllMode(null);
+    if (hasSearch && !isLoading && lawsuit) {
+      router.push(`/processes/${lawsuit.cnjNumber}`);
     }
-  }, [
-    allVisibleSelected,
-    filteredProcesses.length,
-    selectedProcessIds.size,
-    selectAllMode,
-  ]);
+  }, [hasSearch, isLoading, lawsuit, router]);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (breadcrumbRef.current) {
-        const { top } = breadcrumbRef.current.getBoundingClientRect();
-        setBreadcrumbFixed(top <= 0);
-      }
       setShowScrollTopButton(window.scrollY > 200);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Normalizar filtros
-  const normalizedFilters = useMemo(
-    () => ({
-      search:
-        typeof filters.search === "string"
-          ? filters.search
-          : String(filters.search || ""),
-      status:
-        typeof filters.status === "string"
-          ? filters.status
-          : String(filters.status ?? "all"),
-      classProcess:
-        typeof filters.classProcess === "string"
-          ? filters.classProcess
-          : String(filters.classProcess ?? "all"),
-      startDate:
-        typeof filters.startDate === "string"
-          ? new Date(filters.startDate)
-          : typeof filters.startDate === "object" &&
-              filters.startDate !== null &&
-              !Array.isArray(filters.startDate)
-            ? (filters.startDate as Date)
-            : undefined,
-      endDate:
-        typeof filters.endDate === "string"
-          ? new Date(filters.endDate)
-          : typeof filters.endDate === "object" &&
-              filters.endDate !== null &&
-              !Array.isArray(filters.endDate)
-            ? (filters.endDate as Date)
-            : undefined,
-      lossReason:
-        typeof filters.lossReason === "string"
-          ? filters.lossReason
-          : String(filters.lossReason ?? "all"),
-      contentFilter:
-        typeof filters.contentFilter === "string"
-          ? filters.contentFilter
-          : String(filters.contentFilter ?? "all"),
-      emptyDocuments: filters.emptyDocuments || false,
-      emptyInstances: filters.emptyInstances || false,
-      hasNewMovementsNow: filters.hasNewMovementsNow || false,
-      hasSecondInstance: filters.hasSecondInstance || false,
-      hasAutos: filters.hasAutos || false,
-      hasAcordao: filters.hasAcordao || false,
-    }),
-    [filters],
-  );
+  // Limpa a busca ao sair desta tela (ex: ao ir para o detalhe do processo
+  // encontrado) para que, ao voltar, o dashboard não redirecione de novo
+  // automaticamente para o mesmo processo.
+  useEffect(() => {
+    return () => {
+      resetFilters();
+    };
+  }, [resetFilters]);
+
+  // Enquanto isso for falso, ainda estamos checando o Athena e/ou o
+  // comunicacao-spot pra essa busca — mostra loading. Só depois disso é que
+  // dá pra afirmar "não encontrado" de fato (nem no Athena, nem em
+  // comunicacao-spot) sem nenhuma ação do usuário.
+  const insertCheckSettled =
+    notFound &&
+    insertAttemptedFor === debouncedSearch &&
+    !insertLawsuitMutation.isPending;
+  const willRedirectFromCache =
+    insertCheckSettled && insertLawsuitMutation.data?.cached;
+  const genuinelyNotFound = insertCheckSettled && !willRedirectFromCache;
 
   const handleOpenInsertModal = () => {
     setIsInsertModalOpen(true);
@@ -683,7 +134,7 @@ export default function KanbanDashboard() {
   ) => {
     try {
       if (processNumber) {
-        const res = await fetchData({
+        await fetchData({
           type: "number",
           value: [processNumber],
         });
@@ -708,247 +159,84 @@ export default function KanbanDashboard() {
   };
 
   return (
-    <div
-      style={{
-        marginRight: showMassEditPanel ? "420px" : "0",
-        transition: "margin-right 0.3s ease-in-out",
-      }}
-    >
+    <div>
       <main className="w-full px-3 sm:px-4 lg:px-6 xl:px-8 py-8 bg-gradient-to-b from-background via-background to-muted/30">
-        <>
-          <div className="mb-4 flex items-center justify-end">
-            <Button
-              onClick={handleOpenInsertModal}
-              className="ml-4 bg-gradient-to-r from-secondary to-accent text-white shadow-md focus:ring-2 focus:ring-secondary/30 hover:from-secondary hover:to-accent"
-            >
-              Inserir Processo
-            </Button>
-          </div>
-          <div className="mb-8">
-            <FiltersBar
-              filters={{
-                search: normalizedFilters.search,
-                status: normalizedFilters.status,
-                classProcess: normalizedFilters.classProcess,
-                startDate: normalizedFilters.startDate,
-                endDate: normalizedFilters.endDate,
-                lossReason: normalizedFilters.lossReason,
-                contentFilter: normalizedFilters.contentFilter,
-                emptyDocuments: Boolean(normalizedFilters.emptyDocuments),
-                emptyInstances: Boolean(normalizedFilters.emptyInstances),
-                hasNewMovementsNow: Boolean(
-                  normalizedFilters.hasNewMovementsNow,
+        <div className="mb-4 flex items-center justify-end">
+          <Button
+            onClick={handleOpenInsertModal}
+            className="ml-4 bg-gradient-to-r from-secondary to-accent text-white shadow-md focus:ring-2 focus:ring-secondary/30 hover:from-secondary hover:to-accent"
+          >
+            Inserir Processo
+          </Button>
+        </div>
+        <div className="mb-8">
+          <FiltersBar
+            filters={{ search }}
+            onFiltersChange={(newFilters) => {
+              Object.entries(newFilters).forEach(([key, value]) =>
+                setFilter(
+                  key,
+                  value as string | number | boolean | null | undefined,
                 ),
-                hasSecondInstance: Boolean(normalizedFilters.hasSecondInstance),
-                hasAutos: Boolean(normalizedFilters.hasAutos),
-                hasAcordao: Boolean(normalizedFilters.hasAcordao),
-              }}
-              onFiltersChange={(newFilters) => {
-                Object.entries(newFilters).forEach(([key, value]) =>
-                  setFilter(
-                    key,
-                    value as string | number | boolean | null | undefined,
-                  ),
-                );
-              }}
-              onApplyFilters={() => {
-                // React Query will automatically refetch when apiFilters change
-              }}
-              onClearFilters={() => {
-                resetFilters();
-              }}
-              isLoading={isLoading && page === 1}
-            />
-          </div>
+              );
+            }}
+            onApplyFilters={() => {
+              // React Query will automatically refetch when a busca muda
+            }}
+            onClearFilters={() => {
+              resetFilters();
+            }}
+            isLoading={isLoading}
+          />
+        </div>
 
-          {/* Skeleton loading for filtered results */}
-          {isLoading && hasActiveFilters ? (
-            <div className="space-y-8">
-              {/* List/Table Skeleton */}
-              <div className="rounded-2xl border overflow-hidden bg-card/80 backdrop-blur-xl border-border shadow-xl">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="h-6 w-48 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
-                </div>
-                <div className="p-6 space-y-3">
-                  {[...Array(8)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-16 rounded-lg animate-pulse bg-gray-100 dark:bg-gray-700/50"
-                    ></div>
-                  ))}
-                </div>
+        <div className="backdrop-blur-sm rounded-2xl border shadow-lg overflow-hidden bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
+          {!hasSearch ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                <Search className="h-6 w-6 text-gray-400" />
               </div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Digite o número do processo
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Use o número completo, no formato CNJ (ex:
+                0000000-00.0000.0.00.0000). Você será levado direto ao
+                detalhe do processo encontrado.
+              </p>
             </div>
-          ) : isLoading && !hasActiveFilters ? (
-            /* Actual content */
-            /* Loading skeleton for list load (inicial e paginação) sem filtros */
-            <div className="backdrop-blur-sm rounded-2xl border shadow-lg overflow-hidden bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
-              <div className="px-6 py-4 border-b flex items-center justify-between border-gray-200 dark:border-gray-700">
-                <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div className="h-7 w-32 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
-                </div>
+          ) : genuinelyNotFound ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+                <SearchX className="h-6 w-6 text-red-500" />
               </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-200 dark:border-gray-700">
-                      <TableHead className="w-12"></TableHead>
-                      <TableHead>Título</TableHead>
-                      <TableHead>Número do Processo</TableHead>
-                      <TableHead>Valor da Causa</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-center">Instâncias</TableHead>
-                      <TableHead className="text-center">Documentos</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {[...Array(10)].map((_, i) => (
-                      <TableRow
-                        key={i}
-                        className="border-gray-200 dark:border-gray-700"
-                      >
-                        <TableCell className="text-center">
-                          <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse mx-auto"></div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse mx-auto"></div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Processo não encontrado
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Nenhum processo foi encontrado com o número &quot;
+                {debouncedSearch}&quot;.
+              </p>
             </div>
           ) : (
-            /* List/Table View */
-            <div className="backdrop-blur-sm rounded-2xl border shadow-lg overflow-hidden bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
-              <ProcessTableToolbar
-                totalProcessesInDB={totalProcessesInDB}
-                filteredProcesses={filteredProcesses}
-                selectedCount={selectedCount}
-                selectAllMode={selectAllMode}
-                allVisibleSelected={allVisibleSelected}
-                handleOpenExportDialog={handleOpenExportDialog}
-                setSelectAllMode={setSelectAllMode}
-                setSelectedProcessIds={setSelectedProcessIds}
-              />
-
-              <div className="overflow-x-auto overflow-y-visible">
-                <div className="min-w-max">
-                  <Table>
-                    <ProcessTableHeader
-                      allVisibleSelected={allVisibleSelected}
-                      someVisibleSelected={someVisibleSelected}
-                      filteredProcesses={filteredProcesses}
-                      setSelectedProcessIds={setSelectedProcessIds}
-                      setSelectAllMode={setSelectAllMode}
-                    />
-                    <TableBody>
-                      {filteredProcesses.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center py-12">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Nenhum processo encontrado
-                            </p>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredProcesses.map((process) => (
-                          <ProcessTableRow
-                            key={process._id}
-                            process={process}
-                            isSelected={selectedProcessIds.has(process._id)}
-                            selectAllMode={selectAllMode}
-                            visibleProcessIds={visibleProcessIds}
-                            setSelectedProcessIds={setSelectedProcessIds}
-                            setSelectAllMode={setSelectAllMode}
-                          />
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-
-              {/* Pagination */}
-              {(() => {
-                // Use pagination info from API response, fallback to data if available
-                const totalPages =
-                  data?.totalPages || paginationInfo.totalPages || 0;
-                const totalItems = data?.total || paginationInfo.total || 0;
-                const limit = data?.limit || paginationInfo.limit || 10;
-
-                // Always show pagination if there are items, even if only one page
-                if (totalItems === 0 && !isLoading) return null;
-
-                // Don't show pagination while loading initial data
-                if (isLoading && page === 1 && totalItems === 0) return null;
-
-                return (
-                  <div className="border-t border-gray-200 dark:border-gray-700">
-                    <Pagination
-                      currentPage={page}
-                      totalPages={Math.max(totalPages, 1)}
-                      onPageChange={(newPage) => {
-                        setPage(newPage);
-                        // Clear selection when changing pages
-                        setSelectedProcessIds(new Set());
-                        setSelectAllMode(null);
-                        // Scroll to top of table
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      totalItems={totalItems}
-                      itemsPerPage={limit}
-                      className="bg-white/80 dark:bg-gray-800/80"
-                    />
-                  </div>
-                );
-              })()}
+            <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
+              <div className="h-6 w-6 border-2 border-yellow-200 border-t-yellow-500 rounded-full animate-spin"></div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {isLoading
+                  ? "Buscando processo..."
+                  : notFound
+                    ? "Verificando comunicacao-spot..."
+                    : "Redirecionando..."}
+              </p>
             </div>
           )}
-
-          {/* <CompanyModalDialog
-            cnpj={selectedCompany?.cnpj || ""}
-            isOpen={showCompanyModal}
-            onClose={() => setShowCompanyModal(false)}
-          /> */}
-        </>
+        </div>
       </main>
-
-      {/* Mass Edit Panel */}
-      {showMassEditPanel && selectedCount > 0 && (
-        <MassEditPanel
-          selectedProcesses={selectAllMode === "all" ? [] : selectedProcesses}
-          onClose={handleCloseMassEdit}
-          totalSelected={selectedCount}
-        />
-      )}
 
       {showScrollTopButton && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 z-40 bg-primary text-primary-foreground rounded-2xl shadow-xl p-3 hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
-          style={{
-            right: showMassEditPanel ? "calc(420px + 1.5rem)" : "1.5rem",
-            transition: "right 0.3s ease-in-out",
-          }}
+          className="fixed bottom-6 right-6 z-40 bg-primary text-primary-foreground rounded-2xl shadow-xl p-3 hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
           title="Ir para o topo"
         >
           <svg
@@ -969,15 +257,6 @@ export default function KanbanDashboard() {
           </svg>
         </button>
       )}
-
-      {/* Export Columns Dialog */}
-      <ExportColumnsDialog
-        open={showExportDialog}
-        onOpenChange={setShowExportDialog}
-        onExport={handleExportWithColumns}
-        totalProcesses={filteredProcesses.length}
-        totalProcessesInDB={totalProcessesInDB}
-      />
 
       {/* Modal para inserir processo */}
       <InsertProcessModal

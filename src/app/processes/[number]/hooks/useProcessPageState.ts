@@ -1,30 +1,27 @@
 "use client";
 
-import { useMarkMovementsAsViewed } from "@/app/api/hooks/process/useMarkMovementsAsViewed";
+import axios from "axios";
+import { useLawsuit } from "@/app/api/hooks/lawsuit/useLawsuit";
 import { useProcessReopen } from "@/app/api/hooks/process/useProcessReopen";
 import { useUpdateProcessForm } from "@/app/api/hooks/process/useUpdateProcessForm";
 import { useInsertExecution } from "@/app/api/hooks/processes/useInsertExecution";
 import { useRemoveProvisionalLawsuit } from "@/app/api/hooks/processes/useRemoveProvisionalLawsuit";
-import { useRunLawsuits } from "@/app/api/hooks/run-lawsuit/useRunLawsuits";
+import { useSyncLawsuit } from "@/app/api/hooks/lawsuit/useSyncLawsuit";
+import { useSearchLawsuit } from "@/app/api/hooks/lawsuit/useSearchLawsuit";
+import { useInsertLawsuit } from "@/app/api/hooks/lawsuit/useInsertLawsuit";
 import { useProcessAutoRefresh } from "@/app/hooks/useProcessAutoRefresh";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
-import {
-  Company,
-  DocumentExtract,
-  Movimentacoes,
-  ProcessStatus,
-} from "@/app/interfaces/processes";
+import { Company, Movimentacoes, ProcessStatus } from "@/app/interfaces/processes";
 import { UserRolesEnum } from "@/app/interfaces/user";
 import { logger } from "@/app/lib/logger";
+import { mapLawsuitMoviments, mapLawsuitPartes } from "@/app/utils/lawsuitMappers";
 import { getClaimant } from "@/app/utils/processPartsUtils";
+import { generateTextPdf } from "@/app/utils/textToPdf";
 import { InstanceEnum } from "@/components/process/TimelineCard.types";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import {
-  getInitialPetitionData,
-  getNewMovements,
-} from "./processPageState.utils";
+import { getInitialPetitionData } from "./processPageState.utils";
 import { useProcessFormState } from "./useProcessFormState";
 import { useProcessTitleEditor } from "./useProcessTitleEditor";
 import { useProcessUpdateMonitor } from "./useProcessUpdateMonitor";
@@ -34,14 +31,10 @@ export function useProcessPageState() {
   const router = useRouter();
   const params = useParams();
   const id = params?.number as string;
-  const searchParams = useSearchParams();
 
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-  const [showChangeStageDialog, setShowChangeStageDialog] = useState(false);
-  const [showProcessInfoModal, setShowProcessInfoModal] = useState(false);
-  const [showAssignMemberModal, setShowAssignMemberModal] = useState(false);
   const [
     showRemoveProvisionalLinkConfirm,
     setShowRemoveProvisionalLinkConfirm,
@@ -50,24 +43,13 @@ export function useProcessPageState() {
     showLinkProvisionalExecutionModal,
     setShowLinkProvisionalExecutionModal,
   ] = useState(false);
-  const [linkedDocuments, setLinkedDocuments] = useState<DocumentExtract[]>([]);
   const [executionNumberInput, setExecutionNumberInput] = useState("");
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
-    null,
-  );
   const [currentStatusInfo, setCurrentStatusInfo] = useState<{
     errorReason?: string;
     log?: string;
     name: string;
     updatedAt: string;
   } | null>(null);
-  const initialRightTab = useMemo<"documents" | "activities">(() => {
-    const tab = searchParams.get("tab");
-    return tab === "activities" ? "activities" : "documents";
-  }, [searchParams]);
-  const [activeRightTab, setActiveRightTab] = useState<
-    "documents" | "activities"
-  >(initialRightTab);
   const [activeInstance, setActiveInstance] = useState<
     "1grau" | "2grau" | "tst"
   >("1grau");
@@ -87,7 +69,6 @@ export function useProcessPageState() {
 
   const {
     process,
-    isLoading,
     error,
     refetch: refetchProcess,
     isRefetching,
@@ -96,6 +77,31 @@ export function useProcessPageState() {
     enabled: true,
     onStatusChange: handleStatusChange,
   });
+
+  // Número do processo, instâncias, movimentações e partes vêm do PJe via
+  // Athena (módulo lawsuits no robo-api) — substituem os dados equivalentes
+  // que vinham do Mongo. Busca pelo número da URL diretamente (não pelo
+  // process do Mongo): a existência do processo (achar/não achar) passa a
+  // depender só do Athena, independente do Mongo ter ou não o registro.
+  const {
+    data: lawsuit,
+    isLoading: isLawsuitLoading,
+    error: lawsuitError,
+    refetch: refetchLawsuit,
+  } = useLawsuit(id, {
+    // Enquanto o status ficar "SINCRONIZANDO" (marcado no Redis assim que o
+    // sync é disparado, antes do webhook real voltar), continua consultando
+    // de tempos em tempos — sem isso, a tela ficava travada em
+    // "Sincronizando" até um F5 manual, mesmo depois do backend já ter
+    // atualizado o Redis/Athena com o resultado real.
+    refetchInterval: (query) =>
+      query.state.data?.statusColeta === "SINCRONIZANDO" ? 4000 : false,
+  });
+  const lawsuitParts = useMemo(() => mapLawsuitPartes(lawsuit), [lawsuit]);
+  const lawsuitMoviments = useMemo(
+    () => mapLawsuitMoviments(lawsuit),
+    [lawsuit],
+  );
 
   const {
     formState,
@@ -129,7 +135,9 @@ export function useProcessPageState() {
     setCurrentStatusInfo,
   });
 
-  const runLawsuitsMutation = useRunLawsuits();
+  const syncLawsuitMutation = useSyncLawsuit();
+  const searchLawsuitMutation = useSearchLawsuit();
+  const insertLawsuitMutation = useInsertLawsuit();
   const {
     insertExecution,
     isLoading: isInsertExecutionLoading,
@@ -137,7 +145,6 @@ export function useProcessPageState() {
   const updateProcessFormMutation = useUpdateProcessForm(process?.number);
   const processReopenMutation = useProcessReopen(process?._id);
   const removeProvisionalLawsuitMutation = useRemoveProvisionalLawsuit();
-  const markMovementsAsViewedMutation = useMarkMovementsAsViewed();
 
   const handlePersistTitle = useCallback(
     async (unifiedTitle: string) => {
@@ -186,140 +193,164 @@ export function useProcessPageState() {
   });
 
   const isAdmin = user?.role === UserRolesEnum.ADMIN;
-  const newMovements = useMemo(() => getNewMovements(process), [process]);
+  // Processos que começam direto na 2ª instância (ex: Ação Rescisória) não
+  // têm movimentações de 1º grau — sem esse check, a aba "1° Grau" ficava
+  // selecionada por padrão mesmo vazia, escondendo a única instância real.
+  const hasFirstDegreeMovements = useMemo(
+    () =>
+      lawsuitMoviments.some(
+        (movement) => movement.instancia === InstanceEnum.FIRST_INSTANCE,
+      ),
+    [lawsuitMoviments],
+  );
   const hasSecondDegreeMovements = useMemo(
     () =>
-      process?.moviments?.some(
+      lawsuitMoviments.some(
         (movement) => movement.instancia === InstanceEnum.SECOND_INSTANCE,
-      ) || false,
-    [process?.moviments],
+      ),
+    [lawsuitMoviments],
+  );
+  // TERCEIRO_GRAU no Athena corresponde ao TST — substitui o antigo painel
+  // baseado em process.autosData (Mongo) pela timeline vinda do Athena.
+  const hasThirdInstanceMovements = useMemo(
+    () =>
+      lawsuitMoviments.some(
+        (movement) => movement.instancia === InstanceEnum.THIRD_INSTANCE,
+      ),
+    [lawsuitMoviments],
   );
   const claimant = useMemo(
-    () => getClaimant(process?.processParts || []),
-    [process?.processParts],
+    () => getClaimant(lawsuitParts),
+    [lawsuitParts],
   );
   const initialPetitionData = useMemo(
     () => getInitialPetitionData(process),
     [process],
   );
-  const isProcessLoaded = !!process && Object.keys(process).length > 0;
-  const hasRequiredData = process?.documents && Array.isArray(process.documents);
-  const isProcessError =
-    !!error ||
-    (!isLoading && !isProcessLoaded) ||
-    (!!process && !hasRequiredData);
+  // A existência do processo depende só do Athena (/lawsuits): a página
+  // renderiza assim que ele responder, sem esperar o Mongo. O processo do
+  // Mongo (documents, activities, etc) preenche as seções dependentes dele
+  // progressivamente, quando/se estiver disponível.
+  const isLoading = isLawsuitLoading;
+  const isProcessError = !isLawsuitLoading && !lawsuit;
+  // Só dispara o fluxo de "processo não encontrado" (busca automática em
+  // comunicacao-spot) quando o Athena de fato respondeu 404 — outros erros
+  // (500, timeout, rede) também caem em `isProcessError` (pra não deixar a
+  // tela em branco), mas sem isso qualquer falha transitória acionava a
+  // mesma checagem/insert automática de um processo que pode existir.
+  const isLawsuitNotFound =
+    isProcessError &&
+    axios.isAxiosError(lawsuitError) &&
+    lawsuitError.response?.status === 404;
 
+  // Lembra pra qual CNJ já disparamos a checagem automática, pra não repetir
+  // a cada re-render.
+  const [insertAttemptedFor, setInsertAttemptedFor] = useState<string | null>(
+    null,
+  );
+
+  // Assim que o Athena confirma "não encontrado", verifica sozinho (sem
+  // clique do usuário) se já existe dado real em comunicacao-spot (de outro
+  // coletor, nunca migrado pro Athena). Se existir, o backend já joga esse
+  // JSON pro cache no Redis — só precisa refazer a consulta pra sair do
+  // estado de "não encontrado". Se não existir, só grava o marcador
+  // BUSCANDO (sem custo de captcha) e a tela mostra "não encontrado" de fato.
   useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab === "activities" || tab === "documents") {
-      setActiveRightTab(tab);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (process?.documents && !selectedDocumentId) {
-      const peticaoDoc = process.documents.find(
-        (document) => document.title === "Petição Inicial" && document.data,
-      );
-
-      if (peticaoDoc) {
-        setSelectedDocumentId(peticaoDoc._id);
-      }
-    }
-  }, [process?.documents, selectedDocumentId]);
-
-  useEffect(() => {
-    if (activeInstance === "2grau" && !hasSecondDegreeMovements) {
-      setActiveInstance("1grau");
-    }
-    if (activeInstance === "tst" && !process?.autosData) {
-      setActiveInstance("1grau");
-    }
-  }, [activeInstance, hasSecondDegreeMovements, process?.autosData]);
-
-  const handleMarkAsViewed = (instance: "PRIMEIRO_GRAU" | "SEGUNDO_GRAU") => {
-    if (!process?.number) {
+    if (!isLawsuitNotFound || !id || insertAttemptedFor === id) {
       return;
     }
 
-    markMovementsAsViewedMutation.mutate(
-      {
-        processNumber: process.number,
-        instance,
+    setInsertAttemptedFor(id);
+
+    insertLawsuitMutation.mutate(id, {
+      onSuccess: async (result) => {
+        if (result.cached) {
+          toast.success(
+            "Processo encontrado em comunicacao-spot — carregando o detalhe.",
+          );
+          await refetchLawsuit();
+        }
       },
-      {
-        onSuccess: () => {
-          toast.success("Movimentações marcadas como visualizadas");
-          refetchProcess();
-        },
-        onError: () => {
-          toast.error("Erro ao marcar movimentações como visualizadas");
-        },
+      onError: (error) => {
+        logger.error("Erro ao verificar comunicacao-spot:", error as object);
+        toast.error("Erro ao verificar/inserir o processo em comunicacao-spot.");
       },
-    );
-  };
+    });
+  }, [isLawsuitNotFound, id, insertAttemptedFor, insertLawsuitMutation, refetchLawsuit]);
+
+  // Enquanto isso for true, ainda estamos checando o comunicacao-spot pra
+  // esse CNJ — só depois é que dá pra afirmar "não encontrado" de fato (nem
+  // no Athena, nem em comunicacao-spot), sem nenhuma ação do usuário.
+  const isCheckingNewLawsuit =
+    isLawsuitNotFound &&
+    (insertAttemptedFor !== id || insertLawsuitMutation.isPending);
+
+  useEffect(() => {
+    // Corrige a aba ativa pra uma que realmente tenha movimentações — o
+    // estado inicial sempre parte de "1grau" antes do lawsuit carregar, mas
+    // processos sem 1º grau (ex: Ação Rescisória, que começa direto na 2ª
+    // instância) precisam cair pra "2grau"/"tst" assim que os dados chegam.
+    const fallbackInstance = hasFirstDegreeMovements
+      ? "1grau"
+      : hasSecondDegreeMovements
+        ? "2grau"
+        : hasThirdInstanceMovements
+          ? "tst"
+          : "1grau";
+
+    if (activeInstance === "1grau" && !hasFirstDegreeMovements) {
+      setActiveInstance(fallbackInstance);
+    }
+    if (activeInstance === "2grau" && !hasSecondDegreeMovements) {
+      setActiveInstance(fallbackInstance);
+    }
+    if (activeInstance === "tst" && !hasThirdInstanceMovements) {
+      setActiveInstance(fallbackInstance);
+    }
+  }, [
+    activeInstance,
+    hasFirstDegreeMovements,
+    hasSecondDegreeMovements,
+    hasThirdInstanceMovements,
+  ]);
 
   const handleCompanyClick = (company: Company) => {
     setSelectedCompany(company);
     setIsCompanyModalOpen(true);
   };
 
-  const handleDocumentClick = (document: DocumentExtract) => {
-    if (!process?.number) {
-      return;
-    }
+  const [movementDocumentPreview, setMovementDocumentPreview] = useState<{
+    title: string;
+    blob: Blob;
+    movementId: number;
+    texto: string;
+  } | null>(null);
 
-    if (!document?._id) {
-      setSelectedDocumentId(null);
-      return;
-    }
-
-    setSelectedDocumentId(document._id);
-    setActiveRightTab("documents");
-    router.push(`/processes/${process.number}?tab=documents`, {
-      scroll: false,
-    });
+  const handleCloseMovementDocument = () => {
+    setMovementDocumentPreview(null);
   };
 
-  const handleMovementClick = (movement: Movimentacoes) => {
-    if (!process?.documents) {
+  // Documentos vêm 100% do Athena agora — o texto já está embutido na
+  // própria movimentação via `mov.texto` (não cruza mais com
+  // `process.documents`, array do Mongo que não é mais preenchido desde que
+  // o handler de webhook que gravava lá foi removido). O card só é clicável
+  // quando `mov.texto` existe (ver `MovementCard`), então esse handler só é
+  // chamado nesse caso.
+  const handleMovementClick = async (movement: Movimentacoes) => {
+    if (!movement.texto) {
       return;
     }
 
-    const normalizeDate = (dateString: string) => {
-      if (!dateString) {
-        return "";
-      }
-
-      const [dateOnly] = dateString.split(" ");
-      if (dateOnly.includes("/")) {
-        const [day, month, year] = dateOnly.split("/");
-        return `${year}-${month}-${day}`;
-      }
-
-      return dateOnly.substring(0, 10);
-    };
-
-    const normalizedMovementDate = normalizeDate(movement.data);
-    const matchingDocs = process.documents.filter((document) => {
-      const normalizedDocDate = normalizeDate(document.date);
-
-      return (
-        normalizedMovementDate &&
-        normalizedDocDate &&
-        normalizedMovementDate === normalizedDocDate
-      );
+    const blob = await generateTextPdf(movement.texto);
+    const title = movement.conteudo
+      ? `${movement.conteudo} - ${movement.data}`
+      : `Documento - ${movement.data}`;
+    setMovementDocumentPreview({
+      title,
+      blob,
+      movementId: movement.id,
+      texto: movement.texto,
     });
-
-    if (matchingDocs.length === 0) {
-      setLinkedDocuments([]);
-      return;
-    }
-
-    setLinkedDocuments(matchingDocs);
-    setSelectedDocumentId(
-      matchingDocs.length === 1 ? matchingDocs[0]._id : null,
-    );
   };
 
   function handleReopen() {
@@ -384,26 +415,41 @@ export function useProcessPageState() {
     }
   };
 
-  const handleSyncConfirm = async (options: {
-    documents: boolean;
-    movements: boolean;
-  }) => {
+  // Processo ainda não encontrado no Athena (`isProcessError`) — dispara uma
+  // primeira busca (sem documentos restritos) em vez do `/sync`, que é pra
+  // re-sincronizar um processo já existente.
+  const handleSearchNewLawsuit = async () => {
     try {
-      if (!process?.number) {
+      await searchLawsuitMutation.mutateAsync(id);
+      toast.success(
+        "Busca iniciada! Isso pode levar alguns minutos — atualize a página em instantes.",
+      );
+    } catch (error) {
+      logger.error("Erro ao buscar processo:", error as object);
+      toast.error("Erro ao iniciar a busca do processo.");
+    }
+  };
+
+  // `options` (movements/documents) vem do SyncOptionsModal, mas o endpoint
+  // /sync ainda não aceita esses filtros — aceita o parâmetro só pra bater
+  // com a assinatura exigida por SyncOptionsModalProps.onConfirm.
+  const handleSyncConfirm = async (
+    _options?: { movements: boolean; documents: boolean },
+  ) => {
+    try {
+      if (!lawsuit?.cnjNumber) {
         toast.error("Número do processo não encontrado.");
         return;
       }
 
-      await runLawsuitsMutation.mutateAsync({
-        lawsuits: [process.number],
-        movements: options.movements,
-        documents: options.documents,
-      });
+      await syncLawsuitMutation.mutateAsync(lawsuit.cnjNumber);
 
       setSyncModalOpen(false);
-      setLinkedDocuments([]);
-      setSelectedDocumentId(null);
-      await refetchProcess();
+      setMovementDocumentPreview(null);
+      // O backend já marca o processo como SINCRONIZANDO no Redis assim que
+      // a extração é disparada — refaz a consulta pro Athena/Redis (não só
+      // o Mongo) pra esse status aparecer no header sem precisar recarregar.
+      await Promise.all([refetchProcess(), refetchLawsuit()]);
     } catch (error) {
       logger.error("Erro ao sincronizar processo:", error as object);
       toast.error("Erro ao sincronizar processo.");
@@ -412,7 +458,6 @@ export function useProcessPageState() {
 
   return {
     activeInstance,
-    activeRightTab,
     claimant,
     claimantInputRef,
     currentStatusInfo: monitoredStatusInfo,
@@ -428,60 +473,60 @@ export function useProcessPageState() {
     handleCompanyClick,
     handleConfirmLinkProvisionalExecution,
     handleConfirmRemoveProvisionalLink,
+    handleCloseMovementDocument,
     handleDefendantChange,
-    handleDocumentClick,
     handleLinkProvisionalExecution,
-    handleMarkAsViewed,
     handleMovementClick,
     handleRejectUpdate,
     handleRemoveProvisionalLink,
     handleReopen,
     handleSaveTitle,
+    handleSearchNewLawsuit,
     handleStartEditTitle,
     handleSyncConfirm,
     hasChanges,
+    hasFirstDegreeMovements,
     hasSecondDegreeMovements,
+    hasThirdInstanceMovements,
     hasUnsavedChanges,
     id,
     initialPetitionData,
     isAdmin,
+    isCheckingNewLawsuit,
     isCompanyModalOpen,
     isEditing,
     isEditingTitle,
     isInsertExecutionLoading,
     isLoading,
+    isLawsuitNotFound,
     isProcessError,
     isRefetching,
     isSyncing,
-    linkedDocuments,
-    markMovementsAsViewedMutation,
-    newMovements,
+    lawsuitCnjNumber: lawsuit?.cnjNumber,
+    lawsuitMotivoErro: lawsuit?.motivoErro,
+    lawsuitStatusColeta: lawsuit?.statusColeta,
+    lawsuitMoviments,
+    lawsuitParts,
+    movementDocumentPreview,
     process,
     processReopenPending: processReopenMutation.isPending,
     refetchProcess,
     removeProvisionalLawsuitMutation,
     router,
-    runLawsuitsMutation,
+    searchLawsuitMutation,
+    syncLawsuitMutation,
     selectedCompany,
-    selectedDocumentId,
     setActiveInstance,
-    setActiveRightTab,
     setExecutionNumberInput,
     setFormState,
     setIsCompanyModalOpen,
     setIsEditing,
     setSelectedCompany,
-    setShowAssignMemberModal,
-    setShowChangeStageDialog,
     setShowLinkProvisionalExecutionModal,
-    setShowProcessInfoModal,
     setShowRemoveProvisionalLinkConfirm,
     setShowSyncCompleteDialog,
     setShowUpdateConfirmation,
-    showAssignMemberModal,
-    showChangeStageDialog,
     showLinkProvisionalExecutionModal,
-    showProcessInfoModal,
     showRemoveProvisionalLinkConfirm,
     showSyncCompleteDialog,
     showUpdateConfirmation,

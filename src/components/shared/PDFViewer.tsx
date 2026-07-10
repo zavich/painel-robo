@@ -19,6 +19,10 @@ interface PDFViewerProps {
   searchValue?: string;
   searchIndex?: number;
   setSearchMatches?: (matches: Element[]) => void;
+  // Quando informado, usa esse blob diretamente em vez de buscar via
+  // useFetchPDF — usado para PDFs gerados no cliente (ex: texto de
+  // movimentações do PJe), que não existem no backend.
+  blobOverride?: Blob | null;
 }
 
 const PDFViewerComponent: React.FC<PDFViewerProps> = ({
@@ -32,6 +36,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
   searchValue = "",
   searchIndex = 0,
   setSearchMatches,
+  blobOverride,
 }) => {
   const pdfContainerRef = useRef<HTMLDivElement>(null);
   const [internalRetryKey, setInternalRetryKey] = useState(retryKey);
@@ -390,6 +395,18 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
     setPdfBlobUrl(null);
     setIsDocumentReady(false);
 
+    if (blobOverride) {
+      const url = URL.createObjectURL(blobOverride);
+      blobUrlRef.current = url;
+      setPdfBlobUrl(url);
+      return () => {
+        if (blobUrlRef.current) {
+          URL.revokeObjectURL(blobUrlRef.current);
+          blobUrlRef.current = null;
+        }
+      };
+    }
+
     const fetchBlob = async () => {
       try {
         const blob = await fetchPDF(pdfUrl);
@@ -410,7 +427,7 @@ const PDFViewerComponent: React.FC<PDFViewerProps> = ({
         blobUrlRef.current = null;
       }
     };
-  }, [pdfUrl, retryKey]);
+  }, [pdfUrl, retryKey, blobOverride]);
 
   return (
     <div

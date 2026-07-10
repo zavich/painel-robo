@@ -27,28 +27,38 @@ export const reuKeywords = [
 
 /**
  * Encontra o reclamante principal do processo
+ *
+ * Prioriza a parte marcada como `principal === true`, mas o Athena/PJe nem
+ * sempre preenche esse campo (vem `null` em vários processos reais, mesmo
+ * quando só há um reclamante) — sem fallback, isso fazia o título do
+ * processo ficar em branco mesmo com a parte presente em `processParts`.
+ * Cai pro primeiro reclamante encontrado (por tipo/polo, sem advogados —
+ * "advogado" não está em `authorKeywords`) quando nenhuma parte tem
+ * `principal` marcado.
  */
 export function getClaimant(processParts: ProcessPart[]): ProcessPart | null {
   if (!processParts) return null;
-  return processParts.find(
+  const candidates = processParts.filter(
     (part) =>
       authorKeywords.includes(part?.tipo?.toLowerCase()) &&
-      part.polo === "ATIVO" &&
-      part.principal === true
-  ) || null;
+      part.polo === "ATIVO",
+  );
+  if (candidates.length === 0) return null;
+  return candidates.find((part) => part.principal === true) || candidates[0];
 }
 
 /**
- * Encontra o réu principal do processo
+ * Encontra o réu principal do processo — mesma lógica/fallback de `getClaimant`.
  */
 export function getDefendant(processParts: ProcessPart[]): ProcessPart | null {
   if (!processParts) return null;
-  return processParts.find(
+  const candidates = processParts.filter(
     (part) =>
       reuKeywords.includes(part?.tipo?.toLowerCase()) &&
-      part.polo === "PASSIVO" &&
-      part.principal === true
-  ) || null;
+      part.polo === "PASSIVO",
+  );
+  if (candidates.length === 0) return null;
+  return candidates.find((part) => part.principal === true) || candidates[0];
 }
 
 /**

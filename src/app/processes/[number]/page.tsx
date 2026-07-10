@@ -1,9 +1,6 @@
 "use client";
 
 import { Process } from "@/app/interfaces/processes";
-import {
-  canSync,
-} from "@/app/utils/processSyncStatus";
 import { MainShell } from "@/components/layout/MainShell";
 import {
   DocumentsCardSkeleton,
@@ -13,7 +10,7 @@ import {
 import { ProcessHeader } from "@/components/process/ProcessHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { XCircle } from "lucide-react";
+import { Search, XCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { ProcessActionDialogs } from "./components/ProcessActionDialogs";
 import { ProcessSidebar } from "./components/ProcessSidebar";
@@ -26,20 +23,25 @@ export default function ProcessDetailsEditPage() {
     isAdmin,
     process,
     isLoading,
-    error,
     refetchProcess,
     isRefetching,
     isProcessError,
-    newMovements,
+    isLawsuitNotFound,
+    isCheckingNewLawsuit,
+    hasFirstDegreeMovements,
     hasSecondDegreeMovements,
+    hasThirdInstanceMovements,
+    lawsuitCnjNumber,
+    lawsuitMoviments,
+    lawsuitParts,
+    lawsuitMotivoErro,
+    lawsuitStatusColeta,
     claimant,
     initialPetitionData,
     selectedCompany,
     isCompanyModalOpen,
     setIsCompanyModalOpen,
     setSelectedCompany,
-    showChangeStageDialog,
-    setShowChangeStageDialog,
     showUpdateConfirmation,
     setShowUpdateConfirmation,
     isSyncing,
@@ -47,20 +49,13 @@ export default function ProcessDetailsEditPage() {
     setShowSyncCompleteDialog,
     syncModalOpen,
     setSyncModalOpen,
-    selectedDocumentId,
-    activeRightTab,
-    setActiveRightTab,
     activeInstance,
     setActiveInstance,
-    showProcessInfoModal,
-    setShowProcessInfoModal,
-    showAssignMemberModal,
-    setShowAssignMemberModal,
     showRemoveProvisionalLinkConfirm,
     setShowRemoveProvisionalLinkConfirm,
     showLinkProvisionalExecutionModal,
     setShowLinkProvisionalExecutionModal,
-    linkedDocuments,
+    movementDocumentPreview,
     executionNumberInput,
     setExecutionNumberInput,
     isEditingTitle,
@@ -69,14 +64,13 @@ export default function ProcessDetailsEditPage() {
     claimantInputRef,
     defendantInputRef,
     updateProcessFormMutation,
-    runLawsuitsMutation,
+    syncLawsuitMutation,
+    searchLawsuitMutation,
     removeProvisionalLawsuitMutation,
-    markMovementsAsViewedMutation,
     isInsertExecutionLoading,
     processReopenPending,
-    handleMarkAsViewed,
+    handleCloseMovementDocument,
     handleCompanyClick,
-    handleDocumentClick,
     handleMovementClick,
     handleReopen,
     handleRemoveProvisionalLink,
@@ -88,6 +82,7 @@ export default function ProcessDetailsEditPage() {
     handleClaimantChange,
     handleDefendantChange,
     handleSaveTitle,
+    handleSearchNewLawsuit,
     handleSyncConfirm,
     handleAcceptUpdate,
     handleRejectUpdate,
@@ -126,6 +121,21 @@ export default function ProcessDetailsEditPage() {
     );
   }
 
+  if (isCheckingNewLawsuit) {
+    return (
+      <MainShell>
+        <div className="h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-6 w-6 border-2 border-yellow-200 border-t-yellow-500 rounded-full animate-spin" />
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Verificando comunicacao-spot...
+            </p>
+          </div>
+        </div>
+      </MainShell>
+    );
+  }
+
   if (isProcessError) {
     return (
       <MainShell>
@@ -136,18 +146,47 @@ export default function ProcessDetailsEditPage() {
                 <XCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-                Processo não encontrado
+                {isLawsuitNotFound
+                  ? "Processo não encontrado"
+                  : "Erro ao carregar o processo"}
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                {error
-                  ? "Ocorreu um erro ao carregar os dados do processo."
-                  : "Os dados do processo estão incompletos ou corrompidos."}
-                <br />
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Tente novamente mais tarde ou verifique o número informado.
-                </span>
+                {isLawsuitNotFound ? (
+                  <>
+                    Não encontramos nenhum processo com esse número no PJe.
+                    <br />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Verifique se o número foi digitado corretamente.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Ocorreu um erro ao carregar os dados do processo.
+                    <br />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Isso pode ser uma falha transitória — tente novamente em
+                      instantes.
+                    </span>
+                  </>
+                )}
               </p>
               <div className="flex flex-col gap-3">
+                {isLawsuitNotFound && (
+                  <Button
+                    onClick={handleSearchNewLawsuit}
+                    disabled={searchLawsuitMutation.isPending}
+                    className="bg-secondary hover:bg-secondary/90 text-white rounded-xl px-6 py-3 font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    {searchLawsuitMutation.isPending ? (
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    {searchLawsuitMutation.isPending
+                      ? "Iniciando busca..."
+                      : "Buscar processo"}
+                  </Button>
+                )}
                 <Button
                   onClick={() => router.push("/dashboard")}
                   className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-xl px-6 py-3 font-medium transition-colors"
@@ -174,14 +213,15 @@ export default function ProcessDetailsEditPage() {
       <div className="flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <ProcessHeader
           process={process as Process}
+          lawsuitCnjNumber={lawsuitCnjNumber}
+          lawsuitParts={lawsuitParts}
+          lawsuitStatusColeta={lawsuitStatusColeta}
+          lawsuitMotivoErro={lawsuitMotivoErro}
           onReopen={handleReopen}
           isPending={processReopenPending}
           isRefetching={isRefetching}
           isSyncing={isSyncing}
           onCompanyClick={handleCompanyClick}
-          onViewPreAnalysis={() => {
-            window.open(`/processes/${process?.number}/pre-analysis`, "_blank");
-          }}
           onViewAnalysis={() => {
             window.open(`/processes/${process?.number}/analysis`, "_blank");
           }}
@@ -197,82 +237,37 @@ export default function ProcessDetailsEditPage() {
           claimantInputRef={claimantInputRef}
           defendantInputRef={defendantInputRef}
           onSync={async () => {
-            if (!process?.number) {
+            if (!lawsuitCnjNumber) {
               toast.error("Número do processo não encontrado.");
-              return;
-            }
-
-            if (!canSync(process?.processStatus, process?.synchronizedAt)) {
-              if (process?.synchronizedAt) {
-                const lastSync = new Date(process.synchronizedAt);
-                const now = new Date();
-                const diffInMinutes = Math.floor(
-                  (now.getTime() - lastSync.getTime()) / (1000 * 60),
-                );
-                const remainingMinutes = 30 - diffInMinutes;
-
-                toast.warning(
-                  `Aguarde mais ${remainingMinutes} minuto${remainingMinutes > 1 ? "s" : ""} para sincronizar novamente.`,
-                  {
-                    position: "top-right",
-                    autoClose: 4000,
-                  },
-                );
-              } else {
-                toast.error(
-                  "Só é permitido sincronizar caso synchronizedAt já tenha passado 30 minutos.",
-                );
-              }
               return;
             }
 
             setSyncModalOpen(true);
           }}
-          onViewProcessInfo={() => setShowProcessInfoModal(true)}
-          onAssignMember={() => setShowAssignMemberModal(true)}
-          onChangeStage={() => setShowChangeStageDialog(true)}
           onRemoveProvisionalLink={handleRemoveProvisionalLink}
           onLinkProvisionalExecution={handleLinkProvisionalExecution}
-          isAdmin={isAdmin}
         />
         <main className="flex-1 max-w-[1920px] w-full mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 overflow-y-auto flex flex-col min-h-0">
           <div className="grid grid-cols-1 gap-3 sm:gap-4 transition-all duration-300 min-w-0 lg:grid-cols-6 flex-1 items-start">
             <ProcessTimelineSection
               activeInstance={activeInstance}
-              documents={process?.documents || []}
+              hasFirstDegreeMovements={hasFirstDegreeMovements}
               hasSecondDegreeMovements={hasSecondDegreeMovements}
-              isMarkingAsViewed={markMovementsAsViewedMutation.isPending}
-              newMovements={newMovements}
-              onDocumentClick={handleDocumentClick}
-              onMarkAsViewed={handleMarkAsViewed}
+              hasThirdInstanceMovements={hasThirdInstanceMovements}
+              moviments={lawsuitMoviments}
               onMovementClick={handleMovementClick}
               process={process}
               setActiveInstance={setActiveInstance}
             />
 
             <ProcessSidebar
-              activeRightTab={activeRightTab}
-              linkedDocuments={linkedDocuments}
-              onManagePrompts={() => {
-                window.open(`/dashboard?view=prompts`, "_blank");
-              }}
-              process={process}
-              refetchProcess={refetchProcess}
-              selectedDocumentId={selectedDocumentId}
-              setActiveRightTab={setActiveRightTab}
+              overrideDocument={movementDocumentPreview}
+              onCloseOverrideDocument={handleCloseMovementDocument}
             />
           </div>
         </main>
 
         <ProcessActionDialogs
-          assignMemberModal={{
-            open: showAssignMemberModal,
-            setOpen: setShowAssignMemberModal,
-          }}
-          changeStageDialog={{
-            open: showChangeStageDialog,
-            setOpen: setShowChangeStageDialog,
-          }}
           companyModal={{
             open: isCompanyModalOpen,
             selectedCompanyCnpj: selectedCompany?.cnpj || "",
@@ -296,10 +291,6 @@ export default function ProcessDetailsEditPage() {
             process,
             refetchProcess,
           }}
-          processInfoModal={{
-            open: showProcessInfoModal,
-            setOpen: setShowProcessInfoModal,
-          }}
           removeProvisionalLinkDialog={{
             isPending: removeProvisionalLawsuitMutation.isPending,
             onConfirm: handleConfirmRemoveProvisionalLink,
@@ -311,7 +302,7 @@ export default function ProcessDetailsEditPage() {
             setOpen: setShowSyncCompleteDialog,
           }}
           syncOptionsModal={{
-            isPending: runLawsuitsMutation.isPending,
+            isPending: syncLawsuitMutation.isPending,
             onConfirm: handleSyncConfirm,
             open: syncModalOpen,
             setOpen: setSyncModalOpen,

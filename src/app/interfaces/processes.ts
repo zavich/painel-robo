@@ -53,6 +53,7 @@ export interface Movimentacoes {
   data: string;
   conteudo: string;
   instancia: string;
+  texto?: string;
 }
 export interface PeticaoInicialData {
   qualificacao_reclamante: {

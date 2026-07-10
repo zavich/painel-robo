@@ -1,19 +1,12 @@
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import {
-  Calendar,
-  X,
-  FileText,
-  Check,
-  Eye,
-  TrendingUp,
-  XCircle,
-} from "lucide-react";
+import { Calendar, X, FileText, Check } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { NewMovement } from "@/app/api/hooks/process/useNewMovements";
 import { Badge } from "../ui/badge";
-import { DocumentExtract, Movimentacoes, StatusExtractionInsight } from "@/app/interfaces/processes";
+import { Movimentacoes } from "@/app/interfaces/processes";
+import { generateTextPdf } from "@/app/utils/textToPdf";
 import { InstanceEnum } from "./TimelineCard.types";
 
 // Helper para normalizar datas
@@ -49,140 +42,176 @@ function normalizeSearchText(text: string): string {
     .trim();
 }
 
-// Componente para cada documento individual
-function DocumentItem({
-  doc,
-  idx,
-  onClick,
-}: {
-  doc: DocumentExtract;
-  idx: number;
-  onClick?: (doc: DocumentExtract) => void;
-}) {
-  return (
-    <div className="relative">
-      {/* Timeline line */}
-      <div className="absolute left-3 sm:left-4 top-6 sm:top-8 bottom-0 w-0.5 bg-gradient-to-b from-secondary/60 via-secondary/70 to-transparent dark:from-secondary-800 dark:via-secondary-700"></div>
-
-      <div className="relative flex items-start gap-2 sm:gap-3 pb-2 sm:pb-3">
-        {/* Timeline marker */}
-        <div className="relative z-10 flex-shrink-0">
-          <div className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full shadow-md transition-all duration-200 bg-gradient-to-br from-secondary to-accent ring-2 ring-secondary/20 dark:ring-secondary-900/60">
-            <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div
-            onClick={() => onClick?.(doc)}
-            className="rounded-lg p-2 sm:p-3 transition-all duration-200 cursor-pointer hover:shadow-md hover:scale-[1.01] bg-secondary/20 dark:bg-secondary-900/30 border border-border dark:border-border hover:bg-secondary/30 dark:hover:bg-secondary-900/40"
-          >
-            {/* Header with date and status */}
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 flex-wrap">
-              <span className="font-semibold text-xs sm:text-sm text-secondary-foreground dark:text-secondary-foreground">
-                {doc.date}
-              </span>
-              {/* Document badge */}
-              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-secondary text-white">
-                Documento
-              </span>
-            </div>
-
-            {/* Content */}
-            <p className="text-[11px] sm:text-xs leading-relaxed text-foreground dark:text-card-foreground break-words">
-              {doc.title}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Componente para cada movimentação individual
-function MovementItem({
+// Card de uma movimentação — sem marcador próprio. Toda movimentação com
+// documento (`mov.texto`) usa a mesma UI "documento" (fundo/borda dourados +
+// badge "DOCUMENTO"), em vez de um card genérico — antes só os documentos
+// vindos do Mongo (`DocumentExtract`, removido) tinham esse destaque.
+function MovementCard({
   mov,
-  idx,
   isNew,
   onClick,
 }: {
   mov: Movimentacoes;
-  idx: number;
   isNew: boolean;
   onClick?: (mov: Movimentacoes) => void;
 }) {
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const temDocumento = !!mov.texto;
+
+  // Abre o documento direto numa nova aba do navegador — antes gerava o PDF
+  // e mostrava num preview na barra lateral, mas isso escondia o resto da
+  // timeline; abrir em aba nova deixa a timeline visível o tempo todo.
+  const abrirDocumentoEmNovaAba = async () => {
+    if (!mov.texto || isGeneratingPdf) {
+      return;
+    }
+
+    setIsGeneratingPdf(true);
+    try {
+      const blob = await generateTextPdf(mov.texto);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      // Revoga depois de dar tempo do browser abrir a aba e carregar o
+      // blob — revogar cedo demais faz a aba nova falhar ao carregar.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+
   return (
-    <div className="relative">
-      {/* Timeline line */}
-      <div className="absolute left-3 sm:left-4 top-6 sm:top-8 bottom-0 w-0.5 bg-gradient-to-b from-primary/30 via-primary/40 to-transparent dark:from-primary-800 dark:via-primary-700"></div>
+    <div
+      // Só é clicável quando a movimentação tem documento — sem
+      // documento não tem o que abrir no painel ao lado.
+      onClick={temDocumento ? () => onClick?.(mov) : undefined}
+      className={`relative rounded-lg transition-all duration-200 ${
+        temDocumento
+          ? "cursor-pointer hover:shadow-lg hover:scale-[1.01] overflow-hidden pl-4 sm:pl-5 pr-8 sm:pr-9 py-2 sm:py-3 bg-secondary/10 dark:bg-secondary-900/30 border border-secondary/40 dark:border-secondary-700 shadow-sm hover:bg-secondary/20 dark:hover:bg-secondary-900/40"
+          : isNew
+            ? "p-2 sm:p-3 bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary/20 dark:border-primary-800/50"
+            : "p-2 sm:p-3 bg-card dark:bg-card border border-border dark:border-border/50"
+      }`}
+    >
+      {/* Barra de destaque à esquerda, só pra movimentações com documento */}
+      {temDocumento && (
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-secondary" />
+      )}
 
-      <div className="relative flex items-start gap-2 sm:gap-3 pb-2 sm:pb-3">
-        {/* Timeline marker */}
-        <div className="relative z-10 flex-shrink-0">
-          <div
-            className={`flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full shadow-md transition-all duration-200 ${
-              isNew
-                ? "bg-gradient-to-br from-primary to-primary-light ring-2 ring-primary/10 dark:ring-primary-foreground/30"
-                : "bg-gradient-to-br from-gray-400 to-gray-500 ring-2 ring-gray-100 dark:ring-gray-800/50"
-            }`}
-          >
-            {isNew ? (
-              <div className="relative">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></div>
-                <div className="absolute inset-0 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-ping opacity-30"></div>
-              </div>
-            ) : (
-              <span className="text-white font-semibold text-[10px] sm:text-[11px]">
-                {idx + 1}
-              </span>
-            )}
-          </div>
+      {/* Botão de abrir documento — canto superior direito, só ícone */}
+      {temDocumento && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            // Clicar no ícone abre o documento em nova aba; clicar em
+            // qualquer outra parte do card continua abrindo o preview no
+            // painel ao lado, igual antes.
+            e.stopPropagation();
+            void abrirDocumentoEmNovaAba();
+          }}
+          disabled={isGeneratingPdf}
+          className="absolute top-1.5 right-1.5 h-6 w-6 p-0 flex items-center justify-center"
+          title="Abrir documento em nova aba"
+        >
+          {isGeneratingPdf ? (
+            <div className="h-3 w-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <FileText className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      )}
+
+      {(temDocumento || isNew) && (
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 flex-wrap">
+          {temDocumento && (
+            <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wide bg-secondary text-white shadow-sm">
+              <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+              Documento
+            </span>
+          )}
+          {isNew && (
+            <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-primary text-primary-foreground">
+              <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full mr-1 sm:mr-1.5 animate-pulse"></div>
+              Nova
+            </span>
+          )}
         </div>
+      )}
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div
-            onClick={() => onClick?.(mov)}
-            className={`rounded-lg p-2 sm:p-3 transition-all duration-200 cursor-pointer hover:shadow-md hover:scale-[1.01] ${
-              isNew
-                ? "bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary-900/20 dark:to-primary-800/10 border border-primary/20 dark:border-primary-800/50"
-                : "bg-card dark:bg-card border border-border dark:border-border/50"
-            }`}
-          >
-            {/* Header with date and status */}
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 flex-wrap">
-              <span
-                className={`font-semibold text-xs sm:text-sm ${
-                  isNew
-                    ? "text-primary dark:text-primary-foreground"
-                    : "text-foreground dark:text-card-foreground"
-                }`}
-              >
-                {mov.data}
-              </span>
+      <p
+        className={`text-[11px] sm:text-xs leading-relaxed break-words ${
+          temDocumento
+            ? "font-medium text-foreground dark:text-card-foreground"
+            : isNew
+              ? "text-primary dark:text-primary-foreground"
+              : "text-foreground dark:text-card-foreground"
+        }`}
+      >
+        {mov.conteudo}
+      </p>
+    </div>
+  );
+}
 
-              {/* Status badge apenas para movimentos novos */}
-              {isNew && (
-                <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-primary text-primary-foreground">
-                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-white rounded-full mr-1 sm:mr-1.5 animate-pulse"></div>
-                  Nova
-                </span>
-              )}
+type CombinedItem = { id: number; date: string; data: Movimentacoes };
+
+// Agrupa por data (mesmo dia = mesmo marcador) — um único marcador/linha por
+// data, com todos os itens daquele dia empilhados ao lado dele.
+function TimelineDateGroup({
+  date,
+  items,
+  newMovementIds,
+  onMovementClick,
+}: {
+  date: string;
+  items: CombinedItem[];
+  newMovementIds: Set<number>;
+  onMovementClick?: (mov: Movimentacoes) => void;
+}) {
+  const hasNew = items.some((item) => newMovementIds.has(item.id));
+
+  return (
+    <div className="relative flex items-start pb-2 sm:pb-3">
+      {/* Marcador — um só por data, compartilhado por todos os itens dela */}
+      <div className="relative z-10 flex-shrink-0">
+        <div
+          className={`flex h-6 sm:h-7 min-w-6 sm:min-w-7 px-1.5 sm:px-2 items-center justify-center rounded-full shadow-md transition-all duration-200 ${
+            hasNew
+              ? "bg-gradient-to-br from-primary to-primary-light ring-2 ring-primary/10 dark:ring-primary-foreground/30"
+              : "bg-gradient-to-br from-gray-400 to-gray-500 ring-2 ring-gray-100 dark:ring-gray-800/50"
+          }`}
+        >
+          {hasNew ? (
+            <div className="relative">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-ping opacity-30"></div>
             </div>
-
-            {/* Content */}
-            <p
-              className={`text-[11px] sm:text-xs leading-relaxed break-words ${
-                isNew
-                  ? "text-primary dark:text-primary-foreground"
-                  : "text-foreground dark:text-card-foreground"
-              }`}
-            >
-              {mov.conteudo}
-            </p>
-          </div>
+          ) : (
+            <span className="text-white font-semibold text-[8px] sm:text-[9px] leading-none whitespace-nowrap">
+              {date}
+            </span>
+          )}
         </div>
+      </div>
+
+      {/* Linha ligando o marcador (data) aos cards desse mesmo dia — indica
+          visualmente que a data pertence a esses itens, sem repetir o
+          texto da data em cada card. */}
+      <div className="flex-shrink-0 w-2 sm:w-3 h-6 sm:h-7 flex items-center">
+        <div className="h-0.5 w-full rounded-full bg-gray-400 dark:bg-gray-400" />
+      </div>
+
+      {/* Itens do dia, empilhados */}
+      <div className="flex-1 min-w-0 space-y-2">
+        {items.map((item) => (
+          <MovementCard
+            key={`movement-${item.id}`}
+            mov={item.data}
+            isNew={newMovementIds.has(item.id)}
+            onClick={onMovementClick}
+          />
+        ))}
       </div>
     </div>
   );
@@ -195,8 +224,6 @@ interface TimelineCardProps {
   newMovements?: NewMovement[];
   processNumber?: string;
   onMovementClick?: (mov: Movimentacoes) => void;
-  documents?: DocumentExtract[];
-  onDocumentClick?: (doc: DocumentExtract) => void;
   onMarkAsViewed?: () => void;
   isMarkingAsViewed?: boolean;
 }
@@ -208,18 +235,10 @@ export function TimelineCard({
   newMovements = [],
   processNumber,
   onMovementClick,
-  documents = [],
-  onDocumentClick,
   onMarkAsViewed,
   isMarkingAsViewed = false,
 }: TimelineCardProps) {
   const [searchFirstInstance, setSearchFirstInstance] = useState("");
-  const [filterType, setFilterType] = useState<
-    "all" | "movements" | "documents"
-  >("all");
-  const [documentInsightsFilter, setDocumentInsightsFilter] = useState<
-    "all" | "with" | "without"
-  >("all");
 
   const movimentsFirstInstance = useMemo(() => {
     if (!searchFirstInstance) {
@@ -247,127 +266,38 @@ export function TimelineCard({
     return new Set(filteredNewMovements.map((mov) => mov.id));
   }, [newMovements, instancia]);
 
-  // Classificar documentos por instância baseado nas datas das movimentações
-  const classifyDocumentByInstance = useMemo(() => {
-    // Obter datas de cada instância
-    const firstInstanceDates = moviments
-      .filter((mov) => mov.instancia === InstanceEnum.FIRST_INSTANCE)
-      .map((mov) => normalizeDate(mov.data))
-      .filter((d) => d);
-
-    const secondInstanceDates = moviments
-      .filter((mov) => mov.instancia === InstanceEnum.SECOND_INSTANCE)
-      .map((mov) => normalizeDate(mov.data))
-      .filter((d) => d);
-
-    return (docDate: string) => {
-      const normalizedDocDate = normalizeDate(docDate);
-      if (!normalizedDocDate) return null;
-
-      // Se não há movimentações de segunda instância, assume primeira
-      if (secondInstanceDates.length === 0) {
-        return InstanceEnum.FIRST_INSTANCE;
-      }
-
-      // Se não há movimentações de primeira instância, assume segunda
-      if (firstInstanceDates.length === 0) {
-        return InstanceEnum.SECOND_INSTANCE;
-      }
-
-      // Calcular a distância mínima para cada instância
-      const distanceToFirst = Math.min(
-        ...firstInstanceDates.map((movDate) =>
-          Math.abs(
-            new Date(normalizedDocDate).getTime() - new Date(movDate).getTime(),
-          ),
-        ),
-      );
-
-      const distanceToSecond = Math.min(
-        ...secondInstanceDates.map((movDate) =>
-          Math.abs(
-            new Date(normalizedDocDate).getTime() - new Date(movDate).getTime(),
-          ),
-        ),
-      );
-
-      // Retorna a instância mais próxima
-      return distanceToFirst <= distanceToSecond
-        ? InstanceEnum.FIRST_INSTANCE
-        : InstanceEnum.SECOND_INSTANCE;
-    };
-  }, [moviments]);
-
-  // Combinar movimentações e documentos ordenados por data
+  // Mapeia movimentações pro formato unificado e ordena por data (mais
+  // recente primeiro) — documentos não são mais uma fonte separada (vinham
+  // do Mongo, `process.documents`), o texto/documento já está embutido em
+  // cada movimentação via `mov.texto` (fonte 100% Athena).
   const combinedItems = useMemo(() => {
-    // Mapear movimentações para o formato unificado
     const movementsMapped = movimentsFirstInstance.map((mov) => ({
-      type: "movement" as const,
       id: mov.id,
       date: mov.data,
       data: mov,
-      instancia: mov.instancia,
     }));
 
-    // Mapear documentos para o formato unificado e classificar por instância
-    const documentsMapped = documents
-      .map((doc) => ({
-        type: "document" as const,
-        id: doc._id,
-        date: doc.date,
-        data: doc,
-        instancia: classifyDocumentByInstance(doc.date),
-      }))
-      // Filtrar apenas documentos da instância atual
-      .filter((doc) => doc.instancia === instancia)
-      // Filtrar documentos por insights (com insights, sem insights, ou todos)
-      .filter((doc) => {
-        if (documentInsightsFilter === "all") return true;
-        const hasInsights =
-          doc.data.status === StatusExtractionInsight.COMPLETED &&
-          doc.data.data != null;
-        if (documentInsightsFilter === "with") {
-          return hasInsights;
-        } else if (documentInsightsFilter === "without") {
-          return !hasInsights;
-        }
-        return true;
-      })
-      // Aplicar filtro de busca nos documentos
-      .filter((doc) => {
-        if (!searchFirstInstance) return true;
+    return movementsMapped.sort((a, b) => compareDates(a.date, b.date));
+  }, [movimentsFirstInstance]);
 
-        const normalizedSearch = normalizeSearchText(searchFirstInstance);
-        const normalizedTitle = normalizeSearchText(doc.data.title || "");
-        const normalizedDate = normalizeSearchText(doc.data.date || "");
+  // Agrupa itens com a mesma data (já vêm ordenados por data em
+  // `combinedItems`, então basta comparar com o grupo anterior).
+  const groupedItems = useMemo(() => {
+    const groups: { date: string; items: CombinedItem[] }[] = [];
 
-        const titleMatch = normalizedTitle.includes(normalizedSearch);
-        const dateMatch = normalizedDate.includes(normalizedSearch);
+    for (const item of combinedItems) {
+      const normalized = normalizeDate(item.date);
+      const lastGroup = groups[groups.length - 1];
 
-        return titleMatch || dateMatch;
-      });
-
-    // Combinar e ordenar por data (mais recente primeiro)
-    const combined = [...movementsMapped, ...documentsMapped];
-    const sorted = combined.sort((a, b) => compareDates(a.date, b.date));
-
-    // Aplicar filtro de tipo
-    if (filterType === "movements") {
-      return sorted.filter((item) => item.type === "movement");
-    } else if (filterType === "documents") {
-      return sorted.filter((item) => item.type === "document");
+      if (lastGroup && normalizeDate(lastGroup.date) === normalized) {
+        lastGroup.items.push(item);
+      } else {
+        groups.push({ date: item.date, items: [item] });
+      }
     }
 
-    return sorted;
-  }, [
-    movimentsFirstInstance,
-    documents,
-    classifyDocumentByInstance,
-    instancia,
-    searchFirstInstance,
-    filterType,
-    documentInsightsFilter,
-  ]);
+    return groups;
+  }, [combinedItems]);
 
   // Verificar se há movimentações novas
   const hasNewMovementsNow = newMovementIds.size > 0;
@@ -437,108 +367,9 @@ export function TimelineCard({
             )}
           </div>
 
-          {/* Filtros de tipo */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <Button
-                variant={filterType === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setFilterType("all");
-                  setDocumentInsightsFilter("all");
-                }}
-                className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all ${
-                  filterType === "all"
-                    ? "bg-primary hover:bg-primary-light text-primary-foreground"
-                    : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                Todos
-              </Button>
-              <Button
-                variant={filterType === "movements" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setFilterType("movements");
-                  setDocumentInsightsFilter("all");
-                }}
-                className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
-                  filterType === "movements"
-                    ? "bg-primary hover:bg-primary-light text-primary-foreground"
-                    : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                <Calendar className="h-3 w-3" />
-                <span className="hidden sm:inline">Movimentos</span>
-                <span className="sm:hidden">Mov</span>
-              </Button>
-              <Button
-                variant={filterType === "documents" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilterType("documents")}
-                className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
-                  filterType === "documents"
-                    ? "bg-secondary hover:bg-secondary-foreground text-primary-foreground"
-                    : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                <FileText className="h-3 w-3" />
-                <span className="hidden sm:inline">Documentos</span>
-                <span className="sm:hidden">Docs</span>
-              </Button>
-              {/* Filtros de insights - só aparecem quando filtro de documentos está ativo */}
-              {filterType === "documents" && (
-                <>
-                  <Button
-                    variant={
-                      documentInsightsFilter === "with" ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() =>
-                      setDocumentInsightsFilter(
-                        documentInsightsFilter === "with" ? "all" : "with",
-                      )
-                    }
-                    className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
-                      documentInsightsFilter === "with"
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <TrendingUp className="h-3 w-3" />
-                    <span className="hidden sm:inline">Com Insights</span>
-                    <span className="sm:hidden">Com</span>
-                  </Button>
-                  <Button
-                    variant={
-                      documentInsightsFilter === "without"
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    onClick={() =>
-                      setDocumentInsightsFilter(
-                        documentInsightsFilter === "without"
-                          ? "all"
-                          : "without",
-                      )
-                    }
-                    className={`h-7 px-2 sm:px-3 text-[10px] sm:text-xs font-medium transition-all flex items-center gap-1 ${
-                      documentInsightsFilter === "without"
-                        ? "bg-amber-600 hover:bg-amber-700 text-white"
-                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    <XCircle className="h-3 w-3" />
-                    <span className="hidden sm:inline">Sem Insights</span>
-                    <span className="sm:hidden">Sem</span>
-                  </Button>
-                </>
-              )}
-            </div>
-
-            {/* Contador de resultados */}
-            {combinedItems.length > 0 && (
+          {/* Contador de resultados */}
+          {combinedItems.length > 0 && (
+            <div className="flex items-center justify-end">
               <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
                 <span className="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300">
                   {combinedItems.length}
@@ -547,73 +378,46 @@ export function TimelineCard({
                   {combinedItems.length === 1 ? "item" : "itens"}
                 </span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <div className="flex-1 flex flex-col min-h-0">
           {combinedItems?.length === 0 ? (
             <div className="text-center py-8">
               <div className="mx-auto w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
-                {filterType === "documents" ? (
-                  <FileText className="h-6 w-6 text-purple-400 dark:text-purple-500" />
-                ) : filterType === "movements" ? (
-                  <Calendar className="h-6 w-6 text-blue-400 dark:text-blue-500" />
-                ) : (
-                  <Calendar className="h-6 w-6 text-gray-400 dark:text-gray-500" />
-                )}
+                <Calendar className="h-6 w-6 text-gray-400 dark:text-gray-500" />
               </div>
               <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1.5">
-                {filterType === "documents"
-                  ? "Nenhum documento encontrado"
-                  : filterType === "movements"
-                    ? "Nenhuma movimentação encontrada"
-                    : "Nenhum item encontrado"}
+                Nenhum item encontrado
               </h3>
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 {searchFirstInstance
-                  ? `Nenhum ${filterType === "documents" ? "documento" : filterType === "movements" ? "movimentação" : "item"} corresponde ao filtro aplicado.`
-                  : `Nenhum ${filterType === "documents" ? "documento" : filterType === "movements" ? "movimentação" : "item"} registrado para esta instância.`}
+                  ? "Nenhum item corresponde ao filtro aplicado."
+                  : "Nenhum item registrado para esta instância."}
               </p>
-              {(searchFirstInstance || filterType !== "all") && (
+              {searchFirstInstance && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setSearchFirstInstance("");
-                    setFilterType("all");
-                  }}
+                  onClick={() => setSearchFirstInstance("")}
                   className="mt-3 h-7 px-2.5 text-xs"
                 >
-                  Limpar filtros
+                  Limpar filtro
                 </Button>
               )}
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0">
               <div className="relative pl-1">
-                {(combinedItems ?? []).map((item, idx) => {
-                  if (item.type === "movement") {
-                    const isNew = newMovementIds.has(item.id);
-                    return (
-                      <MovementItem
-                        key={`movement-${item.id}`}
-                        mov={item.data}
-                        idx={idx}
-                        isNew={isNew}
-                        onClick={onMovementClick}
-                      />
-                    );
-                  } else {
-                    return (
-                      <DocumentItem
-                        key={`document-${item.id}`}
-                        doc={item.data}
-                        idx={idx}
-                        onClick={onDocumentClick}
-                      />
-                    );
-                  }
-                })}
+                {groupedItems.map((group, index) => (
+                  <TimelineDateGroup
+                    key={`group-${normalizeDate(group.date) || group.date || index}`}
+                    date={group.date}
+                    items={group.items}
+                    newMovementIds={newMovementIds}
+                    onMovementClick={onMovementClick}
+                  />
+                ))}
               </div>
             </div>
           )}

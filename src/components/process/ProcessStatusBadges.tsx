@@ -18,6 +18,8 @@ interface ProcessStatusBadgesProps {
   process: Process;
   isRefetching: boolean;
   isSyncing: boolean;
+  lawsuitStatusColeta?: string | null;
+  lawsuitMotivoErro?: string | null;
   onRemoveProvisionalLink?: () => void;
   onLinkProvisionalExecution?: () => void;
 }
@@ -26,6 +28,8 @@ export const ProcessStatusBadges = memo(function ProcessStatusBadges({
   process,
   isRefetching,
   isSyncing,
+  lawsuitStatusColeta,
+  lawsuitMotivoErro,
   onRemoveProvisionalLink,
   onLinkProvisionalExecution,
 }: ProcessStatusBadgesProps) {
@@ -39,7 +43,9 @@ export const ProcessStatusBadges = memo(function ProcessStatusBadges({
           </span>
         </div>
       )}
-      {(isSyncing || process?.processStatus?.name === "Processando") && (
+      {(isSyncing ||
+        process?.processStatus?.name === "Processando" ||
+        lawsuitStatusColeta === "SINCRONIZANDO") && (
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-cyan-500 dark:bg-cyan-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help animate-pulse">
@@ -213,7 +219,9 @@ export const ProcessStatusBadges = memo(function ProcessStatusBadges({
           </TooltipContent>
         </Tooltip>
       )}
-      {process?.processStatus?.name === "Error" && (
+      {lawsuitStatusColeta &&
+        lawsuitStatusColeta !== "SUCESSO" &&
+        lawsuitStatusColeta !== "SINCRONIZANDO" && (
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 dark:bg-red-600 text-white rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium shadow-sm cursor-help">
@@ -227,25 +235,16 @@ export const ProcessStatusBadges = memo(function ProcessStatusBadges({
           >
             <div className="space-y-2">
               <p className="font-bold text-red-600 dark:text-red-400">
-                Erro no Processamento
+                Erro na Coleta do PJe
               </p>
-              {process.processStatus.errorReason && (
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  <span className="font-semibold">Motivo:</span>{" "}
-                  {process.processStatus.errorReason}
-                </p>
-              )}
-              {process.processStatus.log && (
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <span className="font-semibold">Status:</span>{" "}
+                {lawsuitStatusColeta}
+              </p>
+              {lawsuitMotivoErro && (
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  <span className="font-semibold">Log:</span>{" "}
-                  {process.processStatus.log}
-                </p>
-              )}
-              {process.processStatus.updatedAt && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {new Date(process.processStatus.updatedAt).toLocaleString(
-                    "pt-BR",
-                  )}
+                  <span className="font-semibold">Motivo:</span>{" "}
+                  {lawsuitMotivoErro}
                 </p>
               )}
             </div>

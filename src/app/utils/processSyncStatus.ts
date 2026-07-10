@@ -158,21 +158,4 @@ export function getStatusColor(status: ProcessStatus | undefined): {
   };
 }
 
-/**
- * Verifica se pode sincronizar novamente baseado no status
- */
-export function canSync(status: ProcessStatus | undefined, synchronizedAt?: string): boolean {
-  // Se há erro, pode sincronizar
-  if (hasError(status)) return true;
-  
-  // Se nunca foi sincronizado, pode sincronizar
-  if (!synchronizedAt) return true;
-  
-  // Verifica se passaram 30 minutos desde a última sincronização
-  const lastSync = new Date(synchronizedAt);
-  const now = new Date();
-  const diffInMinutes = (now.getTime() - lastSync.getTime()) / (1000 * 60);
-  
-  return diffInMinutes >= 30;
-}
 

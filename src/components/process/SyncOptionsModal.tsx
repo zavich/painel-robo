@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { RefreshCw, FileText, Activity } from "lucide-react";
+import { RefreshCw, FileText } from "lucide-react";
 
 interface SyncOptionsModalProps {
   isOpen: boolean;
@@ -25,13 +23,8 @@ export function SyncOptionsModal({
   onConfirm,
   isPending,
 }: SyncOptionsModalProps) {
-  const [selectedOption, setSelectedOption] = useState<'movements' | 'documents'>('movements');
-
   const handleConfirm = () => {
-    onConfirm({ 
-      movements: selectedOption === 'movements', 
-      documents: selectedOption === 'documents' 
-    });
+    onConfirm({ movements: false, documents: true });
   };
 
   const handleClose = () => {
@@ -46,52 +39,17 @@ export function SyncOptionsModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5 text-blue-600" />
-            Opções de Sincronização
+            Sincronizar Processo
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Selecione qual tipo de dados deseja sincronizar:
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <input
-                type="radio"
-                id="movements"
-                name="syncOption"
-                value="movements"
-                checked={selectedOption === 'movements'}
-                onChange={(e) => setSelectedOption(e.target.value as 'movements' | 'documents')}
-                disabled={isPending}
-                className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              <Label htmlFor="movements" className="flex items-center gap-3 cursor-pointer">
-                <Activity className="h-5 w-5 text-blue-600" />
-                <span className="text-base">Movimentações</span>
-              </Label>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <input
-                type="radio"
-                id="documents"
-                name="syncOption"
-                value="documents"
-                checked={selectedOption === 'documents'}
-                onChange={(e) => setSelectedOption(e.target.value as 'movements' | 'documents')}
-                disabled={isPending}
-                className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300"
-              />
-              <Label htmlFor="documents" className="flex items-center gap-3 cursor-pointer">
-                <FileText className="h-5 w-5 text-green-600" />
-                <span className="text-base">Documentos</span>
-              </Label>
-            </div>
+
+        <div className="py-4">
+          <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+            <FileText className="h-5 w-5 text-green-600 flex-shrink-0" />
+            Isso vai sincronizar os documentos deste processo.
           </div>
         </div>
-        
+
         <DialogFooter className="gap-2">
           <Button
             variant="outline"
