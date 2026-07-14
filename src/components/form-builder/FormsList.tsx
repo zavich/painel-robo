@@ -21,10 +21,8 @@ export function FormsList() {
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
 
-    setDeletingId(deleteTarget.id);
     deleteForm(deleteTarget.id);
     toast.success("Formulário removido com sucesso (simulação)");
-    setDeletingId(null);
     setDeleteTarget(null);
   };
 

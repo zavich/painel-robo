@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useTheme } from "@/app/hooks/use-theme-client";
 import { iconButtonClass, inputClass, labelClass } from "@/components/form-builder/styles";
@@ -9,37 +10,52 @@ interface OptionsEditorProps {
   onChange: (options: string[]) => void;
 }
 
+type OptionEntry = { id: string; value: string };
+
 export function OptionsEditor({ options, onChange }: OptionsEditorProps) {
   const { theme } = useTheme();
 
+  // Use internal state with stable IDs so that removing a middle item does not
+  // cause React to reuse the DOM node of the next item (which would shift
+  // values and steal focus).
+  const [entries, setEntries] = useState<OptionEntry[]>(() =>
+    options.map((value) => ({ id: crypto.randomUUID(), value }))
+  );
+
   const handleAdd = () => {
-    onChange([...options, ""]);
+    const updated = [...entries, { id: crypto.randomUUID(), value: "" }];
+    setEntries(updated);
+    onChange(updated.map((e) => e.value));
   };
 
-  const handleEdit = (index: number, value: string) => {
-    onChange(options.map((option, i) => (i === index ? value : option)));
+  const handleEdit = (id: string, value: string) => {
+    const updated = entries.map((e) => (e.id === id ? { ...e, value } : e));
+    setEntries(updated);
+    onChange(updated.map((e) => e.value));
   };
 
-  const handleRemove = (index: number) => {
-    onChange(options.filter((_, i) => i !== index));
+  const handleRemove = (id: string) => {
+    const updated = entries.filter((e) => e.id !== id);
+    setEntries(updated);
+    onChange(updated.map((e) => e.value));
   };
 
   return (
     <div className="space-y-2">
       <label className={labelClass(theme)}>Opções</label>
       <div className="space-y-2">
-        {options.map((option, index) => (
-          <div key={index} className="flex items-center gap-2 animate-fade-in-up">
+        {entries.map((entry, index) => (
+          <div key={entry.id} className="flex items-center gap-2 animate-fade-in-up">
             <input
-              value={option}
-              onChange={(e) => handleEdit(index, e.target.value)}
+              value={entry.value}
+              onChange={(e) => handleEdit(entry.id, e.target.value)}
               placeholder={`Opção ${index + 1}`}
               aria-label={`Opção ${index + 1}`}
               className={`${inputClass(theme)} !px-3 !py-2`}
             />
             <button
               type="button"
-              onClick={() => handleRemove(index)}
+              onClick={() => handleRemove(entry.id)}
               className={`${iconButtonClass(theme, "destructive")} shrink-0`}
               title="Remover opção"
               aria-label={`Remover opção ${index + 1}`}
