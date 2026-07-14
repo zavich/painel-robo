@@ -25,7 +25,9 @@ const FormsContext = createContext<FormsContextType | undefined>(undefined);
 function readFormsFromStorage(): FormDefinition[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as FormDefinition[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as FormDefinition[]) : [];
   } catch {
     return [];
   }

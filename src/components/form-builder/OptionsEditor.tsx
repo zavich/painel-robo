@@ -34,6 +34,7 @@ export function OptionsEditor({ options, onChange }: OptionsEditorProps) {
               value={option}
               onChange={(e) => handleEdit(index, e.target.value)}
               placeholder={`Opção ${index + 1}`}
+              aria-label={`Opção ${index + 1}`}
               className={`${inputClass(theme)} !px-3 !py-2`}
             />
             <button

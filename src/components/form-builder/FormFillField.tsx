@@ -121,12 +121,13 @@ export function FormFillField({ field, theme, value, onChange }: FormFillFieldPr
           />
         </div>
       );
-    default:
+    default: {
+      const inputType = field.type === "phone" ? "tel" : field.type;
       return (
         <div className="space-y-1.5">
           {label}
           <input
-            type={field.type}
+            type={inputType}
             value={stringValue}
             onChange={(e) => onChange(e.target.value)}
             placeholder={field.placeholder}
@@ -134,5 +135,6 @@ export function FormFillField({ field, theme, value, onChange }: FormFillFieldPr
           />
         </div>
       );
+    }
   }
 }

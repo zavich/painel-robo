@@ -107,17 +107,19 @@ export function FormFieldPreview({ field, theme, compact = false }: FormFieldPre
           />
         </div>
       );
-    default:
+    default: {
+      const inputType = field.type === "phone" ? "tel" : field.type;
       return (
         <div className={wrapperSpacing}>
           {label}
           <input
-            type={field.type}
+            type={inputType}
             placeholder={field.placeholder}
             disabled
             className={controlClass}
           />
         </div>
       );
+    }
   }
 }
