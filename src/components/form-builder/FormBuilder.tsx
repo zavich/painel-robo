@@ -133,9 +133,6 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
       fields,
     };
 
-    // Estrutura completa do formulário — futuramente será o payload enviado à API.
-    console.log(JSON.stringify(formToSave, null, 2));
-
     if (isEditing) {
       updateForm(formToSave.id, formToSave);
       toast.success("Formulário atualizado com sucesso (simulação)");

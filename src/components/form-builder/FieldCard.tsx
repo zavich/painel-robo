@@ -57,6 +57,7 @@ export function FieldCard({
           theme === "dark" ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"
         }`}
         title="Arrastar para reordenar"
+        aria-label="Arrastar para reordenar"
       >
         <GripVertical className="h-5 w-5" />
       </button>
@@ -87,6 +88,7 @@ export function FieldCard({
           disabled={isFirst}
           className={iconButtonClass(theme)}
           title="Mover para cima"
+          aria-label="Mover para cima"
         >
           <ChevronUp className="h-4 w-4" />
         </button>
@@ -96,6 +98,7 @@ export function FieldCard({
           disabled={isLast}
           className={iconButtonClass(theme)}
           title="Mover para baixo"
+          aria-label="Mover para baixo"
         >
           <ChevronDown className="h-4 w-4" />
         </button>
@@ -104,6 +107,7 @@ export function FieldCard({
           onClick={onEdit}
           className={iconButtonClass(theme, "accent")}
           title="Editar campo"
+          aria-label="Editar campo"
         >
           <Pencil className="h-4 w-4" />
         </button>
@@ -112,6 +116,7 @@ export function FieldCard({
           onClick={onDelete}
           className={iconButtonClass(theme, "destructive")}
           title="Excluir campo"
+          aria-label="Excluir campo"
         >
           <Trash2 className="h-4 w-4" />
         </button>

@@ -4,6 +4,7 @@ import {
   formatarCEP,
   formatarTelefone,
   mascararCNPJ,
+  maskCurrencyInput,
   maskRG,
 } from "./masks";
 
@@ -59,6 +60,24 @@ describe("masks", () => {
 
     it("retorna string vazia para entrada falsy", () => {
       expect(formatProcessNumber("")).toBe("");
+    });
+  });
+
+  describe("maskCurrencyInput", () => {
+    it("formata valor de 1 dígito como centavos", () => {
+      expect(maskCurrencyInput("1")).toBe("R$\u00a00,01");
+    });
+
+    it("formata valor de 3 dígitos como reais e centavos", () => {
+      expect(maskCurrencyInput("123")).toBe("R$\u00a01,23");
+    });
+
+    it("retorna string vazia para entrada vazia", () => {
+      expect(maskCurrencyInput("")).toBe("");
+    });
+
+    it("ignora caracteres não numéricos", () => {
+      expect(maskCurrencyInput("R$ 1,23")).toBe("R$\u00a01,23");
     });
   });
 });

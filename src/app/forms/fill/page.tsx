@@ -75,18 +75,7 @@ export default function FillFormPage() {
       return;
     }
 
-    const payload = {
-      formId: selectedForm.id,
-      formName: selectedForm.name,
-      answers: selectedForm.fields.map((field) => ({
-        label: field.label,
-        type: field.type,
-        value: answers[field.id] ?? (field.type === "checkbox" ? false : ""),
-      })),
-    };
-
     // Simulação — futuramente este payload será enviado a uma API.
-    console.log(JSON.stringify(payload, null, 2));
     toast.success("Formulário enviado com sucesso (simulação)");
     setAnswers({});
   };

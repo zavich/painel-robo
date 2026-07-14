@@ -41,6 +41,7 @@ export function OptionsEditor({ options, onChange }: OptionsEditorProps) {
               onClick={() => handleRemove(index)}
               className={`${iconButtonClass(theme, "destructive")} shrink-0`}
               title="Remover opção"
+              aria-label={`Remover opção ${index + 1}`}
             >
               <Trash2 className="h-4 w-4" />
             </button>

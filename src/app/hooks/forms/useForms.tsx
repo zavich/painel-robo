@@ -14,6 +14,7 @@ const STORAGE_KEY = "prosolutti:forms";
 
 interface FormsContextType {
   forms: FormDefinition[];
+  isReady: boolean;
   createForm: (form: FormDefinition) => void;
   updateForm: (id: string, form: FormDefinition) => void;
   deleteForm: (id: string) => void;
@@ -72,11 +73,7 @@ export const FormsProvider = ({ children }: { children: ReactNode }) => {
   // TODO: quando a API estiver disponível, substituir a implementação
   // interna destas funções por chamadas HTTP mantendo a mesma assinatura.
   const createForm = useCallback((form: FormDefinition) => {
-    setForms((prev) => {
-      const updated = [...prev, form];
-      console.log("Formulários armazenados:", updated);
-      return updated;
-    });
+    setForms((prev) => [...prev, form]);
   }, []);
 
   const updateForm = useCallback((id: string, form: FormDefinition) => {
@@ -88,7 +85,7 @@ export const FormsProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <FormsContext.Provider value={{ forms, createForm, updateForm, deleteForm }}>
+    <FormsContext.Provider value={{ forms, isReady: hydrated, createForm, updateForm, deleteForm }}>
       {children}
     </FormsContext.Provider>
   );

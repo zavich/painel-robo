@@ -83,15 +83,16 @@ export function FormFillField({ field, theme, value, onChange }: FormFillFieldPr
       );
     case "checkbox":
       return (
-        <div className="flex items-center gap-2">
+        <label className={`flex cursor-pointer items-center gap-2 ${labelClass(theme)}`}>
           <input
             type="checkbox"
             checked={value === true}
             onChange={(e) => onChange(e.target.checked)}
             className={checkboxClass()}
           />
-          {label}
-        </div>
+          {field.label}
+          {field.required && <span className="ml-1 text-red-500">*</span>}
+        </label>
       );
     case "file":
       return (

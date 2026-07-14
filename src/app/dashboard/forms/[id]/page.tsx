@@ -13,9 +13,23 @@ export default function EditFormPage() {
   const router = useRouter();
   const { theme } = useTheme();
   const id = params?.id as string;
-  const { forms } = useForms();
+  const { forms, isReady } = useForms();
 
-  const form = forms.find((item) => item.id === id);
+  const form = isReady ? forms.find((item) => item.id === id) : undefined;
+
+  if (!isReady) {
+    return (
+      <MainShell>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="backdrop-blur-sm rounded-2xl border shadow-lg p-6 bg-white/80 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-secondary" />
+            </div>
+          </div>
+        </div>
+      </MainShell>
+    );
+  }
 
   if (!form) {
     return (
@@ -41,8 +55,8 @@ export default function EditFormPage() {
                 <p
                   className={`mt-1 max-w-sm text-sm ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}
                 >
-                  Ele pode ter sido removido, ou a página foi recarregada —
-                  nesta versão os formulários existem apenas em memória.
+                  Ele pode ter sido removido, ou ainda não foi encontrado
+                  no armazenamento local deste navegador.
                 </p>
               </div>
               <button
