@@ -64,12 +64,14 @@ describe("masks", () => {
   });
 
   describe("maskCurrencyInput", () => {
+    const NBSP = "\u00a0";
+
     it("formata valor de 1 dígito como centavos", () => {
-      expect(maskCurrencyInput("1")).toBe("R$\u00a00,01");
+      expect(maskCurrencyInput("1")).toBe(`R$${NBSP}0,01`);
     });
 
     it("formata valor de 3 dígitos como reais e centavos", () => {
-      expect(maskCurrencyInput("123")).toBe("R$\u00a01,23");
+      expect(maskCurrencyInput("123")).toBe(`R$${NBSP}1,23`);
     });
 
     it("retorna string vazia para entrada vazia", () => {
@@ -77,7 +79,7 @@ describe("masks", () => {
     });
 
     it("ignora caracteres não numéricos", () => {
-      expect(maskCurrencyInput("R$ 1,23")).toBe("R$\u00a01,23");
+      expect(maskCurrencyInput("R$ 1,23")).toBe(`R$${NBSP}1,23`);
     });
   });
 });
