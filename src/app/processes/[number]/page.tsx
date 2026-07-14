@@ -177,6 +177,9 @@ export default function ProcessDetailsEditPage() {
           onViewAnalysis={() => {
             window.open(`/processes/${lawsuitCnjNumber}/analysis`, "_blank");
           }}
+          onFillForm={() => {
+            window.open("/forms/fill", "_blank");
+          }}
           onSync={async () => {
             if (!lawsuitCnjNumber) {
               toast.error("Número do processo não encontrado.");

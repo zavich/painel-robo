@@ -16,6 +16,7 @@ import {
   Users,
   FileText,
   Copy,
+  ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -32,6 +33,7 @@ interface ProcessHeaderProps {
   isSyncLocked?: boolean;
   onViewAnalysis?: () => void;
   onSync?: () => void;
+  onFillForm?: () => void;
 }
 
 export function ProcessHeader({
@@ -42,6 +44,7 @@ export function ProcessHeader({
   isSyncLocked = false,
   onViewAnalysis,
   onSync,
+  onFillForm,
 }: ProcessHeaderProps) {
   const [showPartsModal, setShowPartsModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -209,7 +212,7 @@ export function ProcessHeader({
     </div>
   );
 
-  // Botões de ação do processo (Análise, Sincronizar)
+  // Botões de ação do processo (LO, Sincronizar)
   const processActionButtons = (
     <>
       {onViewAnalysis && (
@@ -218,10 +221,10 @@ export function ProcessHeader({
           size="sm"
           className="text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-700 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-400 dark:hover:bg-orange-900/30 dark:hover:text-orange-300 font-medium transition-all"
           onClick={onViewAnalysis}
-          aria-label="Ver Formulário de Análise"
+          aria-label="Ver LO"
         >
           <FileText className="h-4 w-4" />
-          <span className="hidden xl:inline ml-2">Análise</span>
+          <span className="hidden xl:inline ml-2">LO</span>
         </Button>
       )}
       {onSync && (
@@ -237,6 +240,18 @@ export function ProcessHeader({
             className={`h-4 w-4 ${isSyncLocked ? "animate-spin" : ""}`}
           />
           <span className="hidden xl:inline ml-2">Sincronizar</span>
+        </Button>
+      )}
+      {onFillForm && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-secondary dark:text-secondary border-secondary/40 dark:border-secondary/40 hover:bg-secondary/10 hover:text-secondary hover:border-secondary dark:hover:bg-secondary/10 font-medium transition-all"
+          onClick={onFillForm}
+          aria-label="Preencher Formulário"
+        >
+          <ClipboardList className="h-4 w-4" />
+          <span className="hidden xl:inline ml-2">Preencher Formulário</span>
         </Button>
       )}
     </>

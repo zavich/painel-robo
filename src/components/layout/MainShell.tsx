@@ -6,6 +6,7 @@ import { UserRolesEnum } from "@/app/interfaces/user";
 import { NotificationsBell } from "@/components/notifications/NotificationsBell";
 import { Button } from "@/components/ui/button";
 import {
+  FileEdit,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -37,6 +38,11 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/prompts",
     icon: MessageSquareText,
     adminOnly: true,
+  },
+  {
+    label: "Formulários",
+    href: "/dashboard/forms",
+    icon: FileEdit,
   },
   // {
   //   label: "Motivos de Recusa",
