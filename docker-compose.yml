@@ -6,6 +6,7 @@ services:
       context: .
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_JURI_API_URL: ${NEXT_PUBLIC_JURI_API_URL}
     container_name: prosolutti-robo
     env_file:
       - .env
