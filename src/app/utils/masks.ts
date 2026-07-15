@@ -61,4 +61,22 @@ function formatProcessNumber(value: string): string {
     .slice(0, 25);
 }
 
-export { mascararCNPJ, formatarTelefone, formatarCEP, formatCpf, maskRG, formatProcessNumber };
+function maskCurrencyInput(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  const cents = parseInt(digits, 10);
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(cents / 100);
+}
+
+export {
+  mascararCNPJ,
+  formatarTelefone,
+  formatarCEP,
+  formatCpf,
+  maskRG,
+  formatProcessNumber,
+  maskCurrencyInput,
+};

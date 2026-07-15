@@ -3,7 +3,8 @@ import { useInsertLawsuit } from "@/app/api/hooks/lawsuit/useInsertLawsuit";
 import { useFilter } from "@/app/hooks/filter/useFilter";
 import { useToast } from "@/app/hooks/use-toast";
 import { FiltersBar } from "@/components/FiltersBar";
-import { Search, SearchX } from "lucide-react";
+import { validateCnjNumber } from "@/app/utils/cnjValidation";
+import { AlertTriangle, Search, SearchX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -32,9 +33,20 @@ export default function KanbanDashboard() {
 
   const hasSearch = Boolean(debouncedSearch);
 
-  const { data: lawsuit, isLoading } = useLawsuit(debouncedSearch);
+  // Valida o formato/dígito verificador CNJ antes de disparar a consulta —
+  // evita gastar uma query no Athena (lenta e cara) com número incompleto ou
+  // digitado errado, e permite distinguir esse caso de "não existe na base".
+  const cnjValidation = useMemo(
+    () => validateCnjNumber(debouncedSearch),
+    [debouncedSearch],
+  );
+  const isCnjValid = hasSearch && cnjValidation.isValid;
 
-  const notFound = hasSearch && !isLoading && !lawsuit;
+  const { data: lawsuit, isLoading } = useLawsuit(debouncedSearch, {
+    enabled: isCnjValid,
+  });
+
+  const notFound = isCnjValid && !isLoading && !lawsuit;
 
   const insertLawsuitMutation = useInsertLawsuit();
 
@@ -154,6 +166,20 @@ export default function KanbanDashboard() {
                 detalhe do processo encontrado.
               </p>
             </div>
+          ) : !cnjValidation.isValid ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-amber-500" />
+              </div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Número do processo incompleto ou digitado incorretamente
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                {cnjValidation.reason === "incomplete"
+                  ? "O número precisa ter os 20 dígitos do padrão CNJ (NNNNNNN-DD.AAAA.J.TR.OOOO). Confira se não faltou ou sobrou algum dígito."
+                  : "O dígito verificador não confere com o restante do número — provavelmente algum dígito foi digitado errado. Confira o número e tente novamente."}
+              </p>
+            </div>
           ) : genuinelyNotFound ? (
             <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
               <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
@@ -163,8 +189,9 @@ export default function KanbanDashboard() {
                 Processo não encontrado
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Nenhum processo foi encontrado com o número &quot;
-                {debouncedSearch}&quot;.
+                O número &quot;{debouncedSearch}&quot; está em um formato
+                válido, mas nenhum processo foi encontrado com ele em nossa
+                base.
               </p>
             </div>
           ) : (
