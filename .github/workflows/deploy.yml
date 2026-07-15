@@ -47,6 +47,7 @@ jobs:
 
           docker build \
             --build-arg NEXT_PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_JURI_API_URL=${{ secrets.PUBLIC_JURI_API_URL }} \
             -t $IMAGE_URI \
             -t $IMAGE_LATEST \
             .
