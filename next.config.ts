@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_JURI_API_URL: process.env.NEXT_PUBLIC_JURI_API_URL,
     // NEXT_API_KEY_MASTER removido do bundle client (SEG-003)
     // Usar process.env.NEXT_API_KEY_MASTER apenas em API routes server-side
   },

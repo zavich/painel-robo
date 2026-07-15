@@ -55,8 +55,7 @@ export default function EditFormPage() {
                 <p
                   className={`mt-1 max-w-sm text-sm ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}
                 >
-                  Ele pode ter sido removido, ou ainda não foi encontrado
-                  no armazenamento local deste navegador.
+                  Ele pode ter sido removido ou o link está incorreto.
                 </p>
               </div>
               <button

@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { ArrowLeft, ClipboardList, FileText, Send } from "lucide-react";
 import { useTheme } from "@/app/hooks/use-theme-client";
 import { useForms } from "@/app/hooks/forms/useForms";
+import { useSubmitForm } from "@/app/hooks/forms/useSubmitForm";
 import { FormFillField, FormFillValue } from "@/components/form-builder/FormFillField";
 import { FormDefinition } from "@/app/interfaces/forms";
 import {
@@ -28,7 +29,8 @@ function setFormIdInUrl(formId: string | null) {
 
 export default function FillFormPage() {
   const { theme } = useTheme();
-  const { forms } = useForms();
+  const { forms, isReady } = useForms();
+  const { submitForm, isSubmitting } = useSubmitForm();
   const [mounted, setMounted] = useState(false);
   const [formId, setFormId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, FormFillValue>>({});
@@ -60,7 +62,7 @@ export default function FillFormPage() {
     setAnswers((prev) => ({ ...prev, [fieldId]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedForm) return;
 
     const missingRequired = selectedForm.fields.filter((field) => {
@@ -75,9 +77,20 @@ export default function FillFormPage() {
       return;
     }
 
-    // Simulação — futuramente este payload será enviado a uma API.
-    toast.success("Formulário enviado com sucesso (simulação)");
-    setAnswers({});
+    try {
+      await submitForm({
+        formId: selectedForm.id,
+        answers: selectedForm.fields.map((field) => ({
+          label: field.label,
+          type: field.type,
+          value: answers[field.id] ?? (field.type === "checkbox" ? false : ""),
+        })),
+      });
+      toast.success("Formulário enviado com sucesso");
+      setAnswers({});
+    } catch {
+      toast.error("Não foi possível enviar o formulário. Tente novamente.");
+    }
   };
 
   if (!mounted) return null;
@@ -103,7 +116,13 @@ export default function FillFormPage() {
 
         <div className="rounded-2xl border border-white/20 bg-white/95 p-6 shadow-xl backdrop-blur-xl dark:border-gray-700 dark:bg-gray-800/95 sm:p-8">
           {!selectedForm ? (
-            forms.length === 0 ? (
+            !isReady ? (
+              <div className="flex flex-col items-center gap-3 py-12 text-center">
+                <p className={`text-sm ${mutedTextClass(theme)}`}>
+                  Carregando formulários...
+                </p>
+              </div>
+            ) : forms.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-12 text-center">
                 <FileText
                   className={`h-10 w-10 ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}
@@ -182,10 +201,11 @@ export default function FillFormPage() {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className={primaryButtonClass()}
+                  disabled={isSubmitting}
+                  className={`${primaryButtonClass()} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   <Send className="h-4 w-4" />
-                  Enviar
+                  {isSubmitting ? "Enviando..." : "Enviar"}
                 </button>
               </div>
             </div>

@@ -1,95 +1,84 @@
 "use client";
 
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { FormDefinition } from "@/app/interfaces/forms";
+import { createContext, ReactNode, useContext, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import api from "@/app/api/juriApi";
+import { FormDefinition, FormField } from "@/app/interfaces/forms";
 
-const STORAGE_KEY = "prosolutti:forms";
+const FORMS_QUERY_KEY = ["forms"];
+
+export interface FormInput {
+  name: string;
+  fields: FormField[];
+}
 
 interface FormsContextType {
   forms: FormDefinition[];
   isReady: boolean;
-  createForm: (form: FormDefinition) => void;
-  updateForm: (id: string, form: FormDefinition) => void;
-  deleteForm: (id: string) => void;
+  createForm: (form: FormInput) => Promise<FormDefinition>;
+  updateForm: (id: string, form: FormInput) => Promise<FormDefinition>;
+  deleteForm: (id: string) => Promise<void>;
 }
 
 const FormsContext = createContext<FormsContextType | undefined>(undefined);
 
-function readFormsFromStorage(): FormDefinition[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as FormDefinition[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeFormsToStorage(forms: FormDefinition[]) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(forms));
-  } catch {
-    // ignora erros de quota/serialização — os dados continuam em memória
-  }
+async function fetchForms(): Promise<FormDefinition[]> {
+  const { data } = await api.get<FormDefinition[]>("/forms");
+  return data;
 }
 
 export const FormsProvider = ({ children }: { children: ReactNode }) => {
-  const [forms, setForms] = useState<FormDefinition[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Lido apenas no cliente (após o mount) para não gerar mismatch de hidratação
-  // com o HTML renderizado no servidor.
-  useEffect(() => {
-    setForms(readFormsFromStorage());
-    setHydrated(true);
-  }, []);
+  const { data: forms = [], isLoading } = useQuery({
+    queryKey: FORMS_QUERY_KEY,
+    queryFn: fetchForms,
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: false,
+  });
 
-  // Persiste no localStorage — necessário para o fluxo de preenchimento, que
-  // abre em uma nova janela (contexto de React isolado, sem acesso a este
-  // Context em memória). Continua sendo apenas armazenamento local do
-  // navegador, sem nenhuma chamada de API.
-  useEffect(() => {
-    if (!hydrated) return;
-    writeFormsToStorage(forms);
-  }, [forms, hydrated]);
+  const createMutation = useMutation({
+    mutationFn: async (form: FormInput) => {
+      const { data } = await api.post<FormDefinition>("/forms", form);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: FORMS_QUERY_KEY });
+    },
+  });
 
-  // Mantém sincronizado caso outra aba/janela altere os formulários enquanto
-  // esta estiver aberta.
-  useEffect(() => {
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== STORAGE_KEY) return;
-      setForms(readFormsFromStorage());
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, form }: { id: string; form: FormInput }) => {
+      const { data } = await api.patch<FormDefinition>(`/forms/${id}`, form);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: FORMS_QUERY_KEY });
+    },
+  });
 
-  // TODO: quando a API estiver disponível, substituir a implementação
-  // interna destas funções por chamadas HTTP mantendo a mesma assinatura.
-  const createForm = useCallback((form: FormDefinition) => {
-    setForms((prev) => [...prev, form]);
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/forms/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: FORMS_QUERY_KEY });
+    },
+  });
 
-  const updateForm = useCallback((id: string, form: FormDefinition) => {
-    setForms((prev) => prev.map((item) => (item.id === id ? form : item)));
-  }, []);
-
-  const deleteForm = useCallback((id: string) => {
-    setForms((prev) => prev.filter((item) => item.id !== id));
-  }, []);
+  const value = useMemo<FormsContextType>(
+    () => ({
+      forms,
+      isReady: !isLoading,
+      createForm: (form) => createMutation.mutateAsync(form),
+      updateForm: (id, form) => updateMutation.mutateAsync({ id, form }),
+      deleteForm: (id) => deleteMutation.mutateAsync(id),
+    }),
+    [forms, isLoading, createMutation, updateMutation, deleteMutation],
+  );
 
   return (
-    <FormsContext.Provider value={{ forms, isReady: hydrated, createForm, updateForm, deleteForm }}>
-      {children}
-    </FormsContext.Provider>
+    <FormsContext.Provider value={value}>{children}</FormsContext.Provider>
   );
 };
 

@@ -48,6 +48,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
   const [fields, setFields] = useState<FormField[]>(initialForm?.fields ?? []);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingField, setEditingField] = useState<FormField | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -114,7 +115,7 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
     router.push("/dashboard/forms");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const name = formName.trim();
 
     if (!name) {
@@ -127,21 +128,22 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
       return;
     }
 
-    const formToSave: FormDefinition = {
-      id: initialForm?.id ?? crypto.randomUUID(),
-      name,
-      fields,
-    };
+    setIsSaving(true);
+    try {
+      if (isEditing && initialForm) {
+        await updateForm(initialForm.id, { name, fields });
+        toast.success("Formulário atualizado com sucesso");
+      } else {
+        await createForm({ name, fields });
+        toast.success("Formulário criado com sucesso");
+      }
 
-    if (isEditing) {
-      updateForm(formToSave.id, formToSave);
-      toast.success("Formulário atualizado com sucesso (simulação)");
-    } else {
-      createForm(formToSave);
-      toast.success("Formulário criado com sucesso (simulação)");
+      router.push("/dashboard/forms");
+    } catch {
+      toast.error("Não foi possível salvar o formulário. Tente novamente.");
+    } finally {
+      setIsSaving(false);
     }
-
-    router.push("/dashboard/forms");
   };
 
   return (
@@ -258,10 +260,11 @@ export function FormBuilder({ initialForm }: FormBuilderProps) {
         <button
           type="button"
           onClick={handleSubmit}
-          className={primaryButtonClass()}
+          disabled={isSaving}
+          className={`${primaryButtonClass()} disabled:cursor-not-allowed disabled:opacity-60`}
         >
           <Save className="h-4 w-4" />
-          Salvar
+          {isSaving ? "Salvando..." : "Salvar"}
         </button>
       </div>
 

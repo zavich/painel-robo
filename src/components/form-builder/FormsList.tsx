@@ -14,16 +14,23 @@ import { FormDefinition } from "@/app/interfaces/forms";
 export function FormsList() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { forms, deleteForm } = useForms();
+  const { forms, isReady, deleteForm } = useForms();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FormDefinition | null>(null);
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
 
-    deleteForm(deleteTarget.id);
-    toast.success("Formulário removido com sucesso (simulação)");
-    setDeleteTarget(null);
+    setDeletingId(deleteTarget.id);
+    try {
+      await deleteForm(deleteTarget.id);
+      toast.success("Formulário removido com sucesso");
+      setDeleteTarget(null);
+    } catch {
+      toast.error("Não foi possível remover o formulário. Tente novamente.");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -63,7 +70,23 @@ export function FormsList() {
       </div>
 
       {/* Forms Grid */}
-      {forms.length === 0 ? (
+      {!isReady ? (
+        <div
+          className={`rounded-2xl shadow-lg border py-16 text-center ${
+            theme === "dark"
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-200"
+          }`}
+        >
+          <p
+            className={`text-sm ${
+              theme === "dark" ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            Carregando formulários...
+          </p>
+        </div>
+      ) : forms.length === 0 ? (
         <div
           className={`rounded-2xl shadow-lg border py-16 text-center ${
             theme === "dark"

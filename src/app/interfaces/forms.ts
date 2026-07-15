@@ -25,6 +25,17 @@ export interface FormDefinition {
   id: string;
   name: string;
   fields: FormField[];
+  createdBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type FormSubmissionValue = string | number | boolean;
+
+export interface FormSubmissionAnswer {
+  label: string;
+  type: FieldType;
+  value: FormSubmissionValue;
 }
 
 export interface FieldTypeOption {
