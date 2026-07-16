@@ -19,6 +19,9 @@ export interface LawsuitMovimentacao {
   documentoId: string | null;
   texto: string | null;
   nomeDocumento: string | null;
+  // Anexos (ex: procuração, estatuto, CNPJ) aninhados nesta movimentação,
+  // mesma forma que o PJe/scraper já usam.
+  anexos?: LawsuitMovimentacao[];
 }
 
 export interface LawsuitInstancia {

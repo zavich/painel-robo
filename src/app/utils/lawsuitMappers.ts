@@ -1,4 +1,4 @@
-import { Lawsuit } from "@/app/interfaces/lawsuit";
+import { Lawsuit, LawsuitMovimentacao } from "@/app/interfaces/lawsuit";
 import { Movimentacoes, ProcessPart } from "@/app/interfaces/processes";
 
 export function mapLawsuitPartes(
@@ -30,20 +30,34 @@ export function mapLawsuitMoviments(
     return [];
   }
 
-  return lawsuit.movimentacoes.map((mov, index) => {
+  // Contador compartilhado entre todos os níveis (não só o array do topo) —
+  // anexos ficam aninhados em listas separadas por movimentação pai, então
+  // um índice reiniciado por lista colidiria entre anexos de pais diferentes
+  // (ambos cairiam em -1 na primeira posição, quebrando key do React).
+  let fallbackIndex = 0;
+
+  function mapMovimentacao(mov: LawsuitMovimentacao): Movimentacoes {
     const movimentacaoId = Number(mov.movimentacaoId);
+    fallbackIndex += 1;
     return {
       // Fallback pra 0 colidia entre todos os itens sem movimentacaoId
       // válido, quebrando key do React e a lógica de newMovementIds/seleção
-      // — usa um id negativo estável por posição, que nunca colide com um
+      // — usa um id negativo estável, que nunca colide com um
       // movimentacaoId real (sempre positivo).
       id: Number.isFinite(movimentacaoId) && movimentacaoId !== 0
         ? movimentacaoId
-        : -(index + 1),
+        : -fallbackIndex,
       data: mov.data ?? "",
       conteudo: mov.conteudo ?? "",
       instancia: mov.grau ?? "",
       texto: mov.texto ?? undefined,
+      documentoId: mov.documentoId ?? undefined,
+      nomeDocumento: mov.nomeDocumento ?? undefined,
+      anexos: mov.anexos?.length
+        ? mov.anexos.map(mapMovimentacao)
+        : undefined,
     };
-  });
+  }
+
+  return lawsuit.movimentacoes.map(mapMovimentacao);
 }

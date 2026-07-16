@@ -54,6 +54,11 @@ export interface Movimentacoes {
   conteudo: string;
   instancia: string;
   texto?: string;
+  documentoId?: string;
+  nomeDocumento?: string;
+  // Anexos (ex: procuração, estatuto, CNPJ) aninhados nesta movimentação,
+  // usados pra exibir agrupados visualmente na timeline.
+  anexos?: Movimentacoes[];
 }
 export interface PeticaoInicialData {
   qualificacao_reclamante: {

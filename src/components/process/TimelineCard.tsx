@@ -50,10 +50,12 @@ function MovementCard({
   mov,
   isNew,
   onClick,
+  isAttachment = false,
 }: {
   mov: Movimentacoes;
   isNew: boolean;
   onClick?: (mov: Movimentacoes) => void;
+  isAttachment?: boolean;
 }) {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const temDocumento = !!mov.texto;
@@ -127,7 +129,7 @@ function MovementCard({
           {temDocumento && (
             <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wide bg-secondary text-white shadow-sm">
               <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-              Documento
+              {isAttachment ? "Anexo" : "Documento"}
             </span>
           )}
           {isNew && (
@@ -202,15 +204,31 @@ function TimelineDateGroup({
         <div className="h-0.5 w-full rounded-full bg-gray-400 dark:bg-gray-400" />
       </div>
 
-      {/* Itens do dia, empilhados */}
+      {/* Itens do dia, empilhados — anexos vêm aninhados nativamente em
+          `mov.anexos` (mesma forma que o PJe usa), renderizados logo abaixo
+          da movimentação pai. */}
       <div className="flex-1 min-w-0 space-y-2">
         {items.map((item) => (
-          <MovementCard
-            key={`movement-${item.id}`}
-            mov={item.data}
-            isNew={newMovementIds.has(item.id)}
-            onClick={onMovementClick}
-          />
+          <div key={`movement-${item.id}`}>
+            <MovementCard
+              mov={item.data}
+              isNew={newMovementIds.has(item.id)}
+              onClick={onMovementClick}
+            />
+            {item.data.anexos && item.data.anexos.length > 0 && (
+              <div className="mt-1.5 ml-4 sm:ml-5 space-y-1.5 border-l-2 border-secondary/30 dark:border-secondary-700/40 pl-2 sm:pl-3">
+                {item.data.anexos.map((anexo) => (
+                  <MovementCard
+                    key={`movement-${anexo.id}`}
+                    mov={anexo}
+                    isNew={newMovementIds.has(anexo.id)}
+                    onClick={onMovementClick}
+                    isAttachment
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>
