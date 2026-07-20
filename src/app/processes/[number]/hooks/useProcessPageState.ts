@@ -104,12 +104,14 @@ export function useProcessPageState() {
     null,
   );
 
-  // Assim que o Athena confirma "não encontrado", verifica sozinho (sem
-  // clique do usuário) se já existe dado real em comunicacao-spot (de outro
-  // coletor, nunca migrado pro Athena). Se existir, o backend já joga esse
-  // JSON pro cache no Redis — só precisa refazer a consulta pra sair do
-  // estado de "não encontrado". Se não existir, só grava o marcador
-  // BUSCANDO (sem custo de captcha) e a tela mostra "não encontrado" de fato.
+  // Assim que o Athena/Redis confirmam "não encontrado", garante sozinho
+  // (sem clique do usuário) o marcador BUSCANDO em comunicacao-spot — só pra
+  // sinalizar a quem lê o S3 direto (ex.: communication-ingestor-juri) que
+  // uma busca está para começar; sem custo de captcha, e sem disparar
+  // extração nenhuma. Comunicacao-spot não é mais fonte de consulta (só
+  // Redis + Athena), então essa chamada nunca "acha" o processo — depois
+  // dela a tela sempre segue pro estado de "não encontrado", com o botão
+  // "Buscar processo" (`handleSearchNewLawsuit`, dispara `/search`).
   useEffect(() => {
     if (!isLawsuitNotFound || !id || insertAttemptedFor === id) {
       return;
@@ -118,24 +120,16 @@ export function useProcessPageState() {
     setInsertAttemptedFor(id);
 
     insertLawsuitMutation.mutate(id, {
-      onSuccess: async (result) => {
-        if (result.cached) {
-          toast.success(
-            "Processo encontrado em comunicacao-spot — carregando o detalhe.",
-          );
-          await refetchLawsuit();
-        }
-      },
       onError: (error) => {
         logger.error("Erro ao verificar comunicacao-spot:", error as object);
         toast.error("Erro ao verificar/inserir o processo em comunicacao-spot.");
       },
     });
-  }, [isLawsuitNotFound, id, insertAttemptedFor, insertLawsuitMutation, refetchLawsuit]);
+  }, [isLawsuitNotFound, id, insertAttemptedFor, insertLawsuitMutation]);
 
-  // Enquanto isso for true, ainda estamos checando o comunicacao-spot pra
-  // esse CNJ — só depois é que dá pra afirmar "não encontrado" de fato (nem
-  // no Athena, nem em comunicacao-spot), sem nenhuma ação do usuário.
+  // Enquanto isso for true, ainda estamos garantindo o marcador em
+  // comunicacao-spot pra esse CNJ — só depois é que a tela mostra o estado
+  // de "não encontrado" de fato, sem nenhuma ação do usuário.
   const isCheckingNewLawsuit =
     isLawsuitNotFound &&
     (insertAttemptedFor !== id || insertLawsuitMutation.isPending);
@@ -201,13 +195,19 @@ export function useProcessPageState() {
 
   // Processo ainda não encontrado no Athena (`isProcessError`) — dispara uma
   // primeira busca (sem documentos restritos) em vez do `/sync`, que é pra
-  // re-sincronizar um processo já existente.
+  // re-sincronizar um processo já existente. O backend já garante um
+  // registro "SINCRONIZANDO" no Redis assim que a busca é disparada (mesmo
+  // pra um CNJ nunca visto antes), então o refetch aqui tira a tela do card
+  // de erro e leva direto pro layout normal do processo, já mostrando o
+  // status "Sincronizando" — o polling embutido em `useLawsuit` (a cada 4s
+  // enquanto esse status durar) cuida do resto sozinho.
   const handleSearchNewLawsuit = async () => {
     try {
       await searchLawsuitMutation.mutateAsync(id);
       toast.success(
-        "Busca iniciada! Isso pode levar alguns minutos — atualize a página em instantes.",
+        "Busca iniciada! Acompanhe o andamento aqui na tela do processo.",
       );
+      await refetchLawsuit();
     } catch (error) {
       logger.error("Erro ao buscar processo:", error as object);
       toast.error("Erro ao iniciar a busca do processo.");

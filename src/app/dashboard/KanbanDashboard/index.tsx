@@ -4,7 +4,7 @@ import { useFilter } from "@/app/hooks/filter/useFilter";
 import { useToast } from "@/app/hooks/use-toast";
 import { FiltersBar } from "@/components/FiltersBar";
 import { validateCnjNumber } from "@/app/utils/cnjValidation";
-import { AlertTriangle, Search, SearchX } from "lucide-react";
+import { AlertTriangle, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -57,12 +57,15 @@ export default function KanbanDashboard() {
     null,
   );
 
-  // Assim que a busca no Athena confirma "não encontrado", verifica sozinho
-  // (sem clique do usuário) se já existe dado real em comunicacao-spot (de
-  // outro coletor, nunca migrado pro Athena). Se existir, o backend já joga
-  // esse JSON pro cache no Redis e aqui a gente só redireciona — igual à
-  // busca normal quando o processo já existe. Se não existir, só grava o
-  // marcador BUSCANDO (sem custo de captcha) e mostra "não encontrado".
+  // Assim que a busca no Athena/Redis confirma "não encontrado", garante
+  // sozinho (sem clique do usuário) o marcador BUSCANDO em comunicacao-spot
+  // — só pra sinalizar a quem lê o S3 direto (ex.: communication-ingestor-
+  // juri) que uma busca está para começar; sem custo de captcha, e sem
+  // disparar extração nenhuma. Comunicacao-spot não é mais fonte de
+  // consulta pra essa tela (só Redis + Athena), então essa chamada nunca
+  // "acha" nada aqui — o resultado é sempre o mesmo próximo passo: abrir o
+  // detalhe do processo (ver efeito abaixo), que é quem oferece o botão
+  // "Buscar processo" (dispara `/search`, nunca automático a partir daqui).
   useEffect(() => {
     if (!notFound || insertAttemptedFor === debouncedSearch) {
       return;
@@ -71,15 +74,6 @@ export default function KanbanDashboard() {
     setInsertAttemptedFor(debouncedSearch);
 
     insertLawsuitMutation.mutate(debouncedSearch, {
-      onSuccess: (result) => {
-        if (result.cached) {
-          toast({
-            title: "Processo encontrado em comunicacao-spot",
-            description: `O processo ${debouncedSearch} já tinha dado salvo — abrindo o detalhe.`,
-          });
-          router.push(`/processes/${debouncedSearch}`);
-        }
-      },
       onError: () => {
         toast({
           title: "Erro ao verificar comunicacao-spot",
@@ -89,7 +83,15 @@ export default function KanbanDashboard() {
         });
       },
     });
-  }, [notFound, debouncedSearch, insertAttemptedFor, insertLawsuitMutation, router, toast]);
+  }, [notFound, debouncedSearch, insertAttemptedFor, insertLawsuitMutation, toast]);
+
+  // Enquanto isso for falso, ainda estamos checando o Athena/Redis e/ou
+  // garantindo o marcador em comunicacao-spot pra essa busca — mostra
+  // loading. Só depois disso é que dá pra seguir pro detalhe do processo.
+  const insertCheckSettled =
+    notFound &&
+    insertAttemptedFor === debouncedSearch &&
+    !insertLawsuitMutation.isPending;
 
   // Nova abordagem: a busca vai direto para o detalhe do processo quando encontrado
   useEffect(() => {
@@ -97,6 +99,22 @@ export default function KanbanDashboard() {
       router.push(`/processes/${lawsuit.cnjNumber}`);
     }
   }, [hasSearch, isLoading, lawsuit, router]);
+
+  // Nem o Athena nem o Redis têm esse processo ainda — em vez de travar
+  // aqui num beco sem saída, segue o mesmo padrão da tela de detalhes: abre
+  // o detalhe do processo, que é quem sabe oferecer o botão "Buscar
+  // processo" e mostrar o status de sincronização depois.
+  useEffect(() => {
+    if (!insertCheckSettled) {
+      return;
+    }
+
+    toast({
+      title: "Processo não encontrado na base",
+      description: `Abrindo o detalhe de ${debouncedSearch} para iniciar a busca.`,
+    });
+    router.push(`/processes/${debouncedSearch}`);
+  }, [insertCheckSettled, debouncedSearch, router, toast]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -114,18 +132,6 @@ export default function KanbanDashboard() {
       resetFilters();
     };
   }, [resetFilters]);
-
-  // Enquanto isso for falso, ainda estamos checando o Athena e/ou o
-  // comunicacao-spot pra essa busca — mostra loading. Só depois disso é que
-  // dá pra afirmar "não encontrado" de fato (nem no Athena, nem em
-  // comunicacao-spot) sem nenhuma ação do usuário.
-  const insertCheckSettled =
-    notFound &&
-    insertAttemptedFor === debouncedSearch &&
-    !insertLawsuitMutation.isPending;
-  const willRedirectFromCache =
-    insertCheckSettled && insertLawsuitMutation.data?.cached;
-  const genuinelyNotFound = insertCheckSettled && !willRedirectFromCache;
 
   return (
     <div>
@@ -180,29 +186,17 @@ export default function KanbanDashboard() {
                   : "O dígito verificador não confere com o restante do número — provavelmente algum dígito foi digitado errado. Confira o número e tente novamente."}
               </p>
             </div>
-          ) : genuinelyNotFound ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
-              <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
-                <SearchX className="h-6 w-6 text-red-500" />
-              </div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Processo não encontrado
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                O número &quot;{debouncedSearch}&quot; está em um formato
-                válido, mas nenhum processo foi encontrado com ele em nossa
-                base.
-              </p>
-            </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-3 py-20 px-6 text-center">
               <div className="h-6 w-6 border-2 border-yellow-200 border-t-yellow-500 rounded-full animate-spin"></div>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {isLoading
                   ? "Buscando processo..."
-                  : notFound
-                    ? "Verificando comunicacao-spot..."
-                    : "Redirecionando..."}
+                  : insertCheckSettled
+                    ? "Processo não encontrado na base — abrindo o detalhe para buscar..."
+                    : notFound
+                      ? "Verificando comunicacao-spot..."
+                      : "Redirecionando..."}
               </p>
             </div>
           )}

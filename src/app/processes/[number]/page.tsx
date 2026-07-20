@@ -9,7 +9,7 @@ import {
 import { ProcessHeader } from "@/components/process/ProcessHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, XCircle } from "lucide-react";
+import { Search, SearchX, XCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { ProcessActionDialogs } from "./components/ProcessActionDialogs";
 import { ProcessSidebar } from "./components/ProcessSidebar";
@@ -99,21 +99,33 @@ export default function ProcessDetailsEditPage() {
         <div className="h-screen overflow-hidden flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
           <Card className="w-96 text-center border-0 shadow-xl bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-700/50">
             <CardContent className="pt-8 pb-8">
-              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                <XCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${
+                  isLawsuitNotFound
+                    ? "bg-amber-100 dark:bg-amber-900/30"
+                    : "bg-red-100 dark:bg-red-900/30"
+                }`}
+              >
+                {isLawsuitNotFound ? (
+                  <SearchX className="h-8 w-8 text-amber-500 dark:text-amber-400" />
+                ) : (
+                  <XCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
+                )}
               </div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">
                 {isLawsuitNotFound
-                  ? "Processo não encontrado"
+                  ? "Processo ainda não está na nossa base"
                   : "Erro ao carregar o processo"}
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
                 {isLawsuitNotFound ? (
                   <>
-                    Não encontramos nenhum processo com esse número no PJe.
+                    Esse número de processo é válido, mas ainda não temos
+                    dados dele.
                     <br />
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      Verifique se o número foi digitado corretamente.
+                      Clique em &quot;Buscar processo&quot; para buscarmos ele
+                      agora no PJe — pode levar alguns minutos.
                     </span>
                   </>
                 ) : (

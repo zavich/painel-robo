@@ -4,7 +4,6 @@ import api from "../..";
 type InsertLawsuitRes = {
   message: string;
   alreadyExists: boolean;
-  cached: boolean;
 };
 
 export async function insertLawsuit(numeroCnj: string) {
